@@ -67,7 +67,7 @@
 
     <main class="screen">
         <div class="card">
-            <h2>Welkom!</h2>
+            <h2>Welkom!2</h2>
 
             {{-- Foutmelding uit sessie of uit querystring tonen --}}
             @if(session('error'))
