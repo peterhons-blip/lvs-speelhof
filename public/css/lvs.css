@@ -1,0 +1,311 @@
+/* =========================
+   Vars & Base
+========================= */
+:root{
+    --brand-bg:#FFF7D1;
+    --btn-green:#22C55E;
+    --btn-orange:#F97316;
+    --ink:#0b132b;
+    --border:#E5E7EB;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+    margin:0;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica Neue,Arial;
+    color:var(--ink);
+    background:var(--brand-bg);
+    -webkit-tap-highlight-color: transparent;
+}
+
+[data-hidden="true"]{ display:none!important; }
+
+/* =========================
+   App Shell
+========================= */
+.app{
+    max-width:860px;
+    margin:0 auto;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+}
+
+.app-header{
+    position:sticky; top:0; z-index:10;
+    background:rgba(255,255,255,.9);
+    backdrop-filter:saturate(140%) blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:14px 18px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+
+.title{ display:flex; align-items:center; gap:12px; }
+.app-header h1{ margin:0; font-size:clamp(1.2rem,2.4vw,1.6rem); }
+.logo{ height:40px; width:auto; }
+
+.user{ display:flex; align-items:center; gap:10px; font-size:.95rem; color:#475569; }
+.user .avatar{
+    width:32px; height:32px; border-radius:50%;
+    background:#22c55e; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:.85rem; text-transform:uppercase;
+}
+.user .userline small.muted{ color:#64748b; font-size:.85rem; line-height:1; }
+.user .userline strong{ color:#0b132b; font-size:1rem; line-height:1.2; }
+
+.btn-logout{
+    margin-left:12px; padding:6px 12px; border:none; border-radius:8px;
+    background:#ef4444; color:#fff; font-size:.9rem; font-weight:600; cursor:pointer;
+    transition:background .2s;
+}
+.btn-logout:hover{ background:#dc2626; }
+
+.screen{ padding:24px 18px; }
+.lead{ font-size:clamp(1.05rem,2.2vw,1.2rem); margin:6px 0 18px; }
+
+/* =========================
+   Controls & Grid
+========================= */
+.controls{ display:flex; gap:10px; margin:0 0 16px; }
+.search{
+    flex:1; min-width:280px; padding:12px 14px;
+    border:1px solid var(--border); border-radius:12px;
+    font-size:clamp(1.02rem,2.2vw,1.1rem); background:#fff;
+}
+
+.grid{
+    display:grid; grid-template-columns:1fr;
+    gap:14px; margin-top:24px; margin-bottom:24px;
+}
+@media(min-width:640px){ .grid{ grid-template-columns:1fr 1fr; } }
+
+/* =========================
+   Buttons
+========================= */
+.btn{
+    width:100%; padding:20px 18px; border-radius:22px; border:none; text-align:left;
+    color:#fff; font-weight:800; letter-spacing:.2px;
+    display:flex; align-items:center; gap:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.08);
+    cursor:pointer; transition:filter .2s, transform .02s ease;
+    font-size:clamp(1.1rem,3vw,1.35rem); line-height:1.25;
+}
+.btn:focus{ outline:4px solid rgba(37,99,235,.35); }
+.btn:active{ transform:scale(.997); }
+.btn-green{ background:var(--btn-green); }
+.btn-orange{ background:var(--btn-orange); }
+.btn-orange:hover{ filter:brightness(0.95); }
+.btn-red {
+    background: #ef4444; /* rood */
+    color: #fff;
+    border: none;
+}
+.btn-red:hover {
+    background: #dc2626;
+}
+.btn .tag{
+    margin-left:auto; padding:6px 10px; border-radius:999px; font-size:.95rem;
+    color:#0b132b; background:rgba(255,255,255,.88);
+}
+
+/* Kleine, niet-onderlijnde knop (links) */
+.btn--sm{
+    width:auto; padding:10px 14px; border-radius:12px; font-size:1rem; line-height:1.1;
+    text-decoration:none; box-shadow:0 3px 8px rgba(0,0,0,.06);
+}
+
+/* Terugknop */
+.back-btn{
+    display:inline-block; padding:10px 16px; border-radius:12px;
+    background:#22c55e; color:#fff; font-weight:600; text-decoration:none;
+    box-shadow:0 4px 10px rgba(0,0,0,.08); transition:background .2s;
+}
+.back-btn:hover{ background:#16a34a; }
+
+/* =========================
+   Card
+========================= */
+.card{
+    position:relative;
+    background:#fff; border:1px solid var(--border);
+    border-radius:20px; padding:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+}
+.card h2{ margin-top:0; margin-bottom:.6em; font-size:1.6rem; }
+.card p{ margin:.35em 0; }
+
+.card-header{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:1rem;
+}
+.card-footer{
+    display:flex; justify-content:flex-end; margin-top:10px;
+}
+
+/* =========================
+   Meldingen
+========================= */
+.melding-form{ display:flex; flex-direction:column; gap:12px; }
+.melding-form select,
+.melding-form textarea{
+    font-size:1rem; padding:10px 12px; border:1px solid var(--border);
+    border-radius:12px; background:#fff;
+}
+.melding-form textarea{ resize:vertical; min-height:120px; }
+
+.error-text{
+    font-size:1rem; line-height:1.5; color:#475569; margin:8px 0 16px;
+}
+
+.meldingen-list{
+    display:flex; flex-direction:column; gap:12px; margin-top:10px;
+}
+.melding-row{
+    border:1px solid var(--border); border-radius:14px; padding:12px; background:#fff;
+}
+.melding-meta{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;
+}
+.melding-datum{ font-size:.95rem; color:#64748b; }
+
+.melding-badges{ display:flex; gap:8px; flex-wrap:wrap; }
+.badge{
+    display:inline-block; padding:4px 10px; border-radius:999px;
+    font-size:.9rem; font-weight:600; background:#f1f5f9; color:#0b132b;
+}
+.badge-cat{ background:#ffeccc; }
+.badge-soort{ background:#e7f8ef; }
+.melding-comment{ line-height:1.5; }
+.muted{ color:#64748b; }
+
+/* =========================
+   Verjaardagen (weekpagina)
+========================= */
+/* =========================
+   Verjaardagen (weekpagina)
+========================= */
+.bday-list{
+    display:flex; flex-direction:column; gap:16px; margin-top:12px;
+}
+
+.bday-group{
+    border:1px solid var(--border); border-radius:14px; background:#fff; padding:12px;
+}
+
+.bday-group-header{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+}
+
+.bday-date{ font-weight:700; }
+
+.pill{
+    display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px;
+    background:#eef2ff; color:#1e3a8a; font-size:.85rem; font-weight:600;
+}
+
+/* Rijencontainer: alleen een top-lijntje onder de header */
+.bday-rows{
+    overflow:hidden;
+    border-top:1px solid var(--border);
+}
+
+/* Link vult volledige breedte; hover zonder witte rand */
+.bday-row-link{
+    position:relative;
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    background:#fff;
+    transition:background-color .15s ease;
+    padding:0; /* padding zit in .bday-row */
+}
+.bday-row-link:hover{ background:#f9fafb; }
+.bday-row-link:focus-visible{ outline:3px solid rgba(37,99,235,.38); outline-offset:0; border-radius:8px; }
+
+/* Subtiele scheidingslijn als pseudo-element (i.p.v. border-bottom) */
+.bday-row-link::after{
+    content:"";
+    position:absolute; left:14px; right:14px; bottom:0; height:1px;
+    background:var(--border);
+}
+.bday-row-link:last-child::after{ display:none; }
+
+/* Eigenlijke rij-inhoud */
+.bday-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; /* géén border hier! */
+}
+
+.bday-name{
+    font-size:1rem; display:flex; align-items:center; gap:.5em;
+}
+
+.bday-age{ color:#475569; }
+
+.badge-klas{ background:#e7f8ef; }
+
+
+/* Rijen met scheidingslijn als pseudo-element (geen border-shift op hover) */
+.bday-rows{ overflow:hidden; border-top:1px solid var(--border); }
+.bday-row-link{
+    position:relative;
+    display:block; text-decoration:none; color:inherit; background:#fff;
+    transition:background-color .15s ease;
+    padding:0; /* alle padding zit in .bday-row */
+}
+.bday-row-link:hover{ background:#f9fafb; }
+.bday-row-link:focus-visible{ outline:3px solid rgba(37,99,235,.38); outline-offset:0; }
+
+.bday-row-link::after{
+    content:"";
+    position:absolute; left:14px; right:14px; bottom:0; height:1px;
+    background:var(--border);
+}
+.bday-row-link:last-child::after{ display:none; }
+
+.bday-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px;
+}
+.bday-name{ font-size:1rem; display:flex; align-items:center; gap:.5em; }
+.bday-age{ color:#475569; }
+.badge-klas{ background:#e7f8ef; }
+
+/* =========================
+   Vandaag jarig (widget, op index)
+   - Geen rand rond geheel
+   - Alleen lijntjes tussen leerlingen
+   - Hover & focus over de hele rij
+========================= */
+.bday-today-list{
+    border-radius:8px;
+    overflow:hidden;
+    background:#fff;
+}
+
+.bday-today-row-link{
+    position:relative;
+    display:block; text-decoration:none; color:inherit; background:#fff;
+    transition:background-color .15s ease;
+    padding:0; /* alle padding zit in .bday-today-row */
+}
+.bday-today-row-link:hover{ background:#f9fafb; }
+.bday-today-row-link:focus-visible{ outline:3px solid rgba(37,99,235,.38); outline-offset:0; }
+
+/* separator als pseudo-element → geen witruimte-illusie bij hover */
+.bday-today-row-link::after{
+    content:"";
+    position:absolute; left:14px; right:14px; bottom:0; height:1px;
+    background:var(--border);
+}
+.bday-today-row-link:last-child::after{ display:none; }
+
+.bday-today-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 14px;
+}
+.bday-today-name{
+    font-weight:500; display:flex; align-items:center; gap:.5em;
+}
+.bday-today-age{ color:#555; font-size:.95rem; }
