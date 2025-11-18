@@ -24,15 +24,26 @@
             <h1>Leerling Meldingssysteem</h1>
         </div>
 
-        <!-- Rechts: login info + uitloggen -->
-        <div class="user" id="userBox" aria-label="Ingelogde leerkracht">
-            <span class="avatar" aria-hidden="" style="display: none;"></span>
-            <span class="userline">
-                        <small class="muted">Aangemeld via Smartschool als</small><br>
-                        <strong id="userName">{{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}</strong><span class="groupname">({{ ucwords($ss_user['groupname']) }})</span>
-                    </span>
-            <button id="logoutBtn" class="btn-logout" type="button">Uitloggen</button>
-        </div>
+        @php
+            $ss_user = session('ss_user');
+        @endphp
+
+        @if($ss_user)
+            <!-- Rechts: login info + uitloggen -->
+            <div class="user" id="userBox" aria-label="Ingelogde leerkracht">
+                <span class="avatar" aria-hidden="" style="display: none;"></span>
+                <span class="userline">
+                    <small class="muted">Aangemeld via Smartschool als</small><br>
+                    <strong id="userName">
+                        {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}
+                    </strong>
+                    @if(!empty($ss_user['groupname']))
+                        <span class="groupname">({{ ucwords($ss_user['groupname']) }})</span>
+                    @endif
+                </span>
+                <button id="logoutBtn" class="btn-logout" type="button">Uitloggen</button>
+            </div>
+        @endif
     </header>
     @yield('content')
 </div>
