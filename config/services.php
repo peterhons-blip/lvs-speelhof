@@ -39,6 +39,9 @@ return [
         'client_id' => env('SMARTSCHOOL_CLIENT_ID'),
         'client_secret' => env('SMARTSCHOOL_CLIENT_SECRET'),
         'oauth_url' => env('SMARTSCHOOL_OAUTH_URL'), // je eigen Smartschool-platform
+        'wsdl'       => env('SMARTSCHOOL_WSDL'),
+        'accesscode' => env('SMARTSCHOOL_ACCESSCODE'),
+        'identifier'   => env('SMARTSCHOOL_USER_IDENTIFIER_FIELD', 'username'),
     ],
 
 ];
