@@ -42,6 +42,9 @@ body{
 }
 
 .title{ display:flex; align-items:center; gap:12px; }
+.title a {
+    text-decoration: none;
+}
 .app-header h1{ margin:0; font-size:clamp(1.2rem,2.4vw,1.6rem); }
 .logo{ height:40px; width:auto; }
 

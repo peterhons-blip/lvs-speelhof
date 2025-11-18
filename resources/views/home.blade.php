@@ -54,6 +54,17 @@
         }
         .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
         .muted{color:#475569}
+        .ss-login-btn {
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .ss-login-btn img {
+            display: block;
+            height: 40px;   /* of weg laten als je de originele grootte wil */
+            width: auto;
+        }
+
     </style>
 </head>
 <body>
@@ -104,12 +115,12 @@
                 </div>
             @else
                 <div style="margin-top:12px;">
-                    <a href="{{ route('login') }}" class="btn btn-green btn--sm">Aanmelden via Smartschool</a>
+                    <a href="{{ route('login') }}" class="ss-login-btn" aria-label="Aanmelden met Smartschool">
+                        <img src="{{ asset('images/btn_aanmelden_met_smartschool_290x40.png') }}"
+                            alt="Aanmelden met Smartschool">
+                    </a>
                 </div>
             @endif
-
-
-
         </div>
     </main>
 </div>

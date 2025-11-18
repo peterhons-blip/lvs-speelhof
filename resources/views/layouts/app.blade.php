@@ -18,7 +18,9 @@
 <div class="app" id="app">
     <header class="app-header">
         <div class="title">
-            <img class="logo" src="{{ asset('images/logo.png') }}" alt="Atheneum Sint-Truiden — Speelhof" />
+            <a href="/leerlingen">
+                <img class="logo" src="{{ asset('images/logo.png') }}" alt="Atheneum Sint-Truiden — Speelhof" />
+            </a>
             <h1>Leerling Meldingssysteem</h1>
         </div>
 
