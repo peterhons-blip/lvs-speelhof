@@ -7,6 +7,7 @@ use App\Models\Leerling;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\LeerlingenWorden18;
+use App\Services\SmartschoolSoap;
 
 class CheckLeeftijdLeerlingen extends Command
 {
@@ -16,13 +17,21 @@ class CheckLeeftijdLeerlingen extends Command
     public function handle(): int
     {
         $this->info('Check gestart…');
+         $isTest = $this->option('test') === true;
+
 
         // Laad eventueel relation 'klas' mee; harmless als die niet bestaat
         $leerlingen = Leerling::with('klas')->get();
-
         $leerlingenVandaag18 = [];
 
         foreach ($leerlingen as $leerling) {
+
+            if (! method_exists($leerling, 'wordtVandaag18')) {
+                $this->error('Methode wordtVandaag18() bestaat niet op het Leerling-model.');
+                Log::error('Methode wordtVandaag18() ontbreekt op Leerling.');
+                return self::FAILURE;
+            }
+
             if ($leerling->wordtVandaag18()) {
                 // Klasnaam normaliseren: kolom -> JSON -> relation -> string -> fallback
                 $klasNaam =
@@ -37,10 +46,11 @@ class CheckLeeftijdLeerlingen extends Command
                 $this->line($msg);
 
                 $leerlingenVandaag18[] = [
-                    'voornaam'      => $leerling->voornaam ?? '',
-                    'naam'          => $leerling->naam ?? '',
-                    'klas'          => $klasNaam,
-                    'geboortedatum' => $leerling->geboortedatum, // Carbon (cast in model)
+                    'voornaam'          => $leerling->voornaam ?? '',
+                    'naam'              => $leerling->naam ?? '',
+                    'klas'              => $klasNaam,
+                    'geboortedatum'     => $leerling->geboortedatum, // Carbon (cast in model)
+                    'gebruikersnaam'    => $leerling->gebruikersnaam,   // ← Smartschool gebruikersnaam
                 ];
             }
         }
@@ -51,15 +61,56 @@ class CheckLeeftijdLeerlingen extends Command
             return self::SUCCESS;
         }
 
-        // Alleen mailen als er iets te melden is.
-        Mail::to('peter.hons@atheneumsinttruiden.be')
-            ->cc(['pascale.liebens@atheneumsinttruiden.be ', 'stijn.forier@atheneumsinttruiden.be '])
-            ->send(new LeerlingenWorden18($leerlingenVandaag18));
+        if ($isTest) {
+            $this->warn('TESTMODUS: geen mail of Smartschoolberichten verzonden.');
+            Log::info('TESTMODUS: leerlingen:check-18 heeft geen mail/Smartschoolberichten verzonden.');
+            return self::SUCCESS;
+        }
 
+        // 1. Mail naar team
+        //Mail::to('peter.hons@atheneumsinttruiden.be')
+        //    ->cc(['pascale.liebens@atheneumsinttruiden.be ', 'stijn.forier@atheneumsinttruiden.be '])
+        //    ->send(new LeerlingenWorden18($leerlingenVandaag18));
+        //Log::info('Mail verzonden met ' . count($leerlingenVandaag18) . ' leerling(en).');
+        //$this->info('Mail verzonden.');
 
-        Log::info('Mail verzonden met ' . count($leerlingenVandaag18) . ' leerling(en).');
-        $this->info('Mail verzonden.');
+        // 2. Smartschool-berichten naar leerlingen
+        /** @var SmartschoolSoap $ss */
+        $ss = app(SmartschoolSoap::class);
 
+        $onderwerp = "Proficiat met je 18de verjaardag! 🌟";
+
+        foreach ($leerlingenVandaag18 as $ll) {
+
+            if (empty($ll['gebruikersnaam'])) {
+                Log::warning("Geen Smartschool gebruikersnaam voor {$ll['voornaam']} {$ll['naam']}");
+                continue;
+            }
+
+            // Body genereren via Blade-view
+            $body = view('smartschool.berichten.wordt18', [
+                'voornaam' => $ll['voornaam'],
+                'naam'     => $ll['naam'],
+            ])->render();
+
+            try {
+                $ss->sendMessage(
+                    $ll['gebruikersnaam'],  // userIdentifier = Smartschool gebruikersnaam
+                    $onderwerp,
+                    $body,
+                    null,                   // sender wordt in de service ALTIJD "lvs"
+                    true                    // copyToLVS
+                );
+
+                Log::info("Smartschoolbericht verzonden naar {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
+
+            } catch (\SoapFault $e) {
+                Log::error("Fout bij versturen Smartschoolbericht naar {$ll['gebruikersnaam']}: ".$e->getMessage());
+                $this->error("Fout bij Smartschoolbericht naar {$ll['gebruikersnaam']}: ".$e->getMessage());
+            }
+        }
+
+        $this->info('Smartschoolberichten verzonden.');
         return self::SUCCESS;
     }
 }
