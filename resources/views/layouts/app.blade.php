@@ -41,8 +41,11 @@
                     @endif
                 </span>
                 <form action="{{ route('logout') }}" method="get" style="display:inline;">
-                    <button type="submit" class="btn-logout">Uitloggen</button>
+                    <button id="logoutBtn" type="submit" class="btn-logout">
+                        Uitloggen
+                    </button>
                 </form>
+
             </div>
         @else
             <!-- Rechts: Smartschool login-knop (afbeelding) -->
