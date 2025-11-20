@@ -33,7 +33,7 @@ class SmartschoolSoap
         bool $copyToLVS = false
     ) {
         // Verzender uit config halen
-        $userIdentifier = env('SMARTSCHOOL_SENDER_USER');
+        $senderIdentifier = env('SMARTSCHOOL_SENDER_USER');
 
         try {
             return $this->client->sendMsg(
