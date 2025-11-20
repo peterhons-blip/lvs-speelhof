@@ -102,7 +102,7 @@ class SmartschoolController extends Controller
             'groupname'      => $dbUser->groupname ?? null,
         ]);
 
-        return redirect('/leerlingen'); // redirect na login
+        return redirect('/'); // redirect na login
     }
 
     // 🔹 Logout

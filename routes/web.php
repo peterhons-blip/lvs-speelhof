@@ -81,3 +81,18 @@ Route::get('/smartschool/test-user', function (SmartschoolSoap $smartschool) {
         return 'Fout bij getUserDetails: ' . $e->getMessage();
     }
 });
+
+Route::get('/fake-login', function (\Illuminate\Http\Request $request) {
+
+    $request->session()->put('ss_user', [
+        'id'                => '143',
+        'voornaam'          => 'Peter',
+        'naam'              => 'Hons',
+        'gebruikersnaam'    => 'peter.hons',
+        'platform'          => 'atheneumsinttruiden.smartschool.be',
+        'groupId'           => '2',
+        'groupname'         => 'ICT-coördinator'
+    ]);
+
+    return redirect('/'); // of naar /leerlingen indien je wil
+});
