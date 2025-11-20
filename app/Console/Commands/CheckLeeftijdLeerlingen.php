@@ -78,7 +78,7 @@ class CheckLeeftijdLeerlingen extends Command
         /** @var SmartschoolSoap $ss */
         $ss = app(SmartschoolSoap::class);
 
-        $onderwerp = "Proficiat met je 18de verjaardag! 🌟";
+        $onderwerp = "Proficiat met je 18de verjaardag! 🌟 Belangrijk: aanpassing van je co-accounts!";
 
         foreach ($leerlingenVandaag18 as $ll) {
 

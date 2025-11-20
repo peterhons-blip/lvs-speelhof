@@ -9,7 +9,7 @@
     Nu je meerderjarig bent, verandert er ook iets op vlak van jouw privacyrechten.<br>
     Vanaf 18 jaar beslis jij zelf volledig wie toegang heeft tot jouw gegevens in Smartschool.<br>
     Daarom werden de bestaande co-accounts (ouderaccounts) automatisch uitgeschakeld,
-    zoals de regelgeving dat voorschrijft.
+    zoals de regelgeving dat voorschrijft Dat betekent dat je ouders vanaf vandaag geen mails, resultaten, ... meer ontvangen..
 </p>
 
 <p>
