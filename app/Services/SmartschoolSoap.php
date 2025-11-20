@@ -51,6 +51,25 @@ class SmartschoolSoap
         }
     }
 
+    public function disableCoAccounts(string $userIdentifier): void
+    {
+        // Zet co-accounts 1 t.e.m. 6 op 'niet actief'
+        for ($i = 1; $i <= 6; $i++) {
+            try {
+                $this->client->saveUserParameter(
+                    $this->accesscode,                 // string $accesscode
+                    $userIdentifier,                   // string $userIdentifier
+                    "status_coaccount{$i}",            // string $paramName
+                    'niet actief'                      // string $paramValue
+                );
+            } catch (\SoapFault $e) {
+                // We loggen, maar gooien niet door zodat de rest (bericht/mail) kan doorgaan
+                \Log::error("Fout bij uitschakelen co-account {$i} voor {$userIdentifier}: ".$e->getMessage());
+            }
+        }
+    }
+
+
 
     public function getErrorCodes(): array
     {
@@ -76,4 +95,5 @@ class SmartschoolSoap
             $userIdentifier
         );
     }
+
 }

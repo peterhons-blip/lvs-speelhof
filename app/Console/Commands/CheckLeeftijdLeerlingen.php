@@ -107,9 +107,13 @@ class CheckLeeftijdLeerlingen extends Command
 
                 Log::info("Smartschoolbericht verzonden naar {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
 
+                // 🔻 HIER: co-accounts uitzetten
+                $ss->disableCoAccounts($ll['gebruikersnaam']);
+                Log::info("Co-accounts uitgeschakeld voor {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
+
             } catch (\SoapFault $e) {
-                Log::error("Fout bij versturen Smartschoolbericht naar {$ll['gebruikersnaam']}: ".$e->getMessage());
-                $this->error("Fout bij Smartschoolbericht naar {$ll['gebruikersnaam']}: ".$e->getMessage());
+                Log::error("Fout bij versturen Smartschoolbericht of uitschakelen co-accounts voor {$ll['gebruikersnaam']}: ".$e->getMessage());
+                $this->error("Fout bij Smartschoolactie voor {$ll['gebruikersnaam']}: ".$e->getMessage());
             }
         }
 
