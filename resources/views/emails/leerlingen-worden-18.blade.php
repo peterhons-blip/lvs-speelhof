@@ -80,12 +80,12 @@
 
                         <!-- ✔ INFOBOX TOEGEVOEGD -->
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
-                               style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin-top:16px;">
+                            style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin:12px 0;">
                             <tr>
-                                <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#065f46; line-height:1.5;">
+                                <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#065f46; line-height:1.5; padding:0;">
                                     <strong>Automatische acties uitgevoerd</strong><br>
                                     Voor elke leerling in bovenstaande lijst werd:
-                                    <ul style="margin:8px 0 0; padding-left:20px; color:#065f46;">
+                                    <ul style="margin:6px 0 0; padding-left:20px; color:#065f46;">
                                         <li>een Smartschoolbericht verstuurd om hen te informeren</li>
                                         <li>alle co-accounts (ouderaccounts) automatisch uitgeschakeld volgens de regelgeving</li>
                                     </ul>

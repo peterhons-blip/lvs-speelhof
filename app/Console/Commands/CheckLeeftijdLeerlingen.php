@@ -69,7 +69,7 @@ class CheckLeeftijdLeerlingen extends Command
 
         // 1. Mail naar team
         Mail::to('peter.hons@atheneumsinttruiden.be')
-            ->cc(['pascale.liebens@atheneumsinttruiden.be ', 'stijn.forier@atheneumsinttruiden.be '])
+            //->cc(['pascale.liebens@atheneumsinttruiden.be ', 'stijn.forier@atheneumsinttruiden.be '])
             ->send(new LeerlingenWorden18($leerlingenVandaag18));
         Log::info('Mail verzonden met ' . count($leerlingenVandaag18) . ' leerling(en).');
         $this->info('Mail verzonden.');
