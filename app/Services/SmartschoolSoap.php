@@ -32,8 +32,8 @@ class SmartschoolSoap
         ?string $ignoredSender = null,   // wordt genegeerd
         bool $copyToLVS = false
     ) {
-        // Verzender ALTIJD "lvs"
-        $senderIdentifier = "lvs";
+        // Verzender uit config halen
+        $userIdentifier = env('SMARTSCHOOL_SENDER_USER');
 
         try {
             return $this->client->sendMsg(
