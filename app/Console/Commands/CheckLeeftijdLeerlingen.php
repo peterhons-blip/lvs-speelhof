@@ -92,8 +92,6 @@ class CheckLeeftijdLeerlingen extends Command
                 'voornaam' => $ll['voornaam'],
                 'naam'     => $ll['naam'],
             ])->render();
-            $body = str_replace("\r\n", "\n", $body);     // normalize Windows CRLF
-            $body = str_replace("\r", "\n", $body);       // remove CR
 
             // Afzender uit .env halen
              $userIdentifier = env('SMARTSCHOOL_SENDER_USER');
