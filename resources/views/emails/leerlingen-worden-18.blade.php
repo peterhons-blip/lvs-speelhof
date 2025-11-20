@@ -80,18 +80,19 @@
 
                         <!-- ✔ INFOBOX TOEGEVOEGD -->
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
-                            style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:8px; padding:12px; margin:12px 0;">
+                            style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:8px; margin:12px 0;">
                             <tr>
-                                <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#065f46; line-height:1.5; padding:0;">
+                                <td style="padding:16px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#065f46; line-height:1.6;">
                                     <strong>Automatische acties uitgevoerd</strong><br>
                                     Voor elke leerling in bovenstaande lijst werd:
-                                    <ul style="margin:6px 0 0; padding-left:20px; color:#065f46;">
-                                        <li>een Smartschoolbericht verstuurd om hen te informeren</li>
+                                    <ul style="margin:8px 0 0; padding-left:20px; color:#065f46;">
+                                        <li style="margin-bottom:6px;">een Smartschoolbericht verstuurd om hen te informeren</li>
                                         <li>alle co-accounts (ouderaccounts) automatisch uitgeschakeld volgens de regelgeving</li>
                                     </ul>
                                 </td>
                             </tr>
                         </table>
+
 
                         <p style="margin:20px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#666;">
                             Deze e-mail is automatisch verstuurd op {{ now('Europe/Brussels')->format('d-m-Y H:i') }}.
