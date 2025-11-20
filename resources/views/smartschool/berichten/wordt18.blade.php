@@ -1,4 +1,4 @@
-<p>Beste {{ $voornaam }} {{ $naam }},</p>
+<p>Beste {{ $voornaam }} {{ $naam }}</p>
 
 <p>
     Proficiat met je 18de verjaardag! 🎉<br>
@@ -28,7 +28,7 @@
     Je kan eenvoudig antwoorden op dit bericht.
 </p>
 
-<p>Nogmals een dikke proficiat!</p>
+<p>Nogmaals een dikke proficiat!</p>
 
 <p>
     Met vriendelijke groeten<br>
