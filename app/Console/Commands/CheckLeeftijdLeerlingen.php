@@ -93,13 +93,16 @@ class CheckLeeftijdLeerlingen extends Command
                 'naam'     => $ll['naam'],
             ])->render();
 
-            try {
+            // Afzender uit .env halen
+             $userIdentifier = env('SMARTSCHOOL_SENDER_USER');
+
+             try {
                 $ss->sendMessage(
                     $ll['gebruikersnaam'],  // userIdentifier = Smartschool gebruikersnaam
                     $onderwerp,
                     $body,
-                    null,                   // sender wordt in de service ALTIJD "lvs"
-                    true                    // copyToLVS
+                    $userIdentifier,         
+                    false                    // copyToLVS
                 );
 
                 Log::info("Smartschoolbericht verzonden naar {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
