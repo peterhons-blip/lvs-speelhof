@@ -4,6 +4,8 @@ namespace App\Services;
 
 use SoapClient;
 use SoapFault;
+use Illuminate\Support\Facades\Log;
+
 
 class SmartschoolSoap
 {
@@ -64,7 +66,7 @@ class SmartschoolSoap
                 );
             } catch (\SoapFault $e) {
                 // We loggen, maar gooien niet door zodat de rest (bericht/mail) kan doorgaan
-                \Log::error("Fout bij uitschakelen co-account {$i} voor {$userIdentifier}: ".$e->getMessage());
+                Log::error("Fout bij uitschakelen co-account {$i} voor {$userIdentifier}: ".$e->getMessage());
             }
         }
     }
