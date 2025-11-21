@@ -25,7 +25,7 @@
 
 <p>
     Wil je ons even laten weten wat je voorkeur is?<br>
-    Je kan eenvoudig antwoorden op dit bericht.
+    Je kan eenvoudig antwoorden op dit bericht. 
 </p>
 
 <p>Nogmaals een dikke proficiat!</p>
