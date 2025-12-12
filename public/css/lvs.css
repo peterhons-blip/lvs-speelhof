@@ -156,6 +156,14 @@ body{
     border-radius:12px; background:#fff;
 }
 .melding-form textarea{ resize:vertical; min-height:120px; }
+.melding-form input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;   /* 👈 dit maakt hem mooi rond */
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    background: #fff;
+}
 
 .error-text{
     font-size:1rem; line-height:1.5; color:#475569; margin:8px 0 16px;

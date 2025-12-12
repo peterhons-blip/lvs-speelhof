@@ -90,7 +90,12 @@
                         <div class="melding-row">
                             <div class="melding-meta">
                                 <div class="melding-datum">
-                                    {{ optional($melding->created_at)->format('d/m/Y H:i') }}
+                                    <strong>Gebeurt op:</strong>
+                                    {{ optional($melding->gebeurdop)->format('d/m/Y') ?? '—' }}
+                                    <br>
+                                    <small class="muted">
+                                        Ingegeven op {{ optional($melding->created_at)->format('d/m/Y H:i') }}
+                                    </small>
                                 </div>
                                 <div class="melding-badges">
                                     <span class="badge badge-cat">
