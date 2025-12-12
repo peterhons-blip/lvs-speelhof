@@ -76,20 +76,26 @@ class SmartschoolController extends Controller
 
         $user = $userResponse->object(); // ->userID, ->name, ->surname, ->username, ->platform
 
-        //  DB-check + groepnaam ophalen (LEFT JOIN op groups)
+        // 1) Bestaat de gebruiker lokaal?
+        $baseUser = User::where('gebruikersnaam', $user->username)->first();
+
+        if (!$baseUser) {
+            return redirect('/')->with('error', 'Je account is niet gekend in het LVS. Contacteer de beheerder.');
+        }
+
+        // 2) Is login toegestaan / account actief?
+        if ((int)($baseUser->allowed_login ?? 0) !== 1) {   // of: $baseUser->active
+            return redirect('/')->with('error', 'Je account is gedeactiveerd. Contacteer de beheerder.');
+        }
+
+        // 3) Nu pas: groepnaam ophalen
         $dbUser = User::query()
             ->leftJoin('groups', 'users.groupId', '=', 'groups.id')
             ->where('users.gebruikersnaam', $user->username)
-            ->where('users.allowed_login', 1)
             ->first([
                 'users.*',
                 'groups.groupname as groupname',
             ]);
-
-        if (!$dbUser) {
-            return redirect('/')->with('error', 'Je hebt geen toegang. Neem contact op met de beheerder.');
-        }
-
 
         // 4. Sla de info op in de sessie
         $request->session()->put('ss_user', [
