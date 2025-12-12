@@ -7,7 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class Melding extends Model
 {
     protected $table = 'meldingen';
-    protected $fillable = ['leerlingId','meldingssoortId','comment'];
+    protected $fillable = [
+        'leerlingId',
+        'meldingssoortId',
+        'comment',
+        'gebeurdop',
+    ];
+
+    protected $casts = [
+        'gebeurdop' => 'date',
+    ];
 
     public function leerling()
     {

@@ -52,6 +52,19 @@
                 <small style="color:#dc2626">{{ $message }}</small>
                 @enderror
 
+                {{-- Gebeurd op --}}
+                <label for="gebeurdop"><b>Gebeurt op</b></label>
+                <input
+                    type="date"
+                    name="gebeurdop"
+                    id="gebeurdop"
+                    required
+                    value="{{ old('gebeurdop', now('Europe/Brussels')->toDateString()) }}"
+                >
+                @error('gebeurdop')
+                    <small style="color:#dc2626">{{ $message }}</small>
+                @enderror
+
                 {{-- Comment --}}
                 <label for="comment"><b>Omschrijving</b></label>
                 <textarea name="comment" id="comment" rows="5" required>{{ old('comment') }}</textarea>

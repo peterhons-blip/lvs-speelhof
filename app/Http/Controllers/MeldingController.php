@@ -44,6 +44,7 @@ class MeldingController extends Controller
         $validated = $request->validate([
             'categorie_id' => ['required','exists:meldingscategorien,id'],
             'soort_id'     => ['required','exists:meldingssoorten,id'],
+            'gebeurdop'    => ['required','date','before_or_equal:today'],
             'comment'      => ['required','min:5'],
         ]);
 
@@ -62,6 +63,7 @@ class MeldingController extends Controller
             'leerlingId'       => $leerling->id,
             'meldingssoortId'  => $soort->id,
             'comment'          => $validated['comment'],
+            'gebeurdop'        => $validated['gebeurdop'],
         ]);
 
         return redirect("/leerlingen/{$leerling->id}")
