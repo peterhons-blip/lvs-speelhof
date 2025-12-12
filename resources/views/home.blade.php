@@ -4,15 +4,32 @@
 
 @section('content')
     <main class="screen">
+
+        {{-- DUIDELIJK ERRORBLOK BOVENAAN --}}
+        @if(session('error'))
+            <div
+                style="
+                    max-width: 860px;
+                    margin: 0 auto 16px auto;
+                    background: #fff1f2;
+                    border: 1px solid #fecdd3;
+                    color: #9f1239;
+                    padding: 14px 16px;
+                    border-radius: 12px;
+                    font-size: 0.95rem;
+                    line-height: 1.4;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+                "
+                role="alert"
+            >
+                <strong>⚠️ Aanmelden niet gelukt</strong><br>
+                {{ session('error') }}
+            </div>
+        @endif
+
+        {{-- NORMALE WELKOMSTCARD --}}
         <div class="card">
             <h2>Welkom!</h2>
-
-            {{-- Foutmeldingen uit sessie of querystring --}}
-            @if(session('error'))
-                <div class="alert">{{ session('error') }}</div>
-            @elseif(request('error'))
-                <div class="alert">Login mislukt: {{ \Illuminate\Support\Str::of(request('error'))->limit(120) }}</div>
-            @endif
 
             <p style="
                 margin: 0 0 18px;
