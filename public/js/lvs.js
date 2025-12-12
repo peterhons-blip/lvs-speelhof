@@ -93,7 +93,7 @@ function render(list){
     list.forEach((s,i)=>{
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `btn ${i%2===0 ? 'btn-green':'btn-orange'}`;
+        btn.className = `btn ${i%2===0 ? 'btn-orange':'btn-orange'}`;
         btn.innerHTML = `<span>${fullName(s)}</span><span class="tag">${s.klas}</span>`;
         btn.addEventListener('click', ()=> chooseStudent(s));
         studentGrid.appendChild(btn);
