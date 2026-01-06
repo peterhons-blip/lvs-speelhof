@@ -2,7 +2,6 @@
 
 <p>
     Proficiat met je 18de verjaardag! 🎉<br>
-    Een mooie mijlpaal — welkom in de wereld van de volwassenen.
 </p>
 
 <p>
@@ -32,5 +31,5 @@
 
 <p>
     Met vriendelijke groeten<br>
-    <strong>GO! Atheneum Sint-Truiden – campus Speelhof</strong>
+    <strong>{{ $school->schoolnaam ?? 'GO! Atheneum Sint-Truiden – campus Speelhof' }}</strong>
 </p>
