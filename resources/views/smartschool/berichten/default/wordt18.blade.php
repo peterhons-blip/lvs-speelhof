@@ -13,7 +13,7 @@
 </p>
 
 <p>
-    Graag horen we van jou of je toestemming geeft om het ouderaccount van je ouders/voogd opnieuw te activeren.
+    Graag horen we van jou of je toestemming geeft om het ouderaccount van je ouders/voogd opnieuw te activeren.<br>
     Jij kiest volledig zelf wat je wenst:
 </p>
 

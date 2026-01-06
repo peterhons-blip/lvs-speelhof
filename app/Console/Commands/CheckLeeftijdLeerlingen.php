@@ -51,8 +51,9 @@ class CheckLeeftijdLeerlingen extends Command
         /** @var SmartschoolSoap $ss */
         $ss = app(SmartschoolSoap::class);
 
-        // Enkel voor co-account melding (geen felicitatie)
-        $onderwerp = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
+        // Onderwerpen (2 berichten)
+        $onderwerpCoAccounts     = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
+        $onderwerpSecretariaat   = "Uitnodiging: even langs bij het leerlingensecretariaat";
 
         // Groepeer per schoolid
         $perSchool = $leerlingenVandaag18->groupBy('schoolid');
@@ -67,20 +68,26 @@ class CheckLeeftijdLeerlingen extends Command
                 continue;
             }
 
-            // ✅ 1) Verzender voor 18-bericht (per school)
-            $senderIdentifier = trim((string)($school->smartschool_verzender ?? ''));
-            if ($senderIdentifier === '') {
-                $senderIdentifier = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+            // ✅ Afzenders per school
+            $senderCoAccounts = trim((string)($school->smartschool_verzender ?? ''));
+            if ($senderCoAccounts === '') {
+                $senderCoAccounts = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
             }
 
-            // ✅ 2) Beleid (voor later) – geven we al mee aan Blade
+            $senderSecretariaat = trim((string)($school->smartschool_verzender_secretariaat ?? ''));
+            if ($senderSecretariaat === '') {
+                // fallback: als secretariaat niet ingevuld is, gebruik co-account sender
+                $senderSecretariaat = $senderCoAccounts;
+            }
+
+            // ✅ Beleid (voor later) – geven we al mee aan Blade
             $beleid = trim((string)($school->smartschool_verzender_beleid ?? ''));
             if ($beleid === '') {
                 $beleid = null;
             }
 
             Log::info(
-                "School {$school->schoolnaam} (id={$school->id}) → sender={$senderIdentifier}"
+                "School {$school->schoolnaam} (id={$school->id}) → sender_co={$senderCoAccounts} | sender_secr={$senderSecretariaat}"
                 . ($beleid ? " | beleid={$beleid}" : '')
             );
 
@@ -94,16 +101,21 @@ class CheckLeeftijdLeerlingen extends Command
                 $this->warn("Geen mail-ontvangers ingesteld voor {$school->schoolnaam} → mail wordt overgeslagen.");
             }
 
+            // ✅ Templates per school met fallback
+            $viewCoSchool = "smartschool.berichten.scholen.{$school->id}.wordt18";
+            $viewCoDefault = "smartschool.berichten.default.wordt18";
+            $viewCoAccounts = view()->exists($viewCoSchool) ? $viewCoSchool : $viewCoDefault;
+
+            $viewSecrSchool = "smartschool.berichten.scholen.{$school->id}.wordt18_secretariaat";
+            $viewSecrDefault = "smartschool.berichten.default.wordt18_secretariaat";
+            $viewSecretariaat = view()->exists($viewSecrSchool) ? $viewSecrSchool : $viewSecrDefault;
+
             // Payload voor mail
             $payload = [];
 
-            // ✅ Templatekeuze per school met fallback
-            $schoolView = "smartschool.berichten.scholen.{$school->id}.wordt18";
-            $defaultView = "smartschool.berichten.default.wordt18";
-            $viewName = view()->exists($schoolView) ? $schoolView : $defaultView;
-
             foreach ($groep as $leerling) {
 
+                // Klasnaam normaliseren: kolom -> JSON -> relation -> string -> fallback
                 $klasNaam =
                     $leerling->klasnaam
                     ?? ($leerling->klas['klasnaam'] ?? null)
@@ -115,13 +127,17 @@ class CheckLeeftijdLeerlingen extends Command
                 Log::info($msg);
                 $this->line($msg);
 
+                // Flags (voor overzichtsmail)
                 $smartschoolBerichtVerzonden = false;
                 $coaccountsUitgeschakeld = false;
+                $secretariaatBerichtVerzonden = false;
 
+                // Smartschool acties
                 if (!empty($leerling->gebruikersnaam)) {
+
                     try {
-                        // Body via gekozen view
-                        $body = view($viewName, [
+                        // -------- Bericht 1: co-accounts --------
+                        $body1 = view($viewCoAccounts, [
                             'voornaam' => $leerling->voornaam,
                             'naam'     => $leerling->naam,
                             'school'   => $school,
@@ -130,54 +146,85 @@ class CheckLeeftijdLeerlingen extends Command
 
                         $ss->sendMessage(
                             $leerling->gebruikersnaam,
-                            $onderwerp,
-                            $body,
-                            $senderIdentifier,
+                            $onderwerpCoAccounts,
+                            $body1,
+                            $senderCoAccounts,
                             false
                         );
 
                         $smartschoolBerichtVerzonden = true;
-                        Log::info("Smartschool (18) verzonden naar {$leerling->voornaam} {$leerling->naam} ({$leerling->gebruikersnaam}) | sender={$senderIdentifier}");
+                        Log::info("Smartschool (18/coaccounts) verzonden naar {$leerling->gebruikersnaam} | sender={$senderCoAccounts}");
 
                         // Co-accounts uitschakelen
                         $ss->disableCoAccounts($leerling->gebruikersnaam);
                         $coaccountsUitgeschakeld = true;
 
-                        Log::info("Co-accounts uitgeschakeld voor {$leerling->voornaam} {$leerling->naam} ({$leerling->gebruikersnaam})");
+                        Log::info("Co-accounts uitgeschakeld voor {$leerling->gebruikersnaam}");
                         $this->info("Co-accounts uitgeschakeld voor {$leerling->voornaam} {$leerling->naam}");
+
+                        // -------- Bericht 2: secretariaat --------
+                        $body2 = view($viewSecretariaat, [
+                            'voornaam' => $leerling->voornaam,
+                            'naam'     => $leerling->naam,
+                            'school'   => $school,
+                        ])->render();
+
+                        $ss->sendMessage(
+                            $leerling->gebruikersnaam,
+                            $onderwerpSecretariaat,
+                            $body2,
+                            $senderSecretariaat,
+                            false
+                        );
+
+                        $secretariaatBerichtVerzonden = true;
+                        Log::info("Smartschool (18/secretariaat) verzonden naar {$leerling->gebruikersnaam} | sender={$senderSecretariaat}");
 
                     } catch (\SoapFault $e) {
                         Log::error("Smartschoolactie mislukt voor {$leerling->gebruikersnaam}: " . $e->getMessage());
                         $this->error("Fout bij Smartschoolactie voor {$leerling->gebruikersnaam}: " . $e->getMessage());
                     }
+
                 } else {
                     Log::warning("Geen Smartschool gebruikersnaam voor {$leerling->voornaam} {$leerling->naam} (id={$leerling->id})");
                     $this->warn("Geen Smartschool gebruikersnaam voor {$leerling->voornaam} {$leerling->naam}");
                 }
 
                 $payload[] = [
-                    'voornaam'                       => $leerling->voornaam ?? '',
-                    'naam'                           => $leerling->naam ?? '',
-                    'klas'                           => $klasNaam,
-                    'geboortedatum'                  => $leerling->geboortedatum,
-                    'gebruikersnaam'                 => $leerling->gebruikersnaam,
-                    'smartschool_bericht_verzonden'  => $smartschoolBerichtVerzonden,
-                    'coaccounts_uitgeschakeld'       => $coaccountsUitgeschakeld,
+                    'voornaam'                          => $leerling->voornaam ?? '',
+                    'naam'                              => $leerling->naam ?? '',
+                    'klas'                              => $klasNaam,
+                    'geboortedatum'                     => $leerling->geboortedatum,
+                    'gebruikersnaam'                    => $leerling->gebruikersnaam,
+                    'smartschool_bericht_verzonden'      => $smartschoolBerichtVerzonden,
+                    'coaccounts_uitgeschakeld'          => $coaccountsUitgeschakeld,
+                    'secretariaat_bericht_verzonden'    => $secretariaatBerichtVerzonden,
                 ];
             }
 
-            // Mail per school
+            // Mail per school (fail-safe: nooit crashen op SMTP)
             if (count($ontvangers) > 0) {
                 try {
                     Mail::to($ontvangers)->send(new LeerlingenWorden18($payload));
 
                     Log::info("Mail verzonden voor school {$school->schoolnaam} naar: " . implode(', ', $ontvangers));
                     $this->info("Mail verzonden voor {$school->schoolnaam}.");
+
                 } catch (\Throwable $e) {
-                    Log::error("Fout bij mail verzenden voor school {$school->schoolnaam}: " . $e->getMessage());
-                    $this->error("Fout bij mail verzenden voor {$school->schoolnaam}: " . $e->getMessage());
+                    // ✅ Blijven doorgaan, enkel loggen/tonen
+                    Log::error(
+                        "MAIL FOUT (school={$school->schoolnaam}, id={$school->id}) naar [" . implode(', ', $ontvangers) . "]: "
+                        . get_class($e) . " - " . $e->getMessage()
+                    );
+
+                    $this->error("MAIL FOUT voor {$school->schoolnaam}: " . $e->getMessage());
+                    $this->warn("Command gaat verder (Smartschool acties zijn uitgevoerd).");
                 }
+            } else {
+                // Optioneel: ook loggen dat er niemand ingesteld is
+                Log::warning("Geen mail-ontvangers ingesteld voor school {$school->schoolnaam} (id={$school->id}).");
             }
+
         }
 
         $this->info('Klaar.');
