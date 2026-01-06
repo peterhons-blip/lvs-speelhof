@@ -34,4 +34,9 @@ class Leerling extends Model
     {
         return $this->getAttribute('e-mailadres');
     }
+
+    public function school()
+{
+    return $this->belongsTo(\App\Models\School::class, 'schoolid');
+}
 }

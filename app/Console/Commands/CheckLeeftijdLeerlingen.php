@@ -17,108 +17,171 @@ class CheckLeeftijdLeerlingen extends Command
     public function handle(): int
     {
         $this->info('Check gestart…');
-         $isTest = $this->option('test') === true;
+        $isTest = $this->option('test') === true;
 
-
-        // Laad eventueel relation 'klas' mee; harmless als die niet bestaat
-        $leerlingen = Leerling::with('klas')->get();
-        $leerlingenVandaag18 = [];
-
-        foreach ($leerlingen as $leerling) {
-
-            if (! method_exists($leerling, 'wordtVandaag18')) {
-                $this->error('Methode wordtVandaag18() bestaat niet op het Leerling-model.');
-                Log::error('Methode wordtVandaag18() ontbreekt op Leerling.');
-                return self::FAILURE;
-            }
-
-            if ($leerling->wordtVandaag18()) {
-                // Klasnaam normaliseren: kolom -> JSON -> relation -> string -> fallback
-                $klasNaam =
-                    $leerling->klasnaam                           // plain kolom op leerlingen
-                    ?? ($leerling->klas['klasnaam'] ?? null)       // JSON kolom 'klas' => ['klasnaam'=>...]
-                    ?? ($leerling->klas?->klasnaam ?? null)        // relation 'klas' -> klasnaam
-                    ?? (is_string($leerling->klas) ? $leerling->klas : null)
-                    ?? 'onbekend';
-
-                $msg = "{$leerling->voornaam} {$leerling->naam} (klas {$klasNaam}) wordt vandaag 18 ({$leerling->geboortedatum->format('Y-m-d')})";
-                Log::info($msg);
-                $this->line($msg);
-
-                $leerlingenVandaag18[] = [
-                    'voornaam'          => $leerling->voornaam ?? '',
-                    'naam'              => $leerling->naam ?? '',
-                    'klas'              => $klasNaam,
-                    'geboortedatum'     => $leerling->geboortedatum, // Carbon (cast in model)
-                    'gebruikersnaam'    => $leerling->gebruikersnaam,   // ← Smartschool gebruikersnaam
-                ];
-            }
+        // Veiligheidscheck 1x i.p.v. in de loop
+        if (!method_exists(Leerling::class, 'wordtVandaag18')) {
+            $this->error('Methode wordtVandaag18() bestaat niet op het Leerling-model.');
+            Log::error('Methode wordtVandaag18() ontbreekt op Leerling.');
+            return self::FAILURE;
         }
 
-        if (count($leerlingenVandaag18) === 0) {
+        // Laad relaties mee (klas + school)
+        $leerlingen = Leerling::with(['klas', 'school'])->get();
+
+        // Filter leerlingen die vandaag 18 worden
+        $leerlingenVandaag18 = $leerlingen->filter(fn ($l) => $l->wordtVandaag18());
+
+        if ($leerlingenVandaag18->count() === 0) {
             Log::info('Geen leerlingen worden vandaag 18.');
             $this->info('Geen leerlingen worden vandaag 18.');
             return self::SUCCESS;
         }
 
+        // Testmodus: niets verzenden
         if ($isTest) {
+            foreach ($leerlingenVandaag18 as $leerling) {
+                $this->line("TEST: {$leerling->voornaam} {$leerling->naam} wordt vandaag 18 ({$leerling->geboortedatum?->format('Y-m-d')})");
+            }
             $this->warn('TESTMODUS: geen mail of Smartschoolberichten verzonden.');
             Log::info('TESTMODUS: leerlingen:check-18 heeft geen mail/Smartschoolberichten verzonden.');
             return self::SUCCESS;
         }
 
-        // 1. Mail naar team
-        Mail::to('peter.hons@atheneumsinttruiden.be')
-            ->cc(['pascale.liebens@atheneumsinttruiden.be ', 'stijn.forier@atheneumsinttruiden.be '])
-            ->send(new LeerlingenWorden18($leerlingenVandaag18));
-        Log::info('Mail verzonden met ' . count($leerlingenVandaag18) . ' leerling(en).');
-        $this->info('Mail verzonden.');
-
-        // 2. Smartschool-berichten naar leerlingen
         /** @var SmartschoolSoap $ss */
         $ss = app(SmartschoolSoap::class);
 
         $onderwerp = "Proficiat met je 18de verjaardag! 🌟 Belangrijk: aanpassing van je co-accounts!";
 
-        foreach ($leerlingenVandaag18 as $ll) {
+        // Groepeer per schoolid (leerling->schoolid)
+        $perSchool = $leerlingenVandaag18->groupBy('schoolid');
 
-            if (empty($ll['gebruikersnaam'])) {
-                Log::warning("Geen Smartschool gebruikersnaam voor {$ll['voornaam']} {$ll['naam']}");
+        foreach ($perSchool as $schoolId => $groep) {
+
+            $school = $groep->first()->school;
+
+            if (!$school) {
+                Log::warning("Leerlingen met schoolid={$schoolId} maar school ontbreekt. Mail wordt niet verstuurd.");
+                $this->warn("School ontbreekt voor schoolid={$schoolId} → mail overgeslagen.");
                 continue;
             }
 
-            // Body genereren via Blade-view
-            $body = view('smartschool.berichten.wordt18', [
-                'voornaam' => $ll['voornaam'],
-                'naam'     => $ll['naam'],
-            ])->render();
+            // ✅ Nieuwe kolommen gebruiken
+            $senderIdentifier =
+                trim((string)($school->smartschool_verzender ?? '')) !== ''
+                    ? trim((string)$school->smartschool_verzender)
+                    : (env('SMARTSCHOOL_SENDER_USER') ?: 'lvs');
 
-            // Afzender uit .env halen
-             $userIdentifier = env('SMARTSCHOOL_SENDER_USER');
+            $beleid = trim((string)($school->smartschool_verzender_beleid ?? ''));
+            if ($beleid === '') {
+                $beleid = null; // netter in Blade
+            }
 
-             try {
-                $ss->sendMessage(
-                    $ll['gebruikersnaam'],  // userIdentifier = Smartschool gebruikersnaam
-                    $onderwerp,
-                    $body,
-                    $userIdentifier,         
-                    false                    // copyToLVS
-                );
+            Log::info("School {$school->schoolnaam} (id={$school->id}) gebruikt Smartschool verzender: {$senderIdentifier}"
+                . ($beleid ? " | beleid={$beleid}" : ''));
 
-                Log::info("Smartschoolbericht verzonden naar {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
+            // Ontvangers uit scholen.ontvangers_overzicht_18 (CSV of ; gescheiden)
+            $raw = (string) ($school->ontvangers_overzicht_18 ?? '');
+            $ontvangers = preg_split('/[;,]+/', $raw);
+            $ontvangers = array_values(array_filter(array_map('trim', $ontvangers)));
 
-                // 🔻 HIER: co-accounts uitzetten
-                $ss->disableCoAccounts($ll['gebruikersnaam']);
-                Log::info("Co-accounts uitgeschakeld voor {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
-                $this->info("Co-accounts uitgeschakeld voor {$ll['voornaam']} {$ll['naam']} ({$ll['gebruikersnaam']})");
+            if (count($ontvangers) === 0) {
+                Log::warning("Geen ontvangers_overzicht_18 ingesteld voor school {$school->schoolnaam} (id={$school->id}).");
+                $this->warn("Geen mail-ontvangers ingesteld voor {$school->schoolnaam} → mail overgeslagen.");
+            }
 
-            } catch (\SoapFault $e) {
-                Log::error("Fout bij versturen Smartschoolbericht of uitschakelen co-accounts voor {$ll['gebruikersnaam']}: ".$e->getMessage());
-                $this->error("Fout bij Smartschoolactie voor {$ll['gebruikersnaam']}: ".$e->getMessage());
+            // Payload opbouwen voor mail (en meteen acties uitvoeren per leerling)
+            $payload = [];
+
+            foreach ($groep as $leerling) {
+
+                // Klasnaam normaliseren: kolom -> JSON -> relation -> string -> fallback
+                $klasNaam =
+                    $leerling->klasnaam
+                    ?? ($leerling->klas['klasnaam'] ?? null)
+                    ?? ($leerling->klas?->klasnaam ?? null)
+                    ?? (is_string($leerling->klas) ? $leerling->klas : null)
+                    ?? 'onbekend';
+
+                $msg = "{$leerling->voornaam} {$leerling->naam} (klas {$klasNaam}) wordt vandaag 18 ({$leerling->geboortedatum?->format('Y-m-d')})";
+                Log::info($msg);
+                $this->line($msg);
+
+                // Flags (zodat je in de mail kan tonen wat uitgevoerd werd)
+                $smartschoolBerichtVerzonden = false;
+                $coaccountsUitgeschakeld = false;
+
+                // Smartschool acties
+                if (!empty($leerling->gebruikersnaam)) {
+
+                    try {
+                        // Body via Blade-view (+ beleid meegeven voor later)
+                        $body = view('smartschool.berichten.wordt18', [
+                            'voornaam' => $leerling->voornaam,
+                            'naam'     => $leerling->naam,
+                            'beleid'   => $beleid,     // 👈 nieuw (voor later)
+                            'school'   => $school,     // 👈 handig als je schoolnaam wil tonen in template
+                        ])->render();
+
+                        // ✅ Bericht versturen met verzender per school
+                        $ss->sendMessage(
+                            $leerling->gebruikersnaam,   // ontvanger (Smartschool username)
+                            $onderwerp,
+                            $body,
+                            $senderIdentifier,
+                            false
+                        );
+
+                        $smartschoolBerichtVerzonden = true;
+                        Log::info("Smartschoolbericht verzonden naar {$leerling->voornaam} {$leerling->naam} ({$leerling->gebruikersnaam})"
+                            . " | sender={$senderIdentifier}");
+
+                        // Co-accounts uitschakelen
+                        $ss->disableCoAccounts($leerling->gebruikersnaam);
+                        $coaccountsUitgeschakeld = true;
+
+                        Log::info("Co-accounts uitgeschakeld voor {$leerling->voornaam} {$leerling->naam} ({$leerling->gebruikersnaam})");
+                        $this->info("Co-accounts uitgeschakeld voor {$leerling->voornaam} {$leerling->naam}");
+
+                    } catch (\SoapFault $e) {
+                        Log::error("Smartschoolactie mislukt voor {$leerling->gebruikersnaam}: " . $e->getMessage());
+                        $this->error("Fout bij Smartschoolactie voor {$leerling->gebruikersnaam}: " . $e->getMessage());
+                    }
+
+                } else {
+                    Log::warning("Geen Smartschool gebruikersnaam voor {$leerling->voornaam} {$leerling->naam} (id={$leerling->id})");
+                    $this->warn("Geen Smartschool gebruikersnaam voor {$leerling->voornaam} {$leerling->naam}");
+                }
+
+                $payload[] = [
+                    'voornaam'                     => $leerling->voornaam ?? '',
+                    'naam'                         => $leerling->naam ?? '',
+                    'klas'                         => $klasNaam,
+                    'geboortedatum'                => $leerling->geboortedatum, // Carbon
+                    'gebruikersnaam'               => $leerling->gebruikersnaam,
+                    'smartschool_bericht_verzonden' => $smartschoolBerichtVerzonden,
+                    'coaccounts_uitgeschakeld'     => $coaccountsUitgeschakeld,
+                ];
+            }
+
+            // Mail per school
+            if (count($ontvangers) > 0) {
+                try {
+                    // Als je je mailable later wil uitbreiden met schoolinfo:
+                    // Mail::to($ontvangers)->send(new LeerlingenWorden18($payload, $school));
+
+                    Mail::to($ontvangers)->send(new LeerlingenWorden18($payload));
+
+                    Log::info("Mail verzonden voor school {$school->schoolnaam} naar: " . implode(', ', $ontvangers));
+                    $this->info("Mail verzonden voor {$school->schoolnaam}.");
+                } catch (\Throwable $e) {
+                    Log::error("Fout bij mail verzenden voor school {$school->schoolnaam}: " . $e->getMessage());
+                    $this->error("Fout bij mail verzenden voor {$school->schoolnaam}: " . $e->getMessage());
+                }
             }
         }
 
-        $this->info('Smartschoolberichten verzonden.');
+        $this->info('Klaar.');
         return self::SUCCESS;
     }
 }
