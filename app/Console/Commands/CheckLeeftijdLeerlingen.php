@@ -40,7 +40,7 @@ class CheckLeeftijdLeerlingen extends Command
 
         if ($leerlingenBinnenWeek18->count() === 0 && $leerlingenVandaag18->count() === 0) {
             Log::info('Geen leerlingen worden vandaag 18 en geen leerlingen worden binnen 7 dagen 18.');
-            $this->info('Geen acties nodig.');
+            $this->info('Geen leerlingen worden vandaag 18 en geen leerlingen worden binnen 7 dagen 18.');
             return self::SUCCESS;
         }
 
