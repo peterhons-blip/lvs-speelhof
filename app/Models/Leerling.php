@@ -23,6 +23,16 @@ class Leerling extends Model
         return $this->geboortedatum->addYears(18)->isToday();
     }
 
+    public function wordtBinnen7Dagen18(): bool
+    {
+        if (!$this->geboortedatum) return false;
+
+        $dag18 = $this->geboortedatum->copy()->addYears(18)->toDateString();
+        $doeldag = now('Europe/Brussels')->addDays(7)->toDateString();
+
+        return $dag18 === $doeldag;
+    }
+
     // 'achternaam' alias voor kolom 'naam'
     public function getAchternaamAttribute()
     {
