@@ -7,6 +7,7 @@
 </p>
 
 <p>
+    ---<br><br>
     @foreach($payload as $l)
         <strong>{{ $l['voornaam'] }} {{ $l['naam'] }}</strong><br>
         Klas: {{ $l['klas'] ?? '—' }}<br>
@@ -14,7 +15,7 @@
         Bericht co-accounts verstuurd: {{ !empty($l['smartschool_bericht_verzonden']) ? 'JA' : 'NEE' }}<br>
         Co-accounts uitgeschakeld: {{ !empty($l['coaccounts_uitgeschakeld']) ? 'JA' : 'NEE' }}<br>
         Bericht alngskomensecretariaat verstuurd: {{ !empty($l['secretariaat_bericht_verzonden']) ? 'JA' : 'NEE' }}<br><br>
-        ---<br><br>
+
     @endforeach
 </p>
 
