@@ -11,13 +11,20 @@ use App\Services\SmartschoolSoap;
 
 class CheckLeeftijdLeerlingen extends Command
 {
-    protected $signature = 'leerlingen:check-18 {--test}';
-    protected $description = 'Controleer welke leerlingen vandaag 18 worden (+ waarschuwing 7 dagen vooraf)';
+    protected $signature = 'leerlingen:check-18
+                            {--test : Testmodus: niets verzenden/wijzigen, enkel loggen}
+                            {--test-ss-overzicht : Test: verstuur enkel Smartschool-overzicht (geen mails/geen disable/geen leerling-berichten)}
+                            {--dummy : Gebruik dummy-data voor Smartschool-overzicht als er vandaag niemand 18 is}';
+
+    protected $description = 'Controleer welke leerlingen vandaag 18 worden (+ waarschuwing 7 dagen vooraf), verstuurt Smartschool-berichten en overzichten per school';
 
     public function handle(): int
     {
         $this->info('Check gestart…');
+
         $isTest = $this->option('test') === true;
+        $testSsOverzichtOnly = $this->option('test-ss-overzicht') === true;
+        $useDummy = $this->option('dummy') === true;
 
         // Veiligheidschecks
         if (!method_exists(Leerling::class, 'wordtVandaag18')) {
@@ -31,13 +38,23 @@ class CheckLeeftijdLeerlingen extends Command
             return self::FAILURE;
         }
 
+        /** @var SmartschoolSoap $ss */
+        $ss = app(SmartschoolSoap::class);
+
         // Laad relaties mee
         $leerlingen = Leerling::with(['klas', 'school'])->get();
 
         // 7 dagen vooraf + vandaag
-        $leerlingenBinnenWeek18 = $leerlingen->filter(fn ($l) => $l->wordtBinnen7Dagen18());
-        $leerlingenVandaag18    = $leerlingen->filter(fn ($l) => $l->wordtVandaag18());
+        $leerlingenBinnenWeek18 = $leerlingen->filter(fn($l) => $l->wordtBinnen7Dagen18());
+        $leerlingenVandaag18    = $leerlingen->filter(fn($l) => $l->wordtVandaag18());
 
+        // === TEST: enkel Smartschool-overzicht ===
+        if ($testSsOverzichtOnly) {
+            $this->warn('TEST-SS-OVERZICHT: er worden géén mails verstuurd, géén co-accounts gewijzigd, géén leerling-berichten verstuurd.');
+            return $this->sendSmartschoolOverzichtOnly($ss, $leerlingenVandaag18, $useDummy);
+        }
+
+        // Als niets te doen
         if ($leerlingenBinnenWeek18->count() === 0 && $leerlingenVandaag18->count() === 0) {
             Log::info('Geen leerlingen worden vandaag 18 en geen leerlingen worden binnen 7 dagen 18.');
             $this->info('Geen leerlingen worden vandaag 18 en geen leerlingen worden binnen 7 dagen 18.');
@@ -57,13 +74,11 @@ class CheckLeeftijdLeerlingen extends Command
             return self::SUCCESS;
         }
 
-        /** @var SmartschoolSoap $ss */
-        $ss = app(SmartschoolSoap::class);
-
         // Onderwerpen
-        $onderwerpVooraf = "Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld";
-        $onderwerpVandaagCo = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
+        $onderwerpVooraf       = "Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld";
+        $onderwerpVandaagCo    = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
         $onderwerpSecretariaat = "Uitnodiging: even langs bij het leerlingensecretariaat";
+        $onderwerpOverzichtSs  = "Overzicht: leerlingen vandaag 18";
 
         /**
          * 1) VOORAF (7 dagen): berichten naar leerling + coaccounts
@@ -79,7 +94,7 @@ class CheckLeeftijdLeerlingen extends Command
                 continue;
             }
 
-            // Afzenders per school (vooraf is eerder “beleid/administratie” → secretariaat sender is logisch)
+            // Afzender vooraf: secretariaat > verzender > env fallback
             $senderSecretariaat = trim((string)($school->smartschool_verzender_secretariaat ?? ''));
             if ($senderSecretariaat === '') {
                 $senderSecretariaat = trim((string)($school->smartschool_verzender ?? ''));
@@ -92,13 +107,15 @@ class CheckLeeftijdLeerlingen extends Command
             if ($beleid === '') $beleid = null;
 
             // Templates (per school + fallback)
-            $viewVoorafLeerlingSchool = "smartschool.berichten.scholen.{$school->id}.wordt18_vooraf";
-            $viewVoorafLeerlingDefault = "smartschool.berichten.default.wordt18_vooraf";
-            $viewVoorafLeerling = view()->exists($viewVoorafLeerlingSchool) ? $viewVoorafLeerlingSchool : $viewVoorafLeerlingDefault;
+            $viewVoorafLeerling = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.wordt18_vooraf",
+                "smartschool.berichten.default.wordt18_vooraf"
+            );
 
-            $viewVoorafCoSchool = "smartschool.berichten.scholen.{$school->id}.wordt18_vooraf_coaccount";
-            $viewVoorafCoDefault = "smartschool.berichten.default.wordt18_vooraf_coaccount";
-            $viewVoorafCo = view()->exists($viewVoorafCoSchool) ? $viewVoorafCoSchool : $viewVoorafCoDefault;
+            $viewVoorafCo = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.wordt18_vooraf_coaccount",
+                "smartschool.berichten.default.wordt18_vooraf_coaccount"
+            );
 
             foreach ($groep as $leerling) {
                 if (empty($leerling->gebruikersnaam)) {
@@ -107,7 +124,7 @@ class CheckLeeftijdLeerlingen extends Command
                     continue;
                 }
 
-                // naar leerling (hoofdaccount)
+                // 1A: naar leerling (hoofdaccount)
                 try {
                     $bodyLeerling = view($viewVoorafLeerling, [
                         'voornaam' => $leerling->voornaam,
@@ -122,7 +139,7 @@ class CheckLeeftijdLeerlingen extends Command
                         $bodyLeerling,
                         $senderSecretariaat,
                         false,
-                        0 // hoofdaccount
+                        0
                     );
 
                     Log::info("VOORAF: bericht naar leerling {$leerling->gebruikersnaam} | sender={$senderSecretariaat}");
@@ -131,7 +148,7 @@ class CheckLeeftijdLeerlingen extends Command
                     $this->error("VOORAF: fout bij leerling {$leerling->gebruikersnaam}: ".$e->getMessage());
                 }
 
-                // naar co-accounts (1..6)
+                // 1B: naar co-accounts (1..6)
                 try {
                     $bodyCo = view($viewVoorafCo, [
                         'voornaam' => $leerling->voornaam,
@@ -143,16 +160,16 @@ class CheckLeeftijdLeerlingen extends Command
                     for ($i = 1; $i <= 6; $i++) {
                         try {
                             $ss->sendMessage(
-                                $leerling->gebruikersnaam,
+                                $leerling->gebruikersnaam, // dezelfde userIdentifier, maar coaccount param bepaalt ontvanger
                                 $onderwerpVooraf,
                                 $bodyCo,
                                 $senderSecretariaat,
                                 false,
-                                $i // coaccount 1..6
+                                $i
                             );
                             Log::info("VOORAF: bericht naar co-account {$i} van {$leerling->gebruikersnaam}");
                         } catch (\SoapFault $e) {
-                            // Vaak: coaccount bestaat niet → log als info en ga door
+                            // coaccount bestaat vaak niet → log en ga door
                             Log::info("VOORAF: co-account {$i} niet bereikbaar voor {$leerling->gebruikersnaam}: ".$e->getMessage());
                         }
                     }
@@ -164,7 +181,7 @@ class CheckLeeftijdLeerlingen extends Command
         }
 
         /**
-         * 2) VANDAAG (18): disable coaccounts + 2 leerling-berichten + overzichtsmail per school
+         * 2) VANDAAG (18): disable coaccounts + 2 leerling-berichten + overzichtsmail + Smartschool-overzicht per school
          */
         $perSchoolVandaag = $leerlingenVandaag18->groupBy('schoolid');
 
@@ -188,27 +205,46 @@ class CheckLeeftijdLeerlingen extends Command
                 $senderSecretariaat = $senderCoAccounts;
             }
 
+            // Voor Smartschool-overzicht: liever beleid als afzender, anders co-sender
+            $senderBeleid = trim((string)($school->smartschool_verzender_beleid ?? ''));
+            if ($senderBeleid === '') {
+                $senderBeleid = $senderCoAccounts;
+            }
+
             $beleid = trim((string)($school->smartschool_verzender_beleid ?? ''));
             if ($beleid === '') $beleid = null;
 
-            // Mail ontvangers per school
-            $raw = (string)($school->ontvangers_overzicht_18 ?? '');
-            $ontvangers = preg_split('/[;,]+/', $raw);
-            $ontvangers = array_values(array_filter(array_map('trim', $ontvangers)));
+            // Mail ontvangers per school (kan leeg zijn)
+            $ontvangersMail = $this->splitList((string)($school->ontvangers_overzicht_18 ?? ''));
 
-            if (count($ontvangers) === 0) {
+            if (count($ontvangersMail) === 0) {
                 Log::warning("VANDAAG: Geen ontvangers_overzicht_18 voor {$school->schoolnaam} (id={$school->id}).");
                 $this->warn("VANDAAG: Geen mail-ontvangers ingesteld voor {$school->schoolnaam} → mail overgeslagen.");
             }
 
-            // templates (per school + fallback)
-            $viewCoSchool = "smartschool.berichten.scholen.{$school->id}.wordt18";
-            $viewCoDefault = "smartschool.berichten.default.wordt18";
-            $viewCo = view()->exists($viewCoSchool) ? $viewCoSchool : $viewCoDefault;
+            // Smartschool ontvangers (CSV/;): scholen.ontvangers_overzicht_18_ssaccount
+            $ontvangersSs = $this->splitList((string)($school->ontvangers_overzicht_18_ssaccount ?? ''));
 
-            $viewSecrSchool = "smartschool.berichten.scholen.{$school->id}.wordt18_secretariaat";
-            $viewSecrDefault = "smartschool.berichten.default.wordt18_secretariaat";
-            $viewSecr = view()->exists($viewSecrSchool) ? $viewSecrSchool : $viewSecrDefault;
+            if (count($ontvangersSs) === 0) {
+                Log::warning("VANDAAG: Geen ontvangers_overzicht_18_ssaccount voor {$school->schoolnaam} (id={$school->id}).");
+                $this->warn("VANDAAG: Geen Smartschool-overzicht ontvangers ingesteld voor {$school->schoolnaam} → SS-overzicht overgeslagen.");
+            }
+
+            // templates (per school + fallback)
+            $viewCo = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.wordt18",
+                "smartschool.berichten.default.wordt18"
+            );
+
+            $viewSecr = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.wordt18_secretariaat",
+                "smartschool.berichten.default.wordt18_secretariaat"
+            );
+
+            $viewOverzicht = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.overzicht_worden18",
+                "smartschool.berichten.default.overzicht_worden18"
+            );
 
             $payload = [];
 
@@ -280,26 +316,57 @@ class CheckLeeftijdLeerlingen extends Command
                 }
 
                 $payload[] = [
-                    'voornaam'                          => $leerling->voornaam ?? '',
-                    'naam'                              => $leerling->naam ?? '',
-                    'klas'                              => $klasNaam,
-                    'geboortedatum'                     => $leerling->geboortedatum,
-                    'gebruikersnaam'                    => $leerling->gebruikersnaam,
-                    'smartschool_bericht_verzonden'      => $berichtCoVerzonden,
-                    'coaccounts_uitgeschakeld'          => $coaccountsUit,
-                    'secretariaat_bericht_verzonden'    => $berichtSecrVerzonden,
+                    'voornaam'                           => $leerling->voornaam ?? '',
+                    'naam'                               => $leerling->naam ?? '',
+                    'klas'                               => $klasNaam,
+                    'geboortedatum'                      => $leerling->geboortedatum,
+                    'gebruikersnaam'                     => $leerling->gebruikersnaam,
+                    'smartschool_bericht_verzonden'       => $berichtCoVerzonden,
+                    'coaccounts_uitgeschakeld'           => $coaccountsUit,
+                    'secretariaat_bericht_verzonden'     => $berichtSecrVerzonden,
                 ];
             }
 
-            // Overzichtsmail per school (fail-safe: mag nooit command crashen)
-            if (count($ontvangers) > 0) {
+            // 2a) Smartschool-overzicht per school (fail-safe)
+            if (count($ontvangersSs) > 0 && count($payload) > 0) {
                 try {
-                    Mail::to($ontvangers)->send(new LeerlingenWorden18($payload));
-                    Log::info("Mail verzonden voor school {$school->schoolnaam} naar: " . implode(', ', $ontvangers));
+                    $bodyOverzicht = view($viewOverzicht, [
+                        'school'  => $school,
+                        'payload' => $payload,
+                    ])->render();
+
+                    foreach ($ontvangersSs as $ontvanger) {
+                        try {
+                            $ss->sendMessage(
+                                $ontvanger,            // ontvanger = SS account uit DB
+                                $onderwerpOverzichtSs,
+                                $bodyOverzicht,
+                                $senderBeleid,         // afzender (beleid) indien ingesteld
+                                false,
+                                0
+                            );
+                            Log::info("VANDAAG: Smartschool-overzicht verzonden naar {$ontvanger} (school={$school->id})");
+                            $this->info("Smartschool-overzicht verzonden naar {$ontvanger}");
+                        } catch (\SoapFault $e) {
+                            Log::error("VANDAAG: SS-overzicht mislukt naar {$ontvanger} (school={$school->id}): ".$e->getMessage());
+                            $this->error("SS-overzicht mislukt naar {$ontvanger}: ".$e->getMessage());
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("VANDAAG: SS-overzicht crash (school={$school->id}): ".get_class($e)." - ".$e->getMessage());
+                    $this->error("SS-overzicht crash voor {$school->schoolnaam}: ".$e->getMessage());
+                }
+            }
+
+            // 2b) Overzichtsmail per school (fail-safe)
+            if (count($ontvangersMail) > 0) {
+                try {
+                    Mail::to($ontvangersMail)->send(new LeerlingenWorden18($payload));
+                    Log::info("Mail verzonden voor school {$school->schoolnaam} naar: " . implode(', ', $ontvangersMail));
                     $this->info("Mail verzonden voor {$school->schoolnaam}.");
                 } catch (\Throwable $e) {
                     Log::error(
-                        "MAIL FOUT (school={$school->schoolnaam}, id={$school->id}) naar [" . implode(', ', $ontvangers) . "]: "
+                        "MAIL FOUT (school={$school->schoolnaam}, id={$school->id}) naar [" . implode(', ', $ontvangersMail) . "]: "
                         . get_class($e) . " - " . $e->getMessage()
                     );
                     $this->error("MAIL FOUT voor {$school->schoolnaam}: " . $e->getMessage());
@@ -310,5 +377,126 @@ class CheckLeeftijdLeerlingen extends Command
 
         $this->info('Klaar.');
         return self::SUCCESS;
+    }
+
+    /**
+     * TEST-helper: enkel Smartschool-overzicht sturen (zonder andere acties).
+     */
+    private function sendSmartschoolOverzichtOnly(SmartschoolSoap $ss, $leerlingenVandaag18, bool $useDummy): int
+    {
+        if ($leerlingenVandaag18->count() === 0 && !$useDummy) {
+            $this->warn('Niemand wordt vandaag 18. Gebruik --dummy om toch een testbericht te sturen.');
+            return self::SUCCESS;
+        }
+
+        // Groepeer per school
+        $perSchoolVandaag = $leerlingenVandaag18->groupBy('schoolid');
+
+        // Als dummy gevraagd en er is niemand 18: bouw een fake groep op basis van 1 leerling in DB (als die bestaat)
+        if ($leerlingenVandaag18->count() === 0 && $useDummy) {
+            $dummyLeerling = Leerling::with(['klas', 'school'])->first();
+            if (!$dummyLeerling || !$dummyLeerling->school) {
+                $this->error('Geen leerling/school gevonden om dummy test mee te maken.');
+                return self::FAILURE;
+            }
+            $perSchoolVandaag = collect([$dummyLeerling])->groupBy('schoolid');
+        }
+
+        $onderwerpOverzichtSs = "TEST Overzicht: leerlingen vandaag 18";
+
+        foreach ($perSchoolVandaag as $schoolId => $groep) {
+            $school = $groep->first()->school;
+            if (!$school) {
+                $this->warn("TEST-SS: school ontbreekt voor schoolid={$schoolId}");
+                continue;
+            }
+
+            $ontvangersSs = $this->splitList((string)($school->ontvangers_overzicht_18_ssaccount ?? ''));
+            if (count($ontvangersSs) === 0) {
+                $this->warn("TEST-SS: geen ontvangers_overzicht_18_ssaccount ingesteld voor {$school->schoolnaam}");
+                continue;
+            }
+
+            // Afzender: beleid > verzender > env
+            $sender = trim((string)($school->smartschool_verzender_beleid ?? ''));
+            if ($sender === '') $sender = trim((string)($school->smartschool_verzender ?? ''));
+            if ($sender === '') $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+
+            $viewOverzicht = $this->pickView(
+                "smartschool.berichten.scholen.{$school->id}.overzicht_worden18",
+                "smartschool.berichten.default.overzicht_worden18"
+            );
+
+            // Payload bouwen (dummy of echte)
+            $payload = [];
+            foreach ($groep as $leerling) {
+                $klasNaam =
+                    $leerling->klasnaam
+                    ?? ($leerling->klas['klasnaam'] ?? null)
+                    ?? ($leerling->klas?->klasnaam ?? null)
+                    ?? (is_string($leerling->klas) ? $leerling->klas : null)
+                    ?? 'onbekend';
+
+                $payload[] = [
+                    'voornaam'                       => $leerling->voornaam ?? 'Test',
+                    'naam'                           => $leerling->naam ?? 'Leerling',
+                    'klas'                           => $klasNaam,
+                    'geboortedatum'                  => $leerling->geboortedatum,
+                    'gebruikersnaam'                 => $leerling->gebruikersnaam,
+                    'smartschool_bericht_verzonden'   => false,
+                    'coaccounts_uitgeschakeld'       => false,
+                    'secretariaat_bericht_verzonden' => false,
+                ];
+            }
+
+            try {
+                $bodyOverzicht = view($viewOverzicht, [
+                    'school'  => $school,
+                    'payload' => $payload,
+                ])->render();
+
+                foreach ($ontvangersSs as $ontvanger) {
+                    try {
+                        $ss->sendMessage(
+                            $ontvanger,
+                            $onderwerpOverzichtSs,
+                            $bodyOverzicht,
+                            $sender,
+                            false,
+                            0
+                        );
+                        $this->info("TEST-SS: overzicht verstuurd naar {$ontvanger} (school={$school->id})");
+                        Log::info("TEST-SS: overzicht verstuurd naar {$ontvanger} (school={$school->id})");
+                    } catch (\SoapFault $e) {
+                        $this->error("TEST-SS: fout naar {$ontvanger}: ".$e->getMessage());
+                        Log::error("TEST-SS: fout naar {$ontvanger}: ".$e->getMessage());
+                    }
+                }
+            } catch (\Throwable $e) {
+                $this->error("TEST-SS: crash bij opbouw/verzenden overzicht: ".$e->getMessage());
+                Log::error("TEST-SS: crash: ".get_class($e)." - ".$e->getMessage());
+            }
+        }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Kies school-template als die bestaat, anders default.
+     */
+    private function pickView(string $preferred, string $fallback): string
+    {
+        return view()->exists($preferred) ? $preferred : $fallback;
+    }
+
+    /**
+     * Split CSV/; lijst naar array met getrimde items.
+     */
+    private function splitList(string $raw): array
+    {
+        $items = preg_split('/[;,]+/', $raw);
+        $items = array_map('trim', $items ?: []);
+        $items = array_values(array_filter($items, fn($v) => $v !== ''));
+        return $items;
     }
 }
