@@ -29,7 +29,7 @@
 
         {{-- NORMALE WELKOMSTCARD --}}
         <div class="card">
-            <h2>Welkom!</h2>
+            <h2>Welkom!!</h2>
 
             <p style="
                 margin: 0 0 18px;
