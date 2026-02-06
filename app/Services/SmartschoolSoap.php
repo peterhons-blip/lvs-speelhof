@@ -11,16 +11,21 @@ class SmartschoolSoap
     protected SoapClient $client;
     protected string $accesscode;
 
-    public function __construct()
+    /**
+     * Multi-school ready:
+     * - default gebruikt config('services.smartschool.*')
+     * - maar je kan WSDL + accesscode overschrijven (bv. per school uit DB)
+     */
+    public function __construct(?string $wsdl = null, ?string $accesscode = null)
     {
-        $wsdl = config('services.smartschool.wsdl');
+        $wsdl = $wsdl ?: config('services.smartschool.wsdl');
 
         $this->client = new SoapClient($wsdl, [
             'trace'      => true,
             'exceptions' => true,
         ]);
 
-        $this->accesscode = config('services.smartschool.accesscode');
+        $this->accesscode = $accesscode ?: config('services.smartschool.accesscode');
     }
 
     /**
@@ -72,7 +77,6 @@ class SmartschoolSoap
                 $copyToLVS
             );
         } catch (SoapFault $e) {
-            // extra logging kan nuttig zijn
             Log::error("Smartschool sendMsg faalde (user={$userIdentifier}, co={$coaccount}, sender={$sender}): " . $e->getMessage());
             throw $e;
         }
@@ -99,7 +103,7 @@ class SmartschoolSoap
     }
 
     /**
-     * Optioneel: co-account terug activeren (als je later nodig hebt)
+     * Optioneel: co-account terug activeren
      */
     public function enableCoAccount(string $userIdentifier, int $coaccountNr = 1): void
     {
@@ -114,6 +118,68 @@ class SmartschoolSoap
             );
         } catch (SoapFault $e) {
             Log::error("Fout bij activeren co-account {$coaccountNr} voor {$userIdentifier}: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * ✅ Nodig voor sync:
+     * Haalt alle accounts in een klas/groep op (JSON).
+     * Smartschool parameter $recursive: '0' of '1'
+     */
+    public function getAllAccountsExtended(string $groupOrClassCode, bool $recursive = false): array
+    {
+        try {
+            $json = $this->client->getAllAccountsExtended(
+                $this->accesscode,
+                $groupOrClassCode,
+                $recursive ? '1' : '0'
+            );
+
+            if (is_string($json)) {
+                $data = json_decode($json, true);
+                return is_array($data) ? $data : [];
+            }
+
+            // Soms returnt SOAP al een object/array
+            return json_decode(json_encode($json), true) ?: [];
+        } catch (SoapFault $e) {
+            Log::error("Smartschool getAllAccountsExtended faalde (code={$groupOrClassCode}): ".$e->getMessage());
+            throw $e;
+        }
+    }
+
+        /**
+     * getAllGroupsAndClasses: base64 XML → map(code => name)
+     */
+    public function getAllGroupsAndClasses(): array
+    {
+        try {
+            $b64 = $this->client->getAllGroupsAndClasses($this->accesscode);
+            if (!is_string($b64) || trim($b64) === '') return [];
+
+            $xmlString = base64_decode($b64, true);
+            if ($xmlString === false) return [];
+
+            $xml = @simplexml_load_string($xmlString);
+            if (!$xml) return [];
+
+            $map = [];
+            // We proberen generiek te lezen: nodes met <code> en <name>
+            // Smartschool XML kan variëren; daarom defensief.
+            $nodes = $xml->xpath('//*') ?: [];
+
+            foreach ($nodes as $node) {
+                $code = (string)($node->code ?? '');
+                $name = (string)($node->name ?? '');
+                if ($code !== '' && $name !== '') {
+                    $map[$code] = $name;
+                }
+            }
+
+            return $map;
+        } catch (SoapFault $e) {
+            Log::error("Smartschool getAllGroupsAndClasses faalde: ".$e->getMessage());
             throw $e;
         }
     }
