@@ -340,7 +340,7 @@ class CheckLeeftijdLeerlingen extends Command
                                 $ontvanger,
                                 $onderwerpOverzichtSs,
                                 $bodyOverzicht,
-                                $senderBeleid,
+                                $senderCoAccounts,
                                 false,
                                 0
                             );
