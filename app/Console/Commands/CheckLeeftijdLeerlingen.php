@@ -425,10 +425,11 @@ class CheckLeeftijdLeerlingen extends Command
                 continue;
             }
 
-            // Afzender: beleid > verzender > env
-            $sender = trim((string)($school->smartschool_verzender_beleid ?? ''));
-            if ($sender === '') $sender = trim((string)($school->smartschool_verzender ?? ''));
-            if ($sender === '') $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+            // Afzender: zelfde logica als 'vandaag 18' → co-accounts verzender
+            $sender = trim((string)($school->smartschool_verzender ?? ''));
+            if ($sender === '') {
+                $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+            }
 
             $viewOverzicht = $this->pickView(
                 "smartschool.berichten.scholen.{$school->id}.overzicht_worden18",
