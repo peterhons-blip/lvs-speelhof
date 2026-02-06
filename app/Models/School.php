@@ -14,7 +14,9 @@ class School extends Model
         'instellingsnummer',
         'smartschooladres',
         'ontvangers_overzicht_18',
+        'ontvangers_overzicht_18_ssaccount',
         'smartschool_verzender',
+        'smartschool_verzender_secretariaat',
         'smartschool_verzender_beleid',
     ];
 
@@ -22,6 +24,11 @@ class School extends Model
     public function leerlingen(): HasMany
     {
         return $this->hasMany(Leerling::class, 'schoolid');
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'schoolid', 'id');
     }
 
     public function ontvangersOverzicht18(): array
