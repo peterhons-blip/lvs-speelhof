@@ -225,15 +225,38 @@ class SmartschoolSyncLeerlingen extends Command
 
         $deactivated = 0;
 
-        if (!$dryRun && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0) {
-            $deactivated = Leerling::query()
-                ->where('schoolid', $schoolId)
-                ->whereNotIn('gebruikersnaam', $seenUsernames)
-                ->update(['active' => 0]);
+        if (!$dryRun && count($seenUsernames) > 0) {
 
-            $this->info("Niet meer gevonden in Smartschool → active=0: {$deactivated}");
-        } elseif (!$dryRun) {
-            $this->warn('Deactivatie overgeslagen omdat je met --limit of --only-class werkt.');
+            $query = Leerling::query()
+                ->where('schoolid', $schoolId);
+
+            if ($onlyCode !== '') {
+                // 🔥 enkel binnen deze klas deactiveren
+                $klas = Klas::query()
+                    ->where('schoolid', $schoolId)
+                    ->where('smartschool_code', $onlyCode)
+                    ->first();
+
+                if ($klas) {
+                    $query->where('klasid', $klas->id);
+                } else {
+                    $this->warn("Deactivatie overgeslagen: klas {$onlyCode} niet gevonden.");
+                    $query = null;
+                }
+            } elseif ($limit > 0) {
+                // bij limit nog steeds gevaarlijk → niet doen
+                $this->warn('Deactivatie overgeslagen wegens --limit.');
+                $query = null;
+            }
+
+            if ($query) {
+                $deactivated = $query
+                    ->whereNotIn('gebruikersnaam', $seenUsernames)
+                    ->update(['active' => 0]);
+
+                $scope = $onlyCode !== '' ? "klas {$onlyCode}" : "volledige school";
+                $this->info("Niet meer gevonden in Smartschool ({$scope}) → active=0: {$deactivated}");
+            }
         }
 
         $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}" . ($dryRun ? ' [DRY-RUN]' : '');
