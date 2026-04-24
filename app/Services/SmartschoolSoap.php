@@ -127,24 +127,19 @@ class SmartschoolSoap
      * Haalt alle accounts in een klas/groep op (JSON).
      * Smartschool parameter $recursive: '0' of '1'
      */
+
     public function getAllAccountsExtended(string $groupOrClassCode, bool $recursive = false): array
     {
         try {
-            $json = $this->client->getAllAccountsExtended(
+            $raw = $this->client->getAllAccountsExtended(
                 $this->accesscode,
                 $groupOrClassCode,
                 $recursive ? '1' : '0'
             );
 
-            if (is_string($json)) {
-                $data = json_decode($json, true);
-                return is_array($data) ? $data : [];
-            }
-
-            // Soms returnt SOAP al een object/array
-            return json_decode(json_encode($json), true) ?: [];
+            return $this->decodeSmartschoolJson($raw);
         } catch (SoapFault $e) {
-            Log::error("Smartschool getAllAccountsExtended faalde (code={$groupOrClassCode}): ".$e->getMessage());
+            Log::error("Smartschool getAllAccountsExtended faalde (code={$groupOrClassCode}): " . $e->getMessage());
             throw $e;
         }
     }
@@ -203,5 +198,44 @@ class SmartschoolSoap
             $this->accesscode,
             $userIdentifier
         );
+    }
+
+    public function getClassListJson(): array
+    {
+        try {
+            $raw = $this->client->getClassListJson($this->accesscode);
+            return $this->decodeSmartschoolJson($raw);
+        } catch (SoapFault $e) {
+            Log::error("Smartschool getClassListJson faalde: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    private function decodeSmartschoolJson($raw): array
+    {
+        if (is_array($raw)) {
+            return $raw;
+        }
+
+        $json = trim((string) $raw);
+
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            return is_array($data) ? $data : [];
+        } catch (\JsonException $e) {
+            // kleine repair voor rare lege quote-velden zoals :"""
+            $fixed = str_replace(':"""', ':""', $json);
+
+            try {
+                $data = json_decode($fixed, true, 512, JSON_THROW_ON_ERROR);
+                return is_array($data) ? $data : [];
+            } catch (\JsonException $e2) {
+                Log::error('Smartschool JSON decode faalde: ' . $e2->getMessage(), [
+                    'preview' => substr($json, 0, 500),
+                ]);
+
+                return [];
+            }
+        }
     }
 }

@@ -14,123 +14,125 @@ class SmartschoolSyncLeerlingen extends Command
     protected $signature = 'smartschool:sync-leerlingen
                             {--schoolid= : School ID (default: 1)}
                             {--dry-run : Niets schrijven in DB, enkel loggen}
-                            {--limit=0 : Maximum # leerlingen om te verwerken (0 = geen limiet)}
-                            {--only-class= : Alleen deze smartschool_code syncen (vb. officlass_xxx)}';
+                            {--limit=0 : Maximum # leerlingen verwerken (0 = geen limiet)}
+                            {--only-class= : Alleen deze smartschool_code syncen}';
 
-    protected $description = 'Synct leerlingen uit Smartschool (per klascode) naar DB: upsert, active vlag, klas auto-aanmaken.';
+    protected $description = 'Synct leerlingen uit Smartschool naar DB: leerlingen, klassen, active vlag.';
 
     public function handle(): int
     {
-        $schoolId = (int)($this->option('schoolid') ?: 1);
-        $dryRun   = $this->option('dry-run') === true;
-        $limit    = (int)($this->option('limit') ?: 0);
-        $onlyCode = trim((string)($this->option('only-class') ?: ''));
+        $schoolId = (int) ($this->option('schoolid') ?: 1);
+        $dryRun = $this->option('dry-run') === true;
+        $limit = (int) ($this->option('limit') ?: 0);
+        $onlyCode = trim((string) ($this->option('only-class') ?: ''));
 
-        $this->info("Smartschool sync leerlingen gestart (schoolid={$schoolId})".($dryRun ? " [DRY-RUN]" : ""));
-        Log::info("Smartschool sync leerlingen gestart (schoolid={$schoolId})".($dryRun ? " [DRY-RUN]" : ""));
+        $this->info("Smartschool sync leerlingen gestart (schoolid={$schoolId})" . ($dryRun ? ' [DRY-RUN]' : ''));
 
         $school = School::find($schoolId);
+
         if (!$school) {
             $this->error("School {$schoolId} niet gevonden.");
             return self::FAILURE;
         }
 
-        // Verwacht dat je per school wsdl/accesscode kolommen hebt (zoals je eerder wou).
-        // Als je die nog niet hebt: zet dan tijdelijk in config/services + gebruik defaults.
-        $wsdl = $school->smartschool_wsdl ?? config('services.smartschool.wsdl');
-        $accesscode = $school->smartschool_accesscode ?? config('services.smartschool.accesscode');
+        $wsdl = $school->smartschool_wsdl ?: config('services.smartschool.wsdl');
+        $accesscode = $school->smartschool_accesscode ?: config('services.smartschool.accesscode');
 
         $ss = new SmartschoolSoap($wsdl, $accesscode);
 
-        // Probeer namenmap (optioneel)
-        $codeToName = [];
         try {
-            $codeToName = $ss->getAllGroupsAndClasses();
+            $smartschoolClasses = $ss->getClassListJson();
         } catch (\Throwable $e) {
-            $this->warn("Kon groups/classes niet ophalen (ok, we gaan door).");
+            $this->error('Kon Smartschool klassen niet ophalen: ' . $e->getMessage());
+            return self::FAILURE;
         }
 
-        // Klassen uit DB
-        $klassenQuery = Klas::query()
-            ->where('schoolid', $schoolId)
-            ->whereNotNull('smartschool_code');
-
-        if ($onlyCode !== '') {
-            $klassenQuery->where('smartschool_code', $onlyCode);
-        }
-
-        $klassen = $klassenQuery->get();
-
-        if ($klassen->count() === 0) {
-            $this->warn("Geen klassen gevonden voor schoolid={$schoolId} (of filter --only-class).");
-            return self::SUCCESS;
+        if (empty($smartschoolClasses)) {
+            $this->error('Geen klassen ontvangen van Smartschool. Sync gestopt.');
+            return self::FAILURE;
         }
 
         $seenUsernames = [];
         $processed = 0;
         $created = 0;
         $updated = 0;
+        $createdClasses = 0;
 
-        foreach ($klassen as $klas) {
-            $classCode = trim((string)$klas->smartschool_code);
-            if ($classCode === '') continue;
+        foreach ($smartschoolClasses as $ssClass) {
+            if (!is_array($ssClass)) {
+                continue;
+            }
 
-            $this->line("→ Sync klas {$klas->klasnaam} ({$classCode})");
+            $classCode = $this->firstValue($ssClass, [
+                'code',
+                'classCode',
+                'groupCode',
+                'smartschool_code',
+                'id',
+            ]);
+
+            $className = $this->firstValue($ssClass, [
+                'name',
+                'klasnaam',
+                'className',
+                'desc',
+                'description',
+                'omschrijving',
+            ]);
+
+            if (!$classCode) {
+                continue;
+            }
+
+            if ($onlyCode !== '' && $classCode !== $onlyCode) {
+                continue;
+            }
+
+            if (!$className) {
+                $className = $classCode;
+            }
+
+            $klas = $this->findOrCreateKlas($schoolId, $classCode, $className, $dryRun, $createdClasses);
+
+            $this->line("→ Sync klas {$className} ({$classCode})");
 
             try {
                 $accounts = $ss->getAllAccountsExtended($classCode, false);
             } catch (\Throwable $e) {
-                $this->error("Fout bij ophalen accounts voor {$classCode}: ".$e->getMessage());
+                $this->warn("Fout bij ophalen accounts voor {$classCode}: " . $e->getMessage());
                 continue;
             }
 
-            // Smartschool geeft soms wrapper-keys; we maken dit defensief “vlak”
-            $list = $accounts;
+            $list = $this->extractAccountList($accounts);
 
-            // Als er een duidelijke array-key bestaat met items, probeer die
-            foreach (['accounts','users','data','items','result'] as $k) {
-                if (isset($accounts[$k]) && is_array($accounts[$k])) {
-                    $list = $accounts[$k];
-                    break;
-                }
+            if (count($list) === 0) {
+                $this->warn("  Geen accounts gevonden voor {$className} ({$classCode})");
+                continue;
             }
 
-            if (!is_array($list)) $list = [];
-
             foreach ($list as $row) {
-                if (!is_array($row)) continue;
-
-                // Filter op leerlingen (defensief): basisrol/role kan variëren
-                $role = strtolower((string)($row['basisrol'] ?? $row['role'] ?? $row['basisRole'] ?? ''));
-                if ($role !== '' && !str_contains($role, 'leerling')) {
-                    continue; // skip leerkrachten e.d.
+                if (!is_array($row)) {
+                    continue;
                 }
 
-                $username = trim((string)($row['username'] ?? $row['gebruikersnaam'] ?? $row['userIdentifier'] ?? ''));
+                if (!$this->isLeerling($row)) {
+                    continue;
+                }
+
+                $username = trim((string) ($row['gebruikersnaam'] ?? $row['username'] ?? $row['userIdentifier'] ?? ''));
+
                 if ($username === '') {
                     continue;
                 }
 
-                // Naamvelden (Smartschool naming verschilt soms)
-                $voornaam = trim((string)($row['name'] ?? $row['voornaam'] ?? ''));
-                $achternaam = trim((string)($row['surname'] ?? $row['naam'] ?? ''));
+                $voornaam = trim((string) ($row['voornaam'] ?? $row['name'] ?? ''));
+                $naam = trim((string) ($row['naam'] ?? $row['surname'] ?? ''));
 
-                // Geboortedatum
-                $birthdayRaw = (string)($row['birthday'] ?? $row['geboortedatum'] ?? '');
-                $geboortedatum = null;
-                if ($birthdayRaw !== '') {
-                    // ondersteunt 'YYYY-MM-DD' of 'DD-MM-YYYY'
-                    $birthdayRaw = trim($birthdayRaw);
-                    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdayRaw)) {
-                        $geboortedatum = $birthdayRaw;
-                    } elseif (preg_match('/^\d{2}-\d{2}-\d{4}$/', $birthdayRaw)) {
-                        [$d,$m,$y] = explode('-', $birthdayRaw);
-                        $geboortedatum = "{$y}-{$m}-{$d}";
-                    }
-                }
+                $geboortedatum = $this->normalizeDate(
+                    $row['geboortedatum'] ?? $row['birthday'] ?? null
+                );
 
-                // e-mailadres: <gebruikersnaam>@atheneumsinttruiden.be
-                $email = strtolower($username).'@atheneumsinttruiden.be';
+                $email = strtolower($username) . '@atheneumsinttruiden.be';
 
                 $seenUsernames[] = $username;
                 $processed++;
@@ -140,101 +142,188 @@ class SmartschoolSyncLeerlingen extends Command
                     break 2;
                 }
 
-                // Klas auto-aanmaken? (als smartschool_code niet bestaat in DB)
-                // (normaal heb je ze al, maar fail-safe)
-                $klasId = $klas->id;
-
-                if (!$klasId) {
-                    // fallback (normaal nooit)
-                    $klasId = $this->resolveOrCreateKlas($schoolId, $classCode, $codeToName, $dryRun);
-                }
+                $klasId = $klas ? (int) $klas->id : 0;
 
                 if ($dryRun) {
-                    $this->line("  [DRY] {$username} → {$voornaam} {$achternaam} ({$geboortedatum}) klasid={$klasId} email={$email}");
+                    $this->line("  [DRY] {$username} → {$voornaam} {$naam} | klas={$className} | geboortedatum={$geboortedatum} | email={$email}");
                     continue;
                 }
 
-                // Upsert leerling op (schoolid, gebruikersnaam)
                 $existing = Leerling::query()
                     ->where('schoolid', $schoolId)
                     ->where('gebruikersnaam', $username)
                     ->first();
 
                 if (!$existing) {
-                    $l = new Leerling();
-                    $l->schoolid = $schoolId;
-                    $l->gebruikersnaam = $username;
-                    $l->active = 1;
-                    $l->klasid = $klasId;
-                    $l->voornaam = $voornaam !== '' ? $voornaam : null;
-                    $l->naam = $achternaam !== '' ? $achternaam : null;
-                    if ($geboortedatum) $l->geboortedatum = $geboortedatum;
-                    $l->{'e-mailadres'} = $email;
-                    $l->save();
+                    $leerling = new Leerling();
+                    $leerling->schoolid = $schoolId;
+                    $leerling->klasid = $klasId;
+                    $leerling->gebruikersnaam = $username;
+                    $leerling->voornaam = $voornaam ?: null;
+                    $leerling->naam = $naam ?: null;
+                    $leerling->geboortedatum = $geboortedatum;
+                    $leerling->{'e-mailadres'} = $email;
+                    $leerling->active = 1;
+                    $leerling->save();
 
                     $created++;
-                } else {
-                    $dirty = false;
+                    continue;
+                }
 
-                    if ((int)$existing->active !== 1) { $existing->active = 1; $dirty = true; }
-                    if ((int)$existing->klasid !== (int)$klasId) { $existing->klasid = $klasId; $dirty = true; }
-                    if ($voornaam !== '' && (string)$existing->voornaam !== $voornaam) { $existing->voornaam = $voornaam; $dirty = true; }
-                    if ($achternaam !== '' && (string)$existing->naam !== $achternaam) { $existing->naam = $achternaam; $dirty = true; }
-                    if ($geboortedatum && optional($existing->geboortedatum)->toDateString() !== $geboortedatum) { $existing->geboortedatum = $geboortedatum; $dirty = true; }
-                    if ((string)($existing->{'e-mailadres'} ?? '') !== $email) { $existing->{'e-mailadres'} = $email; $dirty = true; }
+                $dirty = false;
 
-                    if ($dirty) {
-                        $existing->save();
-                        $updated++;
-                    }
+                if ((int) $existing->active !== 1) {
+                    $existing->active = 1;
+                    $dirty = true;
+                }
+
+                if ((int) $existing->klasid !== $klasId) {
+                    $existing->klasid = $klasId;
+                    $dirty = true;
+                }
+
+                if ($voornaam !== '' && (string) $existing->voornaam !== $voornaam) {
+                    $existing->voornaam = $voornaam;
+                    $dirty = true;
+                }
+
+                if ($naam !== '' && (string) $existing->naam !== $naam) {
+                    $existing->naam = $naam;
+                    $dirty = true;
+                }
+
+                if ($geboortedatum && optional($existing->geboortedatum)->toDateString() !== $geboortedatum) {
+                    $existing->geboortedatum = $geboortedatum;
+                    $dirty = true;
+                }
+
+                if ((string) ($existing->{'e-mailadres'} ?? '') !== $email) {
+                    $existing->{'e-mailadres'} = $email;
+                    $dirty = true;
+                }
+
+                if ($dirty) {
+                    $existing->save();
+                    $updated++;
                 }
             }
         }
 
         $seenUsernames = array_values(array_unique($seenUsernames));
 
-        // Leerlingen die niet meer in Smartschool zitten → active = 0
-        if (!$dryRun) {
-            $q = Leerling::query()
-                ->where('schoolid', $schoolId);
+        $deactivated = 0;
 
-            if (count($seenUsernames) > 0) {
-                $q->whereNotIn('gebruikersnaam', $seenUsernames);
-            }
+        if (!$dryRun && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0) {
+            $deactivated = Leerling::query()
+                ->where('schoolid', $schoolId)
+                ->whereNotIn('gebruikersnaam', $seenUsernames)
+                ->update(['active' => 0]);
 
-            $deactivated = $q->update(['active' => 0]);
-            $this->info("Deactivated: {$deactivated}");
+            $this->info("Niet meer gevonden in Smartschool → active=0: {$deactivated}");
+        } elseif (!$dryRun) {
+            $this->warn('Deactivatie overgeslagen omdat je met --limit of --only-class werkt.');
         }
 
-        $this->info("Klaar. Processed={$processed}, created={$created}, updated={$updated}".($dryRun ? " [DRY-RUN]" : ""));
-        Log::info("Smartschool sync klaar. Processed={$processed}, created={$created}, updated={$updated}".($dryRun ? " [DRY-RUN]" : ""));
+        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}" . ($dryRun ? ' [DRY-RUN]' : '');
+
+        $this->info($msg);
+        Log::info('Smartschool sync leerlingen: ' . $msg);
 
         return self::SUCCESS;
     }
 
-    private function resolveOrCreateKlas(int $schoolId, string $classCode, array $codeToName, bool $dryRun): int
+    private function findOrCreateKlas(int $schoolId, string $classCode, string $className, bool $dryRun, int &$createdClasses): ?Klas
     {
         $existing = Klas::query()
             ->where('schoolid', $schoolId)
             ->where('smartschool_code', $classCode)
             ->first();
 
-        if ($existing) return (int)$existing->id;
+        if ($existing) {
+            if ($existing->klasnaam !== $className && !$dryRun) {
+                $existing->klasnaam = $className;
+                $existing->save();
+            }
 
-        $name = $codeToName[$classCode] ?? $classCode;
+            return $existing;
+        }
 
         if ($dryRun) {
-            $this->warn("  [DRY] Klas ontbreekt → zou aanmaken: {$name} ({$classCode})");
-            return 0;
+            $this->warn("  [DRY] Klas ontbreekt → zou aanmaken: {$className} ({$classCode})");
+            return null;
         }
 
         $klas = new Klas();
         $klas->schoolid = $schoolId;
-        $klas->klasnaam = $name;
+        $klas->klasnaam = $className;
         $klas->smartschool_code = $classCode;
         $klas->save();
 
-        $this->warn("  Klas aangemaakt: {$name} ({$classCode}) id={$klas->id}");
-        return (int)$klas->id;
+        $createdClasses++;
+
+        $this->warn("  Klas aangemaakt: {$className} ({$classCode})");
+
+        return $klas;
+    }
+
+    private function extractAccountList(array $accounts): array
+    {
+        foreach (['accounts', 'users', 'data', 'items', 'result'] as $key) {
+            if (isset($accounts[$key]) && is_array($accounts[$key])) {
+                return $accounts[$key];
+            }
+        }
+
+        if (array_is_list($accounts)) {
+            return $accounts;
+        }
+
+        return [];
+    }
+
+    private function isLeerling(array $row): bool
+    {
+        $role = strtolower(trim((string) ($row['basisrol'] ?? $row['role'] ?? $row['basisRole'] ?? '')));
+
+        // In jouw Smartschool response is basisrol = "1" voor leerlingen
+        if ($role === '' || $role === '1' || $role === 'leerling' || $role === 'student') {
+            return true;
+        }
+
+        return str_contains($role, 'leerling') || str_contains($role, 'student');
+    }
+
+    private function normalizeDate($value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return $value;
+        }
+
+        if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $value, $m)) {
+            return "{$m[3]}-{$m[2]}-{$m[1]}";
+        }
+
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $value, $m)) {
+            return "{$m[3]}-{$m[2]}-{$m[1]}";
+        }
+
+        return null;
+    }
+
+    private function firstValue(array $row, array $keys): ?string
+    {
+        foreach ($keys as $key) {
+            if (isset($row[$key]) && trim((string) $row[$key]) !== '') {
+                return trim((string) $row[$key]);
+            }
+        }
+
+        return null;
     }
 }
