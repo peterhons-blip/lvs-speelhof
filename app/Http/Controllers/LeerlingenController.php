@@ -13,31 +13,29 @@ class LeerlingenController extends Controller
 {
     public function index(Request $request)
     {
-        // ✅ Lijst voor de zoek-UI — via DB::table zodat alias "achternaam" 100% mee in JSON zit
         $rows = DB::table('leerlingen')
             ->leftJoin('klassen', 'leerlingen.klasid', '=', 'klassen.id')
+            ->where('leerlingen.active', 1)
             ->selectRaw('
                 leerlingen.id,
                 leerlingen.voornaam,
                 COALESCE(leerlingen.naam, "") AS achternaam,
                 COALESCE(klassen.klasnaam, "") AS klas
             ')
-            ->orderBy('leerlingen.naam')       // sorteer op achternaam
+            ->orderBy('leerlingen.naam')
             ->orderBy('leerlingen.voornaam')
             ->get();
 
-        // 🎂 Verjaardagen-widget (vandaag + teller voor komende 7 dagen)
         $today = CarbonImmutable::today();
         $end   = $today->addDays(7);
 
-        // — Vandaag jarig
         $vandaagJarig = Leerling::query()
             ->with(['klas:id,klasnaam'])
+            ->where('active', 1)
             ->whereNotNull('geboortedatum')
             ->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') = ?", [$today->format('m-d')])
             ->get()
             ->map(function ($l) use ($today) {
-                // Zorg dat we op Carbon rekenen, ook als de kolom geen cast heeft
                 $dob = $l->geboortedatum instanceof \Carbon\CarbonInterface
                     ? $l->geboortedatum->toImmutable()
                     : CarbonImmutable::parse($l->geboortedatum);
@@ -53,17 +51,16 @@ class LeerlingenController extends Controller
             ->sortBy(fn($l) => [mb_strtolower($l->achternaam ?? ''), mb_strtolower($l->voornaam ?? '')])
             ->values();
 
-        // — Aantal jarigen in komende 7 dagen (incl. vandaag), incl. jaarovergang
         $startMd = $today->format('m-d');
         $endMd   = $end->format('m-d');
 
         $upcomingCount = Leerling::query()
+            ->where('active', 1)
             ->whereNotNull('geboortedatum')
             ->where(function ($q) use ($startMd, $endMd) {
                 if ($endMd >= $startMd) {
                     $q->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') BETWEEN ? AND ?", [$startMd, $endMd]);
                 } else {
-                    // jaarovergang (bv. 28/12 → 04/01)
                     $q->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') >= ?", [$startMd])
                         ->orWhereRaw("DATE_FORMAT(geboortedatum, '%m-%d') <= ?", [$endMd]);
                 }
@@ -82,9 +79,10 @@ class LeerlingenController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $leerling = Leerling::with('klas')->findOrFail($id);
+            $leerling = Leerling::with('klas')
+                ->where('active', 1)
+                ->findOrFail($id);
 
-            // Meldingen (nieuw → oud) met soort + categorie
             $meldingen = Melding::with(['soort.categorie'])
                 ->where('leerlingId', $leerling->id)
                 ->orderByDesc('created_at')
@@ -99,9 +97,7 @@ class LeerlingenController extends Controller
 
     public function verjaardagen()
     {
-        CarbonImmutable::setLocale('nl'); // optie A: globaal voor CarbonImmutable
-        // of: app()->setLocale('nl');    // optie B: Laravel locale (als je die hier wil forceren)
-
+        CarbonImmutable::setLocale('nl');
 
         $today = CarbonImmutable::today();
         $end   = $today->addDays(7);
@@ -109,8 +105,8 @@ class LeerlingenController extends Controller
         $startMd = $today->format('m-d');
         $endMd   = $end->format('m-d');
 
-        // Leerlingen met verjaardag in komende 7 dagen (incl. vandaag)
         $leerlingen = Leerling::with(['klas:id,klasnaam'])
+            ->where('active', 1)
             ->whereNotNull('geboortedatum')
             ->where(function ($q) use ($startMd, $endMd) {
                 if ($endMd >= $startMd) {
