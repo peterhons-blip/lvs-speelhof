@@ -35,8 +35,20 @@ class SmartschoolSyncLeerlingen extends Command
             return self::FAILURE;
         }
 
-        $wsdl = $school->smartschool_wsdl ?: config('services.smartschool.wsdl');
-        $accesscode = $school->smartschool_accesscode ?: config('services.smartschool.accesscode');
+        $wsdl = trim((string) $school->smartschool_wsdl);
+        $accesscode = trim((string) $school->smartschool_accesscode);
+
+        if ($wsdl === '') {
+            $this->error("School {$schoolId}: smartschool_wsdl ontbreekt in tabel scholen.");
+            Log::error("Smartschool sync gestopt: smartschool_wsdl ontbreekt voor schoolid={$schoolId}");
+            return self::FAILURE;
+        }
+
+        if ($accesscode === '') {
+            $this->error("School {$schoolId}: smartschool_accesscode ontbreekt in tabel scholen.");
+            Log::error("Smartschool sync gestopt: smartschool_accesscode ontbreekt voor schoolid={$schoolId}");
+            return self::FAILURE;
+        }
 
         $ss = new SmartschoolSoap($wsdl, $accesscode);
 
