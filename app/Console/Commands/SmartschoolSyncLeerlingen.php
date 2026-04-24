@@ -75,6 +75,13 @@ class SmartschoolSyncLeerlingen extends Command
                 continue;
             }
 
+            $isKlas = $ssClass['isKlas'] ?? $ssClass['isClass'] ?? null;
+            $isOfficial = $ssClass['isOfficial'] ?? $ssClass['official'] ?? null;
+
+            if (!$this->toBool($isKlas) || !$this->toBool($isOfficial)) {
+                continue;
+            }
+
             $classCode = $this->firstValue($ssClass, [
                 'code',
                 'classCode',
@@ -360,5 +367,16 @@ class SmartschoolSyncLeerlingen extends Command
         }
 
         return null;
+    }
+
+    private function toBool($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $value = strtolower(trim((string) $value));
+
+        return in_array($value, ['1', 'true', 'yes', 'ja'], true);
     }
 }
