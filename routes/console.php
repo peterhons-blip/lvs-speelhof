@@ -22,10 +22,9 @@ Schedule::command('verjaardagen:check')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/verjaardagen_check.log'));
 
-
 // Leerlingen syncen vanuit Smartschool
-//Schedule::command('smartschool:sync-leerlingen --school=1')
- //   ->dailyAt('03:00')
- //   ->timezone('Europe/Brussels')
-  //  ->withoutOverlapping()
-  //  ->appendOutputTo(storage_path('logs/smartschool_sync_leerlingen.log'));
+Schedule::command('smartschool:sync-leerlingen --school=1')
+    ->dailyAt('03:00')
+    ->timezone('Europe/Brussels')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/smartschool_sync_leerlingen.log'));
