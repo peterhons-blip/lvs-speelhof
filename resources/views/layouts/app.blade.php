@@ -21,7 +21,6 @@
             <a href="/">
                 <img class="logo" src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden — Speelhof" />
             </a>
-            <h1>LVS + EMA</h1>
         </div>
         @php
             $ss_user = session('ss_user');
