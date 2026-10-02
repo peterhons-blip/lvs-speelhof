@@ -19,7 +19,7 @@
     <header class="app-header">
         <div class="title">
             <a href="/">
-                <img class="logo" src="{{ asset('images/logo.png') }}" alt="Atheneum Sint-Truiden — Speelhof" />
+                <img class="logo" src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden — Speelhof" />
             </a>
             <h1>LVS + EMA</h1>
         </div>
