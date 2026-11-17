@@ -19,15 +19,15 @@
             </div>
         </div>
 
-        {{-- 1️⃣ Leerling-info --}}
-        <div class="card lvs-panel">
-            <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
-            <p><b>Klas:</b> {{ optional($leerling->klas)->klasnaam ?? '—' }}</p>
-            <p><b>Gebruikersnaam:</b> {{ $leerling->gebruikersnaam }}</p>
-            <p><b>Email:</b> {{ $leerling->email ?: '—' }}</p>
-            <p><b>Geboortedatum:</b> {{ optional($leerling->geboortedatum)->format('d/m/Y') ?? '—' }}</p>
-            <p><b>Leeftijd:</b> {{ optional($leerling->geboortedatum)->age ?? '—' }} jaar</p>
-        </div>
+        {{-- Compact overzicht van de leerling bij wie de melding hoort. --}}
+        <section class="card lvs-panel lvs-context-panel">
+            <div>
+                <p class="lvs-context-label">MELDING VOOR</p>
+                <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
+                <p>{{ optional($leerling->klas)->klasnaam ?? 'Geen klas' }} · {{ $leerling->gebruikersnaam ?: 'Geen gebruikersnaam' }}</p>
+            </div>
+            <a href="{{ route('leerlingen.show', $leerling->id) }}" class="lvs-context-link">Bekijk leerlinggegevens →</a>
+        </section>
 
         {{-- 2️⃣ Nieuwe melding invullen --}}
         <div class="card lvs-panel lvs-section-gap">
