@@ -19,17 +19,19 @@
                     <div class="portal-login-identity">
                         <img class="portal-login-identity-icon" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
                         <div>
-                            <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
                             <h1 id="login-title" class="portal-login-title">Atheneum Portaal</h1>
                         </div>
                     </div>
                 </div>
-                <p class="portal-login-lead">Jouw centrale omgeving voor leerlingenbegeleiding en schooladministratie.</p>
+                <div class="portal-login-welcome">
+                    <h2>Welkom!</h2>
+                    <p>Alles voor je dagelijkse schoolwerking op één plek.</p>
+                </div>
                 <a class="portal-login-cta" href="{{ route('login') }}">
                     <span>Aanmelden via Smartschool</span>
                     <span aria-hidden="true">→</span>
                 </a>
-                <p class="portal-login-note">Gebruik je Smartschool-account om je aan te melden.</p>
+                <p class="portal-login-note">Meld je veilig aan met je Smartschool-account.</p>
             </section>
             <aside class="portal-login-art" aria-hidden="true">
                 <div class="portal-art-orbit portal-art-orbit-one"></div>
