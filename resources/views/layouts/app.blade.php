@@ -6,6 +6,7 @@
     <title>@yield('title', 'Atheneum Portaal') · GO! Atheneum Sint-Truiden</title>
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
     <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=1">
 </head>
 <body class="portal-body">
 @php($ss_user = session('ss_user'))
