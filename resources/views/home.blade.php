@@ -14,9 +14,11 @@
         <main class="portal-login" aria-labelledby="login-title">
             <section class="portal-login-panel">
                 <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
-                <div class="portal-accent-line" aria-hidden="true"></div>
+                <div class="portal-login-platform-brand">
+                    <img src="{{ asset('images/atheneum-portaal-logo.png') }}" alt="Atheneum Portaal" class="portal-login-platform-logo">
+                </div>
                 <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
-                <h1 id="login-title">Atheneum Portaal</h1>
+                <h1 id="login-title" class="portal-login-title">Welkom op het portaal</h1>
                 <p class="portal-login-lead">Eén centrale plek voor leerlingenbegeleiding, aanvragen en schooladministratie.</p>
                 <a class="portal-login-cta" href="{{ route('login') }}">
                     <span class="portal-smartschool-mark" aria-hidden="true">S</span>
@@ -44,8 +46,8 @@
                     <h1 id="dashboard-title">Welkom, {{ session('ss_user.voornaam', 'collega') }}!</h1>
                     <p>Welkom in het Atheneum Portaal. Beheer leerlinginformatie, aanvragen en schooladministratie vanuit één centrale omgeving.</p>
                 </div>
-                <div class="portal-intro-art" aria-hidden="true">
-                    <div class="portal-mini-building"></div>
+                <div class="portal-dashboard-brand" aria-hidden="true">
+                    <img src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" class="portal-dashboard-brand-image">
                 </div>
             </div>
 
