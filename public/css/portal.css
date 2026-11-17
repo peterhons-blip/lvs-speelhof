@@ -163,3 +163,25 @@ body.portal-body{background:var(--portal-surface);color:var(--portal-ink)}
  .portal-login-platform-logo{max-width:290px}
  .portal-dashboard-brand{display:none}
 }
+
+
+/* Login 2B verfijning: een rustige linkerzijde met één duidelijke aanmeldactie. */
+.portal-login-panel{align-items:flex-start}
+.portal-login-panel .portal-login-logo{width:255px;max-height:82px;object-fit:contain;object-position:left center}
+.portal-login-identity{display:flex;align-items:center;gap:16px;margin:42px 0 15px}
+.portal-login-identity-icon{width:67px;height:67px;object-fit:contain;flex:none;background:#F3FAFA;border:1px solid #E1F0F1;border-radius:15px;padding:7px}
+.portal-login-identity .portal-eyebrow{font-size:.66rem;letter-spacing:.12em;margin:0 0 6px}
+.portal-login .portal-login-identity .portal-login-title{font-size:clamp(1.8rem,3vw,2.7rem);line-height:1.13;margin:0;letter-spacing:-.035em}
+.portal-login-panel .portal-login-lead{max-width:425px;font-size:1.04rem;line-height:1.65;margin:0 0 35px}
+.portal-login-panel .portal-login-cta{width:min(100%,410px);min-height:55px;padding:14px 21px;justify-content:space-between;gap:12px}
+.portal-login-note{color:#8292A3;font-size:.84rem;line-height:1.55;margin:16px 0 0}
+@media(max-width:800px){
+ .portal-login-identity{margin-top:30px}
+ .portal-login-panel .portal-login-logo{width:235px}
+}
+@media(max-width:530px){
+ .portal-login-identity{gap:11px;margin-top:24px}
+ .portal-login-identity-icon{width:53px;height:53px;border-radius:12px;padding:6px}
+ .portal-login .portal-login-identity .portal-login-title{font-size:1.8rem}
+ .portal-login-panel .portal-login-lead{font-size:.96rem;margin-bottom:28px}
+}
