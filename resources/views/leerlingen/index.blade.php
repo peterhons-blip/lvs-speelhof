@@ -19,6 +19,7 @@
         </div>
     </div>
 
+    <div class="lvs-overview-grid">
     <section class="card lvs-panel lvs-search-panel" aria-labelledby="lvs-search-title">
         <div class="lvs-search-panel-heading">
             <div>
@@ -37,19 +38,13 @@
         <p class="lvs-field-help">Typ minstens twee tekens om te zoeken.</p>
     </section>
 
-    <div id="infoCard" class="lvs-feedback" data-hidden="true" role="status" aria-live="polite"></div>
-    <div class="lvs-results-heading" id="resultsHeading" data-hidden="true">
-        <h2>Zoekresultaten</h2><span id="resultsCount"></span>
-    </div>
-    <div class="lvs-student-grid" id="studentGrid" aria-live="polite"></div>
-
     <section class="card lvs-panel lvs-birthday-panel" aria-labelledby="birthdays-title">
         <div class="lvs-panel-heading lvs-panel-heading-wrap">
             <div>
                 <p class="portal-eyebrow">VERJAARDAGEN</p>
                 <h2 id="birthdays-title">Vandaag jarig</h2>
             </div>
-            <a href="{{ route('leerlingen.verjaardagen') }}" class="lvs-link-button lvs-link-button-subtle">
+            <a href="{{ route('leerlingen.verjaardagen') }}" class="lvs-inline-link">
                 Bekijk komende week ({{ $upcomingCount ?? 0 }}) →
             </a>
         </div>
@@ -72,6 +67,15 @@
             </div>
         @endif
     </section>
+    </div>
+
+    <div id="infoCard" class="lvs-feedback" data-hidden="true" role="status" aria-live="polite"></div>
+    <div class="lvs-results-heading" id="resultsHeading" data-hidden="true">
+        <h2>Zoekresultaten</h2><span id="resultsCount"></span>
+    </div>
+    <div class="lvs-student-grid" id="studentGrid" aria-live="polite"></div>
+
+
 </main>
 @endsection
 
