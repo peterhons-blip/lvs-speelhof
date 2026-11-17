@@ -138,3 +138,28 @@ body.portal-body{background:var(--portal-surface);color:var(--portal-ink)}
  .portal-login-art{min-height:140px}
  .portal-art-building{bottom:32%;height:80px}
 }
+
+
+/* Logo 2B: schoolidentiteit behouden, platform visueel herkenbaar. */
+.portal-brand-platform{display:inline-flex;align-items:center;gap:10px;min-width:0}
+.portal-brand-mark{display:block;width:46px;height:40px;object-fit:contain;background:#fff;border-radius:8px;padding:3px}
+.portal-login-platform-brand{margin:24px 0 10px;width:100%}
+.portal-login-platform-logo{display:block;width:min(100%,365px);height:auto;object-fit:contain;object-position:left center}
+.portal-login .portal-login-title{font-size:clamp(1.6rem,2.6vw,2.25rem);margin:10px 0 16px}
+.portal-dashboard-brand{width:235px;height:147px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(231,247,248,.7);border:1px solid #DAECEE;border-radius:20px}
+.portal-dashboard-brand-image{display:block;width:205px;max-height:130px;object-fit:contain}
+@media(max-width:900px){
+ .portal-dashboard-brand{width:145px;height:105px}
+ .portal-dashboard-brand-image{width:130px;max-height:95px}
+}
+@media(max-width:800px){
+ .portal-brand-mark{width:36px;height:34px}
+ .portal-brand-platform{gap:7px}
+ .portal-login-platform-brand{margin-top:20px}
+}
+@media(max-width:530px){
+ .portal-brand-mark{width:32px;height:30px}
+ .portal-brand-title{font-size:.9rem}
+ .portal-login-platform-logo{max-width:290px}
+ .portal-dashboard-brand{display:none}
+}
