@@ -211,3 +211,38 @@ body.portal-body{background:var(--portal-surface);color:var(--portal-ink)}
  .portal-login-brand-row .portal-eyebrow{font-size:.49rem;letter-spacing:.05em}
  .portal-login .portal-login-brand-row .portal-login-title{font-size:.95rem}
 }
+
+
+/* Definitieve loginverfijning: compacte dubbele identiteit en rustige aanmeldzone. */
+.portal-login-panel{justify-content:center;padding:clamp(35px,4vw,66px)}
+.portal-login-brand-row{gap:18px;margin:0 0 clamp(52px,6vw,86px);align-items:center}
+.portal-login-panel .portal-login-brand-row .portal-login-logo{width:200px;max-width:45%;height:auto;max-height:65px;flex-shrink:1}
+.portal-login-brand-divider{background:#CCD8E3;height:48px}
+.portal-login-brand-row .portal-login-identity{gap:10px}
+.portal-login-brand-row .portal-login-identity-icon{width:42px;height:42px;padding:4px;background:#F4F9FA;border:1px solid #E4EEF0}
+.portal-login .portal-login-brand-row .portal-login-title{font-size:clamp(1.02rem,1.6vw,1.42rem);font-weight:760;line-height:1.2}
+.portal-login-welcome{margin:0 0 30px;width:min(100%,430px)}
+.portal-login-welcome h2{font-size:clamp(2rem,3.25vw,3rem);font-weight:780;letter-spacing:-.04em;line-height:1.15;color:var(--portal-navy-deep);margin:0 0 14px}
+.portal-login-welcome p{color:#677B8F;line-height:1.7;font-size:1.03rem;margin:0;max-width:410px}
+.portal-login-panel .portal-login-cta{width:min(100%,430px);margin:0;min-height:56px;box-shadow:0 7px 20px rgba(200,0,75,.12)}
+.portal-login-note{font-size:.79rem;color:#8A9AAA;margin:17px 0 0}
+@media(max-width:1050px){
+ .portal-login-brand-row{gap:11px;margin-bottom:55px}
+ .portal-login-panel .portal-login-brand-row .portal-login-logo{width:162px}
+ .portal-login-brand-row .portal-login-identity-icon{width:36px;height:36px}
+ .portal-login-brand-divider{height:43px}
+}
+@media(max-width:800px){
+ .portal-login-panel{padding:40px 30px}
+ .portal-login-brand-row{margin-bottom:39px}
+}
+@media(max-width:530px){
+ .portal-login-panel{padding:30px 23px}
+ .portal-login-brand-row{gap:9px;margin-bottom:34px}
+ .portal-login-panel .portal-login-brand-row .portal-login-logo{width:128px;max-width:43%}
+ .portal-login-brand-divider{height:38px}
+ .portal-login-brand-row .portal-login-identity-icon{width:31px;height:31px}
+ .portal-login .portal-login-brand-row .portal-login-title{font-size:.96rem}
+ .portal-login-welcome h2{font-size:2.1rem}
+ .portal-login-welcome p{font-size:.96rem}
+}
