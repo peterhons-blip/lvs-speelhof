@@ -7,7 +7,7 @@ const studentGrid = document.getElementById('studentGrid');
 const infoCard = document.getElementById('infoCard');
 
 // ===== Uitloggen =====
-document.getElementById('logoutBtn').addEventListener('click', ()=>{
+document.getElementById('logoutBtn')?.addEventListener('click', ()=>{
     localStorage.clear();
     window.location.href = '/logout';
 });
