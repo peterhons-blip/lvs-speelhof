@@ -4,13 +4,17 @@
 
 @section('content')
 <main class="screen lvs-screen" id="screenStudents" role="main">
+    @include('partials.breadcrumbs', ['items' => [
+        ['label' => 'Dashboard', 'url' => route('home')],
+        ['label' => 'LVS'],
+    ]])
+
     <div class="lvs-page-heading">
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM</p>
             <h1>Leerlingen</h1>
             <p>Zoek een leerling of klas om gegevens te bekijken en meldingen op te volgen.</p>
         </div>
-        <a class="lvs-link-button lvs-link-button-subtle" href="{{ route('home') }}">← Dashboard</a>
     </div>
 
     <section class="card lvs-panel" aria-label="Leerling zoeken">
