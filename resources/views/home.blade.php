@@ -28,29 +28,58 @@
         @endif
 
         {{-- NORMALE WELKOMSTCARD --}}
-        <div class="card">
-            <h2>Welkom!!</h2>
 
-            <p style="
-                margin: 0 0 18px;
-                font-size: 0.97rem;
-                color: #555;
-                line-height: 1.55;
-            ">
-                Het Leerlingvolgsysteem (LVS) van GO! Atheneum Sint-Truiden, campus Speelhof,
-                ondersteunt leerkrachten bij het opvolgen en begeleiden van leerlingen.
-                Je kan hiermee eenvoudig <strong>leerlingen opzoeken</strong>,
-                <strong>gedragsmeldingen registreren en opvolgen</strong>
-                en <strong>belangrijke leerlinginformatie raadplegen</strong>.
-                <br><br>
-                Daarnaast kunnen leerkrachten via het LVS ook <strong>EMA’s (extra-murosactiviteiten)</strong>
-                digitaal aanvragen en opvolgen. De goedkeuringsflow gebeurt centraal,
-                waardoor aanvragen sneller en overzichtelijker verwerkt kunnen worden.
-                <br><br>
-                Het LVS automatiseert bovendien enkele administratieve en privacy-gebonden processen,
-                zoals het <strong>automatisch informeren van leerlingen</strong> en het
-                <strong>uitschakelen van ouderaccounts wanneer een leerling 18 wordt</strong>,
-                conform de geldende regelgeving.
+        <div class="card">
+            <h2>Welkom bij het Atheneum Portaal!</h2>
+
+            <p>
+                Welkom op het centrale digitale platform van
+                <strong>GO! Atheneum Sint-Truiden – campus Speelhof</strong>.
+            </p>
+
+            <p>
+                Het Atheneum Portaal bundelt verschillende toepassingen
+                voor leerkrachten, secretariaat, leerlingenbegeleiding
+                en directie op één overzichtelijke plaats.
+                Het ondersteunt de dagelijkse schoolwerking en maakt
+                administratieve processen eenvoudiger en efficiënter.
+            </p>
+
+            <h3>Beschikbare toepassingen</h3>
+            <p>
+                Via het <strong>Leerlingvolgsysteem (LVS)</strong>
+                kunnen leerkrachten leerlingen opzoeken,
+                gedragsmeldingen registreren en opvolgen en
+                belangrijke leerlinginformatie raadplegen.
+                Daarnaast automatiseert het platform onder andere
+                verjaardagsberichten en de opvolging van leerlingen
+                die 18 jaar worden.
+            </p>
+
+            <h3>Binnenkort beschikbaar</h3>
+            <p>
+                Het Atheneum Portaal wordt verder uitgebreid met:
+            </p>
+
+            <ul>
+                <li>
+                    <strong>EMA's:</strong> digitaal aanvragen,
+                    goedkeuren en opvolgen van extra-murosactiviteiten.
+                </li>
+                <li>
+                    <strong>Onboarding personeel:</strong>
+                    nieuwe personeelsleden digitaal registreren
+                    en hun opstart administratief begeleiden.
+                </li>
+                <li>
+                    <strong>Nascholingen:</strong> aanvragen,
+                    goedkeuren en beheren van nascholingen.
+                </li>
+            </ul>
+
+            <p>
+                Zo groeit het Atheneum Portaal uit tot één centrale
+                digitale werkomgeving voor onze school.
             </p>
         </div>
     </main>
