@@ -1,121 +1,99 @@
-const MIN_CHARS = 2;
-const DEBOUNCE_MS = 250;
+/* Leerlingen zoeken — alleen actief op de leerlingenlijst. */
+(() => {
+    'use strict';
 
-let STUDENTS = LEERLINGEN_DATA.slice();
-const qInput = document.getElementById('q');
-const studentGrid = document.getElementById('studentGrid');
-const infoCard = document.getElementById('infoCard');
+    const qInput = document.getElementById('q');
+    const studentGrid = document.getElementById('studentGrid');
+    const infoCard = document.getElementById('infoCard');
+    const resultsHeading = document.getElementById('resultsHeading');
+    const resultsCount = document.getElementById('resultsCount');
+    const students = Array.isArray(window.LVS_STUDENTS) ? window.LVS_STUDENTS : [];
 
-// ===== Uitloggen =====
-document.getElementById('logoutBtn')?.addEventListener('click', ()=>{
-    localStorage.clear();
-    window.location.href = '/logout';
-});
+    if (!qInput || !studentGrid || !infoCard) return;
 
-// ===== Helpers =====
-const debounce = (fn,ms)=>{ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args),ms); }; };
-function normalize(s){ return (s||'').toString().trim(); }
-function fullName(s){
-    const achternaam = s.achternaam ?? s.naam ?? '';
-    return `${(s.voornaam||'').trim()} ${achternaam.trim()}`.trim();
-}
-// "Klas-achtige" input detecteren: cijfer(s) + minstens 1 letter (bv. "3 e", "3 EL", "2 STEM")
-function isClassQuery(q){
-    return /^\s*\d{1,2}\s*[A-Za-zÀ-ÿ]/i.test(q);
-}
+    const normalize = value => String(value ?? '').trim();
+    const normalizeClass = value => normalize(value).toLocaleLowerCase('nl-BE').replace(/\s+/g, ' ');
+    const fullName = student => [student.voornaam, student.achternaam ?? student.naam].map(normalize).filter(Boolean).join(' ');
+    const isClassQuery = query => /^\s*\d{1,2}\s*[a-zà-ÿ]/i.test(query);
 
-// Alles netjes lowercased en spaties samenvouwen voor vergelijkingen
-function normalizeClass(s){
-    return (s||'').toString().toLowerCase().replace(/\s+/g,' ').trim();
-}
-
-// ===== InfoCard helpers =====
-function showInfo(html) {
-    if (!infoCard) return;
-    infoCard.innerHTML = html;
-    infoCard.removeAttribute('data-hidden');
-}
-function hideInfo() {
-    if (!infoCard) return;
-    infoCard.setAttribute('data-hidden', 'true');
-    infoCard.innerHTML = '';
-}
-
-// ===== Filter + Render =====
-function filterStudents(q){
-    const raw = normalize(q);
-    const term = raw.toLowerCase();
-
-    // Klas-achtige query: prefix match, niet exact
-    if (isClassQuery(raw)) {
-        const classQ = normalizeClass(raw);        // bv. "3 e"
-        return STUDENTS.filter(s => normalizeClass(s.klas).startsWith(classQ));
+    function matches(query) {
+        const term = normalize(query).toLocaleLowerCase('nl-BE');
+        if (!term) return [];
+        if (isClassQuery(query)) {
+            const classQuery = normalizeClass(query);
+            return students.filter(student => normalizeClass(student.klas).startsWith(classQuery));
+        }
+        if (term.length < 2) return [];
+        return students.filter(student =>
+            fullName(student).toLocaleLowerCase('nl-BE').includes(term) ||
+            normalizeClass(student.klas).includes(term)
+        );
     }
 
-    // Naam/algemene query: bevat-match op naam of klas
-    if (term.length < MIN_CHARS) return [];
-    return STUDENTS.filter(s => {
-        const nm = fullName(s).toLowerCase();
-        const kl = (s.klas||'').toLowerCase();
-        return nm.includes(term) || kl.includes(term);
+    function clearResults() {
+        studentGrid.replaceChildren();
+        infoCard.dataset.hidden = 'true';
+        if (resultsHeading) resultsHeading.dataset.hidden = 'true';
+    }
+
+    function render() {
+        const query = normalize(qInput.value);
+        clearResults();
+        if (!query || (!isClassQuery(query) && query.length < 2)) return;
+
+        const found = matches(query);
+        if (!found.length) {
+            infoCard.textContent = 'Geen leerlingen gevonden voor "' + query + '".';
+            infoCard.dataset.hidden = 'false';
+            return;
+        }
+
+        if (resultsHeading) resultsHeading.dataset.hidden = 'false';
+        if (resultsCount) resultsCount.textContent = found.length + (found.length === 1 ? ' leerling' : ' leerlingen');
+
+        const fragment = document.createDocumentFragment();
+        found.forEach(student => {
+            const link = document.createElement('a');
+            link.href = '/leerlingen/' + encodeURIComponent(student.id);
+            link.className = 'lvs-student-card';
+
+            const avatar = document.createElement('span');
+            avatar.className = 'lvs-student-avatar';
+            avatar.textContent = normalize(student.voornaam).charAt(0).toLocaleUpperCase('nl-BE') || 'L';
+
+            const textWrap = document.createElement('span');
+            textWrap.className = 'lvs-student-meta';
+
+            const name = document.createElement('strong');
+            name.textContent = fullName(student);
+            const sub = document.createElement('small');
+            sub.textContent = 'Bekijk leerlinggegevens en meldingen';
+            textWrap.append(name, sub);
+
+            const right = document.createElement('span');
+            right.className = 'lvs-student-trailing';
+
+            const classBadge = document.createElement('span');
+            classBadge.className = 'lvs-class-badge';
+            classBadge.textContent = normalize(student.klas) || 'Geen klas';
+
+            const arrow = document.createElement('span');
+            arrow.className = 'lvs-student-arrow';
+            arrow.textContent = '→';
+            arrow.setAttribute('aria-hidden', 'true');
+            right.append(classBadge, arrow);
+
+            link.append(avatar, textWrap, right);
+            fragment.appendChild(link);
+        });
+
+        studentGrid.appendChild(fragment);
+    }
+
+    let timer;
+    qInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(render, 150);
     });
-}
-
-function render(list){
-    studentGrid.innerHTML = '';
-
-    const q = normalize(qInput.value);
-    const isEmpty = q.length === 0;
-    const valid = isClassQuery(q) || q.length >= MIN_CHARS;
-
-    // 1) Leeg zoekveld -> infoCard verbergen, grid leeg
-    if (isEmpty) {
-        hideInfo();
-        return;
-    }
-
-    // 2) Niet leeg maar ongeldige/te korte zoekterm -> infoCard verbergen, grid leeg
-    if (!valid) {
-        hideInfo();
-        return;
-    }
-
-    // 3) Geldige zoekterm:
-    if (!list.length){
-        // Alleen hier tonen we de infoCard (geen tip meer)
-        const safeTerm = q.replace(/[<>&]/g, s => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[s]));
-        showInfo(`Geen resultaten voor <b>${safeTerm}</b>.`);
-        return;
-    }
-
-    // 4) Matches -> infoCard verbergen en knoppen renderen
-    hideInfo();
-    list.forEach((s,i)=>{
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `btn ${i%2===0 ? 'btn-orange':'btn-orange'}`;
-        btn.innerHTML = `<span>${fullName(s)}</span><span class="tag">${s.klas}</span>`;
-        btn.addEventListener('click', ()=> chooseStudent(s));
-        studentGrid.appendChild(btn);
-    });
-}
-
-// ===== Actie bij keuze =====
-function chooseStudent(s){
-    try{ localStorage.setItem('speelhof.selectedStudent', JSON.stringify(s)); }catch(e){}
-    window.location.href = `/leerlingen/${s.id}`;
-}
-
-// ===== INIT =====
-function init(){
-    hideInfo(); // standaard verborgen bij load
-
-    const onQChange = debounce(()=>{
-        const q = normalize(qInput.value);
-        render(filterStudents(q));
-    }, DEBOUNCE_MS);
-
-    qInput.addEventListener('input', onQChange);
-    qInput.addEventListener('keydown', e=>{ if(e.key==='Enter') onQChange(); });
-}
-init();
+    qInput.addEventListener('search', render);
+})();

@@ -6,6 +6,7 @@
     <title>@yield('title', 'Atheneum Portaal') · GO! Atheneum Sint-Truiden</title>
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
     <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
 @php($ss_user = session('ss_user'))
@@ -45,6 +46,15 @@
                 <div class="portal-sidebar-foot">GO! Atheneum Sint-Truiden<br><span>Campus Speelhof</span></div>
             </aside>
             <div class="portal-content">
+                <div class="portal-page-breadcrumb">
+                    @hasSection('breadcrumbs')
+                        @yield('breadcrumbs')
+                    @else
+                        @include('partials.breadcrumbs', ['items' => [
+                            ['label' => 'Dashboard'],
+                        ]])
+                    @endif
+                </div>
                 @yield('content')
             </div>
         </div>
@@ -55,9 +65,7 @@
     </div>
 @endif
 
-{{-- Het leerlingzoekscript hoort alleen bij de leerlingenlijst. --}}
-@if(request()->routeIs('leerlingen.index'))
-<script src="{{ asset('js/lvs.js') }}"></script>
-@endif
+{{-- Elke pagina laadt alleen de eigen scripts, na de HTML-inhoud. --}}
+@stack('scripts')
 </body>
 </html>

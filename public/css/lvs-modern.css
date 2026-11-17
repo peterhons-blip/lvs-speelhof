@@ -1,0 +1,185 @@
+/* LVS-specific interface aligned with Atheneum Portaal. */
+.lvs-screen{max-width:1160px;margin:0 auto}
+.lvs-page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:25px}
+.lvs-page-heading h1{font-size:clamp(1.8rem,3vw,2.45rem);color:var(--portal-navy-deep);margin:6px 0 9px;letter-spacing:-.03em}
+.lvs-page-heading p:not(.portal-eyebrow){color:#657A90;line-height:1.6;margin:0}
+.lvs-link-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;max-width:100%;border-radius:10px;padding:11px 16px;text-decoration:none;font-size:.91rem;font-weight:720;line-height:1.35;white-space:normal;cursor:pointer;border:1px solid transparent;transition:background .15s,box-shadow .15s}
+.lvs-link-button:focus-visible{outline:3px solid var(--portal-magenta);outline-offset:3px}
+.lvs-link-button-subtle{background:white;border-color:#D8E4EC;color:var(--portal-navy)}
+.lvs-link-button-subtle:hover{background:#EAF6F7}
+.lvs-link-button-primary{background:var(--portal-magenta);color:#fff;border-color:var(--portal-magenta)}
+.lvs-link-button-primary:hover{background:#AB0041}
+.lvs-panel{border:1px solid var(--portal-border);border-radius:17px;padding:clamp(20px,2.8vw,30px);box-shadow:0 4px 15px rgba(20,44,68,.035)}
+.lvs-panel h2{font-size:1.22rem;margin:0 0 8px;color:var(--portal-navy)}
+.lvs-panel p{line-height:1.6}
+.lvs-panel-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:18px}
+.lvs-panel-heading h2{margin:0 0 6px}
+.lvs-panel-heading p:not(.portal-eyebrow){color:#708295;font-size:.9rem;margin:0}
+.lvs-panel-heading-wrap{flex-wrap:wrap}
+.lvs-panel-symbol{display:grid;place-items:center;width:46px;height:46px;flex:none;font-size:2rem;color:#168C98;background:var(--portal-aqua-soft);border-radius:12px}
+.lvs-field-label{display:block;color:var(--portal-navy);font-weight:700;font-size:.91rem;margin:5px 0 8px}
+.lvs-search-controls{margin:0!important}
+.lvs-screen .lvs-search{width:100%;min-width:0;max-width:100%;border:1px solid #CBD9E4;border-radius:10px;background:#F9FCFD;padding:14px 17px;font-size:1rem}
+.lvs-screen .lvs-search:focus{outline:2px solid #7CCCD0;outline-offset:2px;border-color:#58B5BC}
+.lvs-field-help{color:#73869A!important;font-size:.86rem;margin:11px 0 0!important}
+.lvs-feedback{padding:16px 20px;border:1px solid #F3D3A0;border-radius:12px;background:#FFF8EC;color:#825320;margin-top:18px;font-size:.93rem}
+.lvs-results-heading{display:flex;align-items:baseline;gap:13px;margin-top:28px;margin-bottom:15px}
+.lvs-results-heading h2{font-size:1.1rem;margin:0;color:var(--portal-navy)}
+.lvs-results-heading span{font-size:.82rem;color:#718398}
+.lvs-student-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-bottom:32px}
+.lvs-student-card{display:flex;align-items:center;gap:14px;background:white;color:var(--portal-navy);border:1px solid #E0E8EF;border-radius:13px;padding:16px;text-decoration:none;min-width:0;box-shadow:0 3px 10px rgba(20,44,68,.035)}
+.lvs-student-card:hover{border-color:#8BCDD2;background:#FCFFFF;box-shadow:0 6px 19px rgba(20,44,68,.09)}
+.lvs-student-card:focus-visible{outline:3px solid var(--portal-magenta);outline-offset:3px}
+.lvs-student-avatar{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:#E3F4F4;color:#167D88;font-size:1.18rem;font-weight:800;flex:none}
+.lvs-student-meta{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.lvs-student-meta strong{font-size:.96rem;overflow-wrap:anywhere}
+.lvs-student-meta small{font-size:.76rem;color:#8593A2;line-height:1.4}
+.lvs-student-trailing{display:flex;align-items:center;gap:12px;flex:none}
+.lvs-class-badge,.lvs-count-pill{display:inline-block;background:#E6F4F5;color:#157783;padding:6px 9px;border-radius:8px;font-size:.79rem;font-weight:800}
+.lvs-student-arrow{color:#8195A5;font-size:1.2rem}
+.lvs-birthday-panel{margin-top:28px}
+.lvs-empty{padding:18px 0;color:#728397;font-size:.94rem}
+.lvs-section-gap{margin-top:20px}
+.lvs-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 25px;margin:15px 0 0}
+.lvs-details-grid>div{padding:14px 16px;border:1px solid #E8EEF2;background:#F9FBFC;border-radius:10px;min-width:0}
+.lvs-details-grid dt{font-size:.75rem;font-weight:730;color:#71869B;margin-bottom:6px}
+.lvs-details-grid dd{margin:0;font-size:.95rem;font-weight:600;color:var(--portal-navy);overflow-wrap:anywhere}
+.lvs-screen .melding-row{border:1px solid #E7EBF1;border-radius:12px;padding:17px 18px;background:#FCFDFE}
+.lvs-screen .melding-datum{color:#65798A;font-size:.85rem;line-height:1.65}
+.lvs-screen .melding-datum strong{color:var(--portal-navy)}
+.lvs-screen .melding-meta{align-items:flex-start;flex-wrap:wrap}
+.lvs-screen .melding-comment{margin:10px 0 0;color:var(--portal-ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.lvs-screen .badge-cat{background:#FDE9F0;color:#B20B4B}
+.lvs-screen .badge-soort{background:#E5F5F6;color:#157D89}
+.lvs-screen .badge-klas{background:#E6F4F5;color:#177E88}
+.lvs-screen .bday-group{padding:0;margin-bottom:14px;border-color:#E8EDF2;border-radius:11px;overflow:hidden}
+.lvs-screen .bday-group-header{padding:14px 17px;margin:0;background:#F8FBFC}
+.lvs-screen .bday-date{color:var(--portal-navy);font-size:.95rem}
+.lvs-screen .bday-rows{border-top:1px solid #E6EDF1}
+.lvs-screen .bday-row,.lvs-screen .bday-today-row{flex-wrap:wrap;gap:10px;padding:13px 15px}
+.lvs-screen .bday-name,.lvs-screen .bday-today-name{flex-wrap:wrap}
+.lvs-screen .bday-age,.lvs-screen .bday-today-age{color:#718398}
+.lvs-screen .bday-row-link:hover,.lvs-screen .bday-today-row-link:hover{background:#F0F9F9}
+.lvs-screen .melding-form{gap:9px;margin-top:20px}
+.lvs-screen .melding-form label{margin-top:9px}
+.lvs-screen .melding-form select,.lvs-screen .melding-form textarea,.lvs-screen .melding-form input[type="date"]{width:100%;max-width:100%;border:1px solid #CBD9E4;border-radius:10px;padding:12px 14px;background:#F9FCFD;color:var(--portal-ink);font-family:inherit;font-size:.96rem}
+.lvs-screen .melding-form :is(select,textarea,input[type="date"]):focus{outline:2px solid #7CCCD0;outline-offset:2px}
+.lvs-screen .melding-form .card-footer{margin-top:14px}
+.lvs-form-alert{background:#FFF0F3;color:#AA1D4B;border:1px solid #F1B8CA;border-radius:10px;padding:13px 15px;margin-top:17px}
+.lvs-success{background:#E5F6F0;color:#176D4A;border:1px solid #B9DDCE;border-radius:11px;padding:15px 18px;margin-bottom:20px;font-weight:650}
+@media(max-width:850px){.lvs-student-grid{grid-template-columns:1fr}.lvs-details-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.lvs-panel-heading{align-items:flex-start;flex-wrap:wrap}.lvs-student-trailing{gap:6px}.lvs-student-card{gap:10px;padding:13px}.lvs-student-meta small{display:none}.lvs-student-avatar{width:35px;height:35px}.lvs-page-heading{gap:12px}}
+
+
+/* Herbruikbare breadcrumbs boven de inhoud, zonder terugknoppen. */
+.portal-breadcrumbs{margin:0 0 21px;color:#708399;font-size:.87rem}
+.portal-breadcrumbs ol{list-style:none;display:flex;align-items:center;flex-wrap:wrap;gap:0;margin:0;padding:0}
+.portal-breadcrumbs li{display:flex;align-items:center;min-height:26px}
+.portal-breadcrumbs li+li::before{content:"/";color:#A8B7C7;padding:0 11px;font-weight:400}
+.portal-breadcrumbs a{color:#516D89;text-decoration:none;font-weight:600;border-radius:4px}
+.portal-breadcrumbs a:hover{color:var(--portal-magenta);text-decoration:underline;text-underline-offset:3px}
+.portal-breadcrumbs a:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+.portal-breadcrumbs [aria-current="page"]{color:var(--portal-navy-deep);font-weight:750}
+@media(max-width:520px){.portal-breadcrumbs{font-size:.81rem;margin-bottom:16px}.portal-breadcrumbs li+li::before{padding:0 7px}}
+
+
+/* Verfijnde LVS-layout: minder versiering, een rustig ritme en consistente kaarten. */
+.lvs-screen{max-width:1120px}
+.lvs-screen .portal-breadcrumbs{margin-bottom:25px}
+.lvs-page-heading{margin-bottom:26px}
+.lvs-page-heading h1{font-size:clamp(1.85rem,2.7vw,2.35rem);font-weight:780;line-height:1.14;margin:8px 0 10px}
+.lvs-page-heading .portal-eyebrow{letter-spacing:.105em;font-size:.68rem}
+.lvs-page-heading p:not(.portal-eyebrow){font-size:.96rem}
+.lvs-panel{border:1px solid #E1E8EF;border-radius:14px;padding:clamp(22px,2.6vw,32px);box-shadow:0 3px 16px rgba(14,38,67,.035)}
+.lvs-panel-heading{margin-bottom:21px}
+.lvs-panel h2{letter-spacing:-.016em}
+.lvs-search-panel{padding:clamp(25px,3vw,36px);border-top:3px solid var(--portal-navy)}
+.lvs-search-panel-heading{margin:0 0 26px}
+.lvs-search-panel-heading h2{font-size:1.33rem;line-height:1.25;margin:0 0 7px}
+.lvs-search-panel-heading p{font-size:.91rem;color:#65788D;margin:0}
+.lvs-search-panel .lvs-field-label{font-size:.83rem;margin:0 0 9px;color:#405875}
+.lvs-search-panel .lvs-search-input-wrap{width:100%;max-width:100%}
+.lvs-screen .lvs-search-panel .lvs-search{
+  width:100%;display:block;padding:16px 18px;font-size:1.04rem;
+  border:1px solid #C9D6E1;border-radius:10px;box-shadow:0 1px 2px rgba(13,35,60,.025);
+  background:#fff;color:var(--portal-navy-deep);
+}
+.lvs-screen .lvs-search-panel .lvs-search::placeholder{color:#94A4B4}
+.lvs-screen .lvs-search-panel .lvs-search:focus{outline:3px solid rgba(103,197,204,.22);outline-offset:0;border-color:#48AAB3}
+.lvs-search-panel .lvs-field-help{font-size:.81rem;margin:12px 0 0!important}
+.lvs-results-heading{margin-top:31px}
+.lvs-student-card{border-radius:11px;padding:16px 17px;box-shadow:none}
+.lvs-student-avatar{border-radius:10px}
+.lvs-student-card:hover{box-shadow:0 4px 16px rgba(14,38,67,.07)}
+.lvs-birthday-panel{margin-top:34px}
+.lvs-screen .lvs-panel .portal-eyebrow{margin-bottom:7px}
+.lvs-screen .lvs-details-grid>div{border:0;border-bottom:1px solid #E7EEF3;background:transparent;border-radius:0;padding:12px 3px}
+.lvs-screen .lvs-details-grid{gap:7px 30px}
+.lvs-screen .melding-row{background:#fff}
+.lvs-context-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#F6FAFB;padding:22px 26px}
+.lvs-context-panel h2{margin:2px 0 5px;font-size:1.18rem}
+.lvs-context-panel p{margin:0;font-size:.85rem;color:#73859A}
+.lvs-context-label{font-size:.67rem!important;letter-spacing:.1em;font-weight:800;color:#A00044!important;margin:0 0 6px!important}
+.lvs-context-link{color:#0A7480;text-decoration:none;font-weight:720;font-size:.83rem}
+.lvs-context-link:hover{text-decoration:underline;text-underline-offset:3px}
+.lvs-context-link:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+@media(max-width:600px){
+ .lvs-screen .portal-breadcrumbs{margin-bottom:18px}
+ .lvs-page-heading{margin-bottom:20px}
+ .lvs-search-panel{padding:23px 19px}
+ .lvs-search-panel-heading{margin-bottom:19px}
+ .lvs-context-panel{padding:19px}
+}
+
+
+/* LVS overzicht als dashboard: benut de beschikbare breedte, geen gekleurde bovenrand. */
+.portal-content .lvs-screen{max-width:none;width:100%;margin:0}
+.portal-content .screen.lvs-screen>.card{max-width:none;width:100%}
+.lvs-overview-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.65fr) minmax(360px,1fr);
+  gap:20px;
+  align-items:stretch;
+  margin-bottom:28px;
+}
+.lvs-overview-grid>.lvs-panel{min-width:0;min-height:0;margin:0;padding:28px 30px}
+.lvs-overview-grid .lvs-search-panel{border-top:1px solid #E1E8EF}
+.lvs-overview-grid .lvs-search-panel-heading{margin-bottom:23px}
+.lvs-overview-grid .lvs-search-panel-heading h2{font-size:1.17rem;margin-bottom:7px}
+.lvs-overview-grid .lvs-search-panel-heading p{font-size:.87rem}
+.lvs-overview-grid .lvs-search{padding:14px 16px}
+.lvs-overview-grid .lvs-birthday-panel{display:flex;flex-direction:column}
+.lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:start;margin:0 0 13px}
+.lvs-overview-grid .lvs-birthday-panel .portal-eyebrow{font-size:.65rem;margin:0 0 5px}
+.lvs-overview-grid .lvs-birthday-panel h2{font-size:1.17rem}
+.lvs-inline-link{font-size:.81rem;color:#0A7783;text-decoration:none;font-weight:750;line-height:1.5;white-space:normal;text-align:right}
+.lvs-inline-link:hover{text-decoration:underline;text-underline-offset:3px}
+.lvs-inline-link:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+.lvs-overview-grid .bday-today-row{padding:10px 5px}
+.lvs-overview-grid .bday-today-row-link:after{left:5px;right:5px}
+.lvs-overview-grid .bday-today-name{font-size:.88rem;gap:7px}
+.lvs-overview-grid .bday-today-age{font-size:.8rem;white-space:nowrap}
+.lvs-overview-grid .badge-klas{font-size:.72rem;padding:4px 8px}
+.lvs-overview-grid .lvs-empty{padding:6px 0}
+.lvs-page-heading{margin-bottom:22px}
+.lvs-results-heading{margin-top:5px}
+.lvs-student-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:24px}
+.lvs-screen .lvs-section-gap{margin-top:20px}
+.portal-page-breadcrumb .portal-breadcrumbs{margin:0 0 22px}
+.portal-dashboard .portal-page-breadcrumb{margin-bottom:16px}
+@media(max-width:1350px){
+  .lvs-overview-grid{grid-template-columns:minmax(0,1.35fr) minmax(310px,1fr)}
+  .lvs-student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+  .lvs-overview-grid{grid-template-columns:minmax(0,1fr)}
+  .lvs-overview-grid>.lvs-panel{padding:24px}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:center}
+}
+@media(max-width:620px){
+  .lvs-overview-grid{gap:14px;margin-bottom:20px}
+  .lvs-overview-grid>.lvs-panel{padding:19px}
+  .lvs-student-grid{grid-template-columns:minmax(0,1fr)}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:flex-start;gap:9px}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading>a{margin-top:3px}
+}
