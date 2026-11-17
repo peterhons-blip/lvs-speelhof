@@ -60,7 +60,7 @@
     @if($ss_user)
         <nav class="sub-header" aria-label="LVS-navigatie">
             <a href="{{ route('leerlingen.index') }}" class="btn btn-green btn--sm">
-                Leerlingen
+                LVS
             </a>
             <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
                 EMA's
