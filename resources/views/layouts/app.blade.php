@@ -46,6 +46,15 @@
                 <div class="portal-sidebar-foot">GO! Atheneum Sint-Truiden<br><span>Campus Speelhof</span></div>
             </aside>
             <div class="portal-content">
+                <div class="portal-page-breadcrumb">
+                    @hasSection('breadcrumbs')
+                        @yield('breadcrumbs')
+                    @else
+                        @include('partials.breadcrumbs', ['items' => [
+                            ['label' => 'Dashboard'],
+                        ]])
+                    @endif
+                </div>
                 @yield('content')
             </div>
         </div>
