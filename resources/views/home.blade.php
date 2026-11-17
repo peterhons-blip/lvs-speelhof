@@ -13,12 +13,15 @@
     @if(!session('ss_user'))
         <main class="portal-login" aria-labelledby="login-title">
             <section class="portal-login-panel">
-                <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
-                <div class="portal-login-identity">
-                    <img class="portal-login-identity-icon" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
-                    <div>
-                        <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
-                        <h1 id="login-title" class="portal-login-title">Atheneum Portaal</h1>
+                <div class="portal-login-brand-row">
+                    <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
+                    <span class="portal-login-brand-divider" aria-hidden="true"></span>
+                    <div class="portal-login-identity">
+                        <img class="portal-login-identity-icon" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
+                        <div>
+                            <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
+                            <h1 id="login-title" class="portal-login-title">Atheneum Portaal</h1>
+                        </div>
                     </div>
                 </div>
                 <p class="portal-login-lead">Jouw centrale omgeving voor leerlingenbegeleiding en schooladministratie.</p>
