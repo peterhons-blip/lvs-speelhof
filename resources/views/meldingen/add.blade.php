@@ -2,16 +2,18 @@
 
 @section('title', 'Nieuwe melding')
 
-@section('content')
-    <main class="screen lvs-screen">
-        @include('partials.breadcrumbs', ['items' => [
+@section('breadcrumbs')
+@include('partials.breadcrumbs', ['items' => [
             ['label' => 'Dashboard', 'url' => route('home')],
             ['label' => 'LVS', 'url' => route('leerlingen.index')],
             ['label' => $leerling->voornaam . ' ' . $leerling->achternaam, 'url' => route('leerlingen.show', $leerling->id)],
             ['label' => 'Nieuwe melding'],
         ]])
+@endsection
 
-        <div class="lvs-page-heading">
+@section('content')
+    <main class="screen lvs-screen">
+            <div class="lvs-page-heading">
             <div>
                 <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / MELDINGEN</p>
                 <h1>Nieuwe melding</h1>
