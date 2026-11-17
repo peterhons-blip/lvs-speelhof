@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Atheneum Portaal') · GO! Atheneum Sint-Truiden</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=2">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
+    <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
     <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=6">
