@@ -81,3 +81,52 @@
 .portal-breadcrumbs a:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
 .portal-breadcrumbs [aria-current="page"]{color:var(--portal-navy-deep);font-weight:750}
 @media(max-width:520px){.portal-breadcrumbs{font-size:.81rem;margin-bottom:16px}.portal-breadcrumbs li+li::before{padding:0 7px}}
+
+
+/* Verfijnde LVS-layout: minder versiering, een rustig ritme en consistente kaarten. */
+.lvs-screen{max-width:1120px}
+.lvs-screen .portal-breadcrumbs{margin-bottom:25px}
+.lvs-page-heading{margin-bottom:26px}
+.lvs-page-heading h1{font-size:clamp(1.85rem,2.7vw,2.35rem);font-weight:780;line-height:1.14;margin:8px 0 10px}
+.lvs-page-heading .portal-eyebrow{letter-spacing:.105em;font-size:.68rem}
+.lvs-page-heading p:not(.portal-eyebrow){font-size:.96rem}
+.lvs-panel{border:1px solid #E1E8EF;border-radius:14px;padding:clamp(22px,2.6vw,32px);box-shadow:0 3px 16px rgba(14,38,67,.035)}
+.lvs-panel-heading{margin-bottom:21px}
+.lvs-panel h2{letter-spacing:-.016em}
+.lvs-search-panel{padding:clamp(25px,3vw,36px);border-top:3px solid var(--portal-navy)}
+.lvs-search-panel-heading{margin:0 0 26px}
+.lvs-search-panel-heading h2{font-size:1.33rem;line-height:1.25;margin:0 0 7px}
+.lvs-search-panel-heading p{font-size:.91rem;color:#65788D;margin:0}
+.lvs-search-panel .lvs-field-label{font-size:.83rem;margin:0 0 9px;color:#405875}
+.lvs-search-panel .lvs-search-input-wrap{width:100%;max-width:100%}
+.lvs-screen .lvs-search-panel .lvs-search{
+  width:100%;display:block;padding:16px 18px;font-size:1.04rem;
+  border:1px solid #C9D6E1;border-radius:10px;box-shadow:0 1px 2px rgba(13,35,60,.025);
+  background:#fff;color:var(--portal-navy-deep);
+}
+.lvs-screen .lvs-search-panel .lvs-search::placeholder{color:#94A4B4}
+.lvs-screen .lvs-search-panel .lvs-search:focus{outline:3px solid rgba(103,197,204,.22);outline-offset:0;border-color:#48AAB3}
+.lvs-search-panel .lvs-field-help{font-size:.81rem;margin:12px 0 0!important}
+.lvs-results-heading{margin-top:31px}
+.lvs-student-card{border-radius:11px;padding:16px 17px;box-shadow:none}
+.lvs-student-avatar{border-radius:10px}
+.lvs-student-card:hover{box-shadow:0 4px 16px rgba(14,38,67,.07)}
+.lvs-birthday-panel{margin-top:34px}
+.lvs-screen .lvs-panel .portal-eyebrow{margin-bottom:7px}
+.lvs-screen .lvs-details-grid>div{border:0;border-bottom:1px solid #E7EEF3;background:transparent;border-radius:0;padding:12px 3px}
+.lvs-screen .lvs-details-grid{gap:7px 30px}
+.lvs-screen .melding-row{background:#fff}
+.lvs-context-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#F6FAFB;padding:22px 26px}
+.lvs-context-panel h2{margin:2px 0 5px;font-size:1.18rem}
+.lvs-context-panel p{margin:0;font-size:.85rem;color:#73859A}
+.lvs-context-label{font-size:.67rem!important;letter-spacing:.1em;font-weight:800;color:#A00044!important;margin:0 0 6px!important}
+.lvs-context-link{color:#0A7480;text-decoration:none;font-weight:720;font-size:.83rem}
+.lvs-context-link:hover{text-decoration:underline;text-underline-offset:3px}
+.lvs-context-link:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+@media(max-width:600px){
+ .lvs-screen .portal-breadcrumbs{margin-bottom:18px}
+ .lvs-page-heading{margin-bottom:20px}
+ .lvs-search-panel{padding:23px 19px}
+ .lvs-search-panel-heading{margin-bottom:19px}
+ .lvs-context-panel{padding:19px}
+}
