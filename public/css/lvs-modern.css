@@ -69,3 +69,15 @@
 .lvs-success{background:#E5F6F0;color:#176D4A;border:1px solid #B9DDCE;border-radius:11px;padding:15px 18px;margin-bottom:20px;font-weight:650}
 @media(max-width:850px){.lvs-student-grid{grid-template-columns:1fr}.lvs-details-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.lvs-panel-heading{align-items:flex-start;flex-wrap:wrap}.lvs-student-trailing{gap:6px}.lvs-student-card{gap:10px;padding:13px}.lvs-student-meta small{display:none}.lvs-student-avatar{width:35px;height:35px}.lvs-page-heading{gap:12px}}
+
+
+/* Herbruikbare breadcrumbs boven de inhoud, zonder terugknoppen. */
+.portal-breadcrumbs{margin:0 0 21px;color:#708399;font-size:.87rem}
+.portal-breadcrumbs ol{list-style:none;display:flex;align-items:center;flex-wrap:wrap;gap:0;margin:0;padding:0}
+.portal-breadcrumbs li{display:flex;align-items:center;min-height:26px}
+.portal-breadcrumbs li+li::before{content:"/";color:#A8B7C7;padding:0 11px;font-weight:400}
+.portal-breadcrumbs a{color:#516D89;text-decoration:none;font-weight:600;border-radius:4px}
+.portal-breadcrumbs a:hover{color:var(--portal-magenta);text-decoration:underline;text-underline-offset:3px}
+.portal-breadcrumbs a:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+.portal-breadcrumbs [aria-current="page"]{color:var(--portal-navy-deep);font-weight:750}
+@media(max-width:520px){.portal-breadcrumbs{font-size:.81rem;margin-bottom:16px}.portal-breadcrumbs li+li::before{padding:0 7px}}
