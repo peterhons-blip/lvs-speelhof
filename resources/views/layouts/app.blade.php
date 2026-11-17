@@ -44,7 +44,6 @@
                         Uitloggen
                     </button>
                 </form>
-
             </div>
         @else
             <!-- Rechts: Smartschool login-knop (afbeelding) -->
@@ -57,28 +56,22 @@
             </div>
         @endif
     </header>
-    {{-- Tweede witte balk met navigatie (alleen bij ingelogde gebruiker) --}}
-    @php $ss_user = session('ss_user'); @endphp
-
+    {{-- Navigatie: toekomstige modules zijn zichtbaar maar niet aanklikbaar. --}}
     @if($ss_user)
-        <div class="sub-header"
-            style="
-                background:#ffffff;
-                border-bottom:1px solid #E5E7EB;
-                padding:10px 18px;
-                display:flex;
-                gap:10px;
-            ">
-            
+        <nav class="sub-header" aria-label="LVS-navigatie">
             <a href="{{ route('leerlingen.index') }}" class="btn btn-green btn--sm">
                 Leerlingen
             </a>
-
-            <a href="{{ url('/ema') }}" class="btn btn-green btn--sm">
+            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
                 EMA's
-            </a>
-
-        </div>
+            </button>
+            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
+                Onboarding personeel
+            </button>
+            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
+                Nascholingen
+            </button>
+        </nav>
     @endif
 
     @yield('content')
