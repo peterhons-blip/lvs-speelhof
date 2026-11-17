@@ -1,60 +1,64 @@
 @extends('layouts.app')
 
-@section('title', 'Leerlingen')
+@section('title', 'LVS · Leerlinggegevens')
 
 @section('content')
-    <main class="screen">
-        <div class="card">
-            <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
-            <p><b>Klas:</b> {{ optional($leerling->klas)->klasnaam ?? '—' }}</p>
-            <p><b>Gebruikersnaam:</b> {{ $leerling->gebruikersnaam }}</p>
-            <p><b>Email:</b> {{ $leerling->email }}</p>
-            <p><b>Geboortedatum:</b> {{ optional($leerling->geboortedatum)->format('d/m/Y') ?? '—' }}</p>
-            <p><b>Leeftijd:</b> {{ optional($leerling->geboortedatum)->age ?? '—' }} jaar</p>
-
-            <div class="card-footer">
-                <a href="{{ url('/meldingen/add/' . $leerling->id) }}" class="btn btn-orange btn--sm">
-                    Maak melding
-                </a>
-            </div>
+<main class="screen lvs-screen">
+    <div class="lvs-page-heading">
+        <div>
+            <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
+            <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
+            <p>Leerlinggegevens en overzicht van de geregistreerde meldingen.</p>
         </div>
+        <a href="{{ route('leerlingen.index') }}" class="lvs-link-button lvs-link-button-subtle">← Leerlingen</a>
+    </div>
 
-        {{-- Bestaande leerling-info hier boven --}}
+    @if(session('success'))
+        <div class="lvs-success" role="status">{{ session('success') }}</div>
+    @endif
 
-        {{-- Meldingenoverzicht --}}
-        <div class="card" style="margin-top: 20px;">
-            <h2>Meldingen voor deze leerling</h2>
+    <section class="card lvs-panel">
+        <div class="lvs-panel-heading lvs-panel-heading-wrap">
+            <h2>Leerlinggegevens</h2>
+            <a href="{{ route('meldingen.create', $leerling->id) }}" class="lvs-link-button lvs-link-button-primary">+ Nieuwe melding</a>
+        </div>
+        <dl class="lvs-details-grid">
+            <div><dt>Klas</dt><dd>{{ optional($leerling->klas)->klasnaam ?? '—' }}</dd></div>
+            <div><dt>Gebruikersnaam</dt><dd>{{ $leerling->gebruikersnaam ?: '—' }}</dd></div>
+            <div><dt>E-mailadres</dt><dd>{{ $leerling->email ?: '—' }}</dd></div>
+            <div><dt>Geboortedatum</dt><dd>{{ optional($leerling->geboortedatum)->format('d/m/Y') ?? '—' }}</dd></div>
+            <div><dt>Leeftijd</dt><dd>{{ optional($leerling->geboortedatum)->age !== null ? optional($leerling->geboortedatum)->age . ' jaar' : '—' }}</dd></div>
+        </dl>
+    </section>
 
-            @if($meldingen->isEmpty())
-                <p class="muted">Nog geen meldingen gevonden.</p>
-            @else
-                <div class="meldingen-list">
-                    @foreach($meldingen as $melding)
-                        <div class="melding-row">
-                            <div class="melding-meta">
-                                <div class="melding-datum">
-                                    {{ optional($melding->created_at)->format('d/m/Y H:i') }}
-                                </div>
-                                <div class="melding-badges">
-                            <span class="badge badge-cat">
-                                {{ optional(optional($melding->soort)->categorie)->naam ?? '—' }}
-                            </span>
-                                    <span class="badge badge-soort">
-                                {{ optional($melding->soort)->naam ?? '—' }}
-                            </span>
-                                </div>
+    <section class="card lvs-panel lvs-section-gap">
+        <div class="lvs-panel-heading">
+            <div><p class="portal-eyebrow">OPVOLGING</p><h2>Meldingen</h2></div>
+            <span class="lvs-count-pill">{{ $meldingen->count() }}</span>
+        </div>
+        @if($meldingen->isEmpty())
+            <p class="lvs-empty">Er zijn nog geen meldingen geregistreerd voor deze leerling.</p>
+        @else
+            <div class="meldingen-list">
+                @foreach($meldingen as $melding)
+                    <article class="melding-row">
+                        <div class="melding-meta">
+                            <div class="melding-datum">
+                                @if($melding->gebeurdop)
+                                    <strong>Gebeurd op {{ optional($melding->gebeurdop)->format('d/m/Y') }}</strong><br>
+                                @endif
+                                <small>Ingegeven op {{ optional($melding->created_at)->format('d/m/Y H:i') ?? '—' }}</small>
                             </div>
-                            <div class="melding-comment">
-                                {{ $melding->comment }}
+                            <div class="melding-badges">
+                                <span class="badge badge-cat">{{ optional(optional($melding->soort)->categorie)->naam ?? '—' }}</span>
+                                <span class="badge badge-soort">{{ optional($melding->soort)->naam ?? '—' }}</span>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-
-
-        <br>
-        <a href="{{ url('/leerlingen') }}" class="back-btn">← Terug naar lijst</a>
-    </main>
+                        <p class="melding-comment">{{ $melding->comment }}</p>
+                    </article>
+                @endforeach
+            </div>
+        @endif
+    </section>
+</main>
 @endsection
