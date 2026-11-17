@@ -14,18 +14,19 @@
         <main class="portal-login" aria-labelledby="login-title">
             <section class="portal-login-panel">
                 <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
-                <div class="portal-login-platform-brand">
-                    <img src="{{ asset('images/atheneum-portaal-logo.png') }}" alt="Atheneum Portaal" class="portal-login-platform-logo">
+                <div class="portal-login-identity">
+                    <img class="portal-login-identity-icon" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
+                    <div>
+                        <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
+                        <h1 id="login-title" class="portal-login-title">Atheneum Portaal</h1>
+                    </div>
                 </div>
-                <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
-                <h1 id="login-title" class="portal-login-title">Welkom op het portaal</h1>
-                <p class="portal-login-lead">Eén centrale plek voor leerlingenbegeleiding, aanvragen en schooladministratie.</p>
+                <p class="portal-login-lead">Jouw centrale omgeving voor leerlingenbegeleiding en schooladministratie.</p>
                 <a class="portal-login-cta" href="{{ route('login') }}">
-                    <span class="portal-smartschool-mark" aria-hidden="true">S</span>
-                    Aanmelden via Smartschool
+                    <span>Aanmelden via Smartschool</span>
                     <span aria-hidden="true">→</span>
                 </a>
-                <p class="portal-login-help">Meld je aan met je Smartschool-account van GO! Atheneum Sint-Truiden.</p>
+                <p class="portal-login-note">Gebruik je Smartschool-account om je aan te melden.</p>
             </section>
             <aside class="portal-login-art" aria-hidden="true">
                 <div class="portal-art-orbit portal-art-orbit-one"></div>
