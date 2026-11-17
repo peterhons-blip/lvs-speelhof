@@ -130,3 +130,56 @@
  .lvs-search-panel-heading{margin-bottom:19px}
  .lvs-context-panel{padding:19px}
 }
+
+
+/* LVS overzicht als dashboard: benut de beschikbare breedte, geen gekleurde bovenrand. */
+.portal-content .lvs-screen{max-width:none;width:100%;margin:0}
+.portal-content .screen.lvs-screen>.card{max-width:none;width:100%}
+.lvs-overview-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.65fr) minmax(360px,1fr);
+  gap:20px;
+  align-items:stretch;
+  margin-bottom:28px;
+}
+.lvs-overview-grid>.lvs-panel{min-width:0;min-height:0;margin:0;padding:28px 30px}
+.lvs-overview-grid .lvs-search-panel{border-top:1px solid #E1E8EF}
+.lvs-overview-grid .lvs-search-panel-heading{margin-bottom:23px}
+.lvs-overview-grid .lvs-search-panel-heading h2{font-size:1.17rem;margin-bottom:7px}
+.lvs-overview-grid .lvs-search-panel-heading p{font-size:.87rem}
+.lvs-overview-grid .lvs-search{padding:14px 16px}
+.lvs-overview-grid .lvs-birthday-panel{display:flex;flex-direction:column}
+.lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:start;margin:0 0 13px}
+.lvs-overview-grid .lvs-birthday-panel .portal-eyebrow{font-size:.65rem;margin:0 0 5px}
+.lvs-overview-grid .lvs-birthday-panel h2{font-size:1.17rem}
+.lvs-inline-link{font-size:.81rem;color:#0A7783;text-decoration:none;font-weight:750;line-height:1.5;white-space:normal;text-align:right}
+.lvs-inline-link:hover{text-decoration:underline;text-underline-offset:3px}
+.lvs-inline-link:focus-visible{outline:2px solid var(--portal-magenta);outline-offset:3px}
+.lvs-overview-grid .bday-today-row{padding:10px 5px}
+.lvs-overview-grid .bday-today-row-link:after{left:5px;right:5px}
+.lvs-overview-grid .bday-today-name{font-size:.88rem;gap:7px}
+.lvs-overview-grid .bday-today-age{font-size:.8rem;white-space:nowrap}
+.lvs-overview-grid .badge-klas{font-size:.72rem;padding:4px 8px}
+.lvs-overview-grid .lvs-empty{padding:6px 0}
+.lvs-page-heading{margin-bottom:22px}
+.lvs-results-heading{margin-top:5px}
+.lvs-student-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:24px}
+.lvs-screen .lvs-section-gap{margin-top:20px}
+.portal-page-breadcrumb .portal-breadcrumbs{margin:0 0 22px}
+.portal-dashboard .portal-page-breadcrumb{margin-bottom:16px}
+@media(max-width:1350px){
+  .lvs-overview-grid{grid-template-columns:minmax(0,1.35fr) minmax(310px,1fr)}
+  .lvs-student-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1050px){
+  .lvs-overview-grid{grid-template-columns:minmax(0,1fr)}
+  .lvs-overview-grid>.lvs-panel{padding:24px}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:center}
+}
+@media(max-width:620px){
+  .lvs-overview-grid{gap:14px;margin-bottom:20px}
+  .lvs-overview-grid>.lvs-panel{padding:19px}
+  .lvs-student-grid{grid-template-columns:minmax(0,1fr)}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:flex-start;gap:9px}
+  .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading>a{margin-top:3px}
+}
