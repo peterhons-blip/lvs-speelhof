@@ -55,9 +55,7 @@
     </div>
 @endif
 
-{{-- Het leerlingzoekscript hoort alleen bij de leerlingenlijst. --}}
-@if(request()->routeIs('leerlingen.index'))
-<script src="{{ asset('js/lvs.js') }}"></script>
-@endif
+{{-- Elke pagina laadt alleen de eigen scripts, na de HTML-inhoud. --}}
+@stack('scripts')
 </body>
 </html>
