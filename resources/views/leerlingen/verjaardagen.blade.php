@@ -4,13 +4,18 @@
 
 @section('content')
 <main class="screen lvs-screen">
+    @include('partials.breadcrumbs', ['items' => [
+        ['label' => 'Dashboard', 'url' => route('home')],
+        ['label' => 'LVS', 'url' => route('leerlingen.index')],
+        ['label' => 'Verjaardagen'],
+    ]])
+
     <div class="lvs-page-heading">
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / VERJAARDAGEN</p>
             <h1>Verjaardagen</h1>
             <p>Leerlingen die jarig zijn van {{ $today->format('d/m') }} tot en met {{ $end->format('d/m') }}.</p>
         </div>
-        <a href="{{ route('leerlingen.index') }}" class="lvs-link-button lvs-link-button-subtle">← Leerlingen</a>
     </div>
     <section class="card lvs-panel">
         <div class="lvs-panel-heading">
