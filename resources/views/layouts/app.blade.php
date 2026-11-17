@@ -4,8 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Atheneum Portaal') · GO! Atheneum Sint-Truiden</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=2">
+    <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=2">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -16,7 +18,10 @@
             <a class="portal-brand" href="{{ route('home') }}" aria-label="Atheneum Portaal, naar dashboard">
                 <img src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden" class="portal-brand-logo">
                 <span class="portal-brand-divider" aria-hidden="true"></span>
-                <span class="portal-brand-title">Atheneum Portaal</span>
+                <span class="portal-brand-platform">
+                    <img class="portal-brand-mark" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
+                    <span class="portal-brand-title">Atheneum Portaal</span>
+                </span>
             </a>
             <div class="portal-account">
                 <span class="portal-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ss_user['voornaam'] ?? 'G', 0, 1)) }}</span>
