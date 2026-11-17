@@ -2,14 +2,16 @@
 
 @section('title', 'LVS · Verjaardagen')
 
-@section('content')
-<main class="screen lvs-screen">
-    @include('partials.breadcrumbs', ['items' => [
+@section('breadcrumbs')
+@include('partials.breadcrumbs', ['items' => [
         ['label' => 'Dashboard', 'url' => route('home')],
         ['label' => 'LVS', 'url' => route('leerlingen.index')],
         ['label' => 'Verjaardagen'],
     ]])
+@endsection
 
+@section('content')
+<main class="screen lvs-screen">
     <div class="lvs-page-heading">
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / VERJAARDAGEN</p>
