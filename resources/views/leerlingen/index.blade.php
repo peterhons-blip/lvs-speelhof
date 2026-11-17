@@ -17,22 +17,22 @@
         </div>
     </div>
 
-    <section class="card lvs-panel" aria-label="Leerling zoeken">
-        <div class="lvs-panel-heading">
+    <section class="card lvs-panel lvs-search-panel" aria-labelledby="lvs-search-title">
+        <div class="lvs-search-panel-heading">
             <div>
-                <h2>Leerling zoeken</h2>
-                <p>Zoek op naam of op klas.</p>
+                <h2 id="lvs-search-title">Zoek een leerling</h2>
+                <p>Zoek op naam of klas en open meteen het leerlingdossier.</p>
             </div>
-            <span class="lvs-panel-symbol" aria-hidden="true">⌕</span>
         </div>
         <label for="q" class="lvs-field-label">Naam of klas</label>
-        <div class="controls lvs-search-controls">
+        <div class="lvs-search-input-wrap">
             <input id="q" class="search lvs-search" type="search"
-                   placeholder="Bijv. 3 EL of Piet Pieters"
+                   placeholder="Bijvoorbeeld: Piet Pieters of 3 EL"
                    aria-label="Zoek klas of leerling"
-                   autocomplete="off">
+                   autocomplete="off"
+                   spellcheck="false">
         </div>
-        <p class="lvs-field-help">Typ minstens 2 tekens of een klas (bv. 3 EL).</p>
+        <p class="lvs-field-help">Typ minstens twee tekens om te zoeken.</p>
     </section>
 
     <div id="infoCard" class="lvs-feedback" data-hidden="true" role="status" aria-live="polite"></div>
