@@ -1,68 +1,77 @@
 @extends('layouts.app')
 
-@section('title', 'Leerlingen')
+@section('title', 'LVS · Leerlingen')
 
 @section('content')
-    <main class="screen" id="screenStudents" role="main">
+<main class="screen lvs-screen" id="screenStudents" role="main">
+    <div class="lvs-page-heading">
+        <div>
+            <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM</p>
+            <h1>Leerlingen</h1>
+            <p>Zoek een leerling of klas om gegevens te bekijken en meldingen op te volgen.</p>
+        </div>
+        <a class="lvs-link-button lvs-link-button-subtle" href="{{ route('home') }}">← Dashboard</a>
+    </div>
 
-        {{-- 🔹 Bovenste kader: titel + zoekfunctie + instructie --}}
-        <div class="card" style="margin-bottom: 20px;">
-            <h2 style="margin-top:0;">👩‍🏫 Leerlingen</h2>
-            <p class="lead" style="margin-bottom:16px;">
-                Zoek een leerling om <b>details te bekijken</b> of een <b>melding te maken</b>.
-            </p>
-
-            <div class="controls" style="margin-bottom:10px;">
-                <input id="q" class="search" type="search"
-                       placeholder="Zoek: ‘3 EL’ of ‘Piet Pieters’…"
-                       aria-label="Zoek klas of leerling"
-                       autocomplete="off"/>
+    <section class="card lvs-panel" aria-label="Leerling zoeken">
+        <div class="lvs-panel-heading">
+            <div>
+                <h2>Leerling zoeken</h2>
+                <p>Zoek op naam of op klas.</p>
             </div>
+            <span class="lvs-panel-symbol" aria-hidden="true">⌕</span>
+        </div>
+        <label for="q" class="lvs-field-label">Naam of klas</label>
+        <div class="controls lvs-search-controls">
+            <input id="q" class="search lvs-search" type="search"
+                   placeholder="Bijv. 3 EL of Piet Pieters"
+                   aria-label="Zoek klas of leerling"
+                   autocomplete="off">
+        </div>
+        <p class="lvs-field-help">Typ minstens 2 tekens of een klas (bv. 3 EL).</p>
+    </section>
 
-            <p class="muted" style="font-size:0.95rem; margin:0;">
-                Typ minstens 2 tekens of een geldige klas (bv. <i>3 EL</i>) om resultaten te zien.
-            </p>
+    <div id="infoCard" class="lvs-feedback" data-hidden="true" role="status" aria-live="polite"></div>
+    <div class="lvs-results-heading" id="resultsHeading" data-hidden="true">
+        <h2>Zoekresultaten</h2><span id="resultsCount"></span>
+    </div>
+    <div class="lvs-student-grid" id="studentGrid" aria-live="polite"></div>
+
+    <section class="card lvs-panel lvs-birthday-panel" aria-labelledby="birthdays-title">
+        <div class="lvs-panel-heading lvs-panel-heading-wrap">
+            <div>
+                <p class="portal-eyebrow">VERJAARDAGEN</p>
+                <h2 id="birthdays-title">Vandaag jarig</h2>
+            </div>
+            <a href="{{ route('leerlingen.verjaardagen') }}" class="lvs-link-button lvs-link-button-subtle">
+                Bekijk komende week ({{ $upcomingCount ?? 0 }}) →
+            </a>
         </div>
 
-        {{-- 🔹 Placeholder voor dynamische meldingen vanuit JS --}}
-        <div id="infoCard" class="card" data-hidden="true"></div>
-
-        {{-- 🔹 Dynamisch leerlingenoverzicht --}}
-        <div class="grid" id="studentGrid" aria-live="polite"></div>
-
-        {{-- 🎂 Verjaardagen-widget onderaan --}}
-        <div class="card" style="margin-top: 28px;">
-            <div class="card-header" style="margin-bottom: 8px;">
-                <h2 style="margin:0;">🎂 Vandaag jarig</h2>
-                <a href="{{ url('/leerlingen/verjaardagen') }}" class="btn btn-green btn--sm">
-                    Verjaardagen binnen de week ({{ $upcomingCount ?? 0 }})
-                </a>
-            </div>
-
-            @if(($vandaagJarig ?? collect())->isEmpty())
-                <p class="muted">Niemand jarig vandaag.</p>
-            @else
-                <div class="bday-today-list">
-                    @foreach($vandaagJarig as $l)
-                        <a href="{{ url('/leerlingen/' . $l->id) }}" class="bday-today-row-link">
-                            <div class="bday-today-row">
-                                <div class="bday-today-name">
-                                    {{ $l->voornaam }} {{ $l->achternaam }}
-                                    <span class="badge badge-klas">{{ $l->klas->klasnaam }}</span>
-                                </div>
-                                <div class="bday-today-age">
-                                    Wordt <strong>{{ $l->turns }}</strong>
-                                </div>
+        @if(($vandaagJarig ?? collect())->isEmpty())
+            <p class="lvs-empty">Vandaag is er geen leerling jarig.</p>
+        @else
+            <div class="bday-today-list">
+                @foreach($vandaagJarig as $l)
+                    <a href="{{ route('leerlingen.show', $l->id) }}" class="bday-today-row-link">
+                        <div class="bday-today-row">
+                            <div class="bday-today-name">
+                                <strong>{{ $l->voornaam }} {{ $l->achternaam }}</strong>
+                                <span class="badge badge-klas">{{ optional($l->klas)->klasnaam ?? '—' }}</span>
                             </div>
-                        </a>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-
-    </main>
-
-    <script>
-        const LEERLINGEN_DATA = {!! json_encode($leerlingen, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) !!};
-    </script>
+                            <div class="bday-today-age">Wordt <strong>{{ $l->turns }}</strong> jaar</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </section>
+</main>
 @endsection
+
+@push('scripts')
+<script>
+    window.LVS_STUDENTS = @json($leerlingen);
+</script>
+<script src="{{ asset('js/lvs.js') }}?v=3" defer></script>
+@endpush
