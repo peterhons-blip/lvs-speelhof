@@ -13,25 +13,17 @@
     @if(!session('ss_user'))
         <main class="portal-login" aria-labelledby="login-title">
             <section class="portal-login-panel">
-                <div class="portal-login-brand-row">
-                    <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
-                    <span class="portal-login-brand-divider" aria-hidden="true"></span>
-                    <div class="portal-login-identity">
-                        <img class="portal-login-identity-icon" src="{{ asset('images/atheneum-portaal-icon.png') }}" alt="" aria-hidden="true">
-                        <div>
-                            <h1 id="login-title" class="portal-login-title">Atheneum Portaal</h1>
-                        </div>
-                    </div>
-                </div>
-                <div class="portal-login-welcome">
-                    <h2>Welkom!</h2>
-                    <p>Alles voor je dagelijkse schoolwerking op één plek.</p>
-                </div>
+                <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
+                <div class="portal-accent-line" aria-hidden="true"></div>
+                <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
+                <h1 id="login-title">Atheneum Portaal</h1>
+                <p class="portal-login-lead">Eén centrale plek voor leerlingenbegeleiding, aanvragen en schooladministratie.</p>
                 <a class="portal-login-cta" href="{{ route('login') }}">
-                    <span>Aanmelden via Smartschool</span>
+                    <span class="portal-smartschool-mark" aria-hidden="true">S</span>
+                    Aanmelden via Smartschool
                     <span aria-hidden="true">→</span>
                 </a>
-                <p class="portal-login-note">Meld je veilig aan met je Smartschool-account.</p>
+                <p class="portal-login-help">Meld je aan met je Smartschool-account van GO! Atheneum Sint-Truiden.</p>
             </section>
             <aside class="portal-login-art" aria-hidden="true">
                 <div class="portal-art-orbit portal-art-orbit-one"></div>
