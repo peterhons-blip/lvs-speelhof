@@ -1,81 +1,63 @@
 <!doctype html>
 <html lang="nl">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title', 'LVS Speelhof – Leerling Meldingssysteem')</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@yield('title', 'Atheneum Portaal') · GO! Atheneum Sint-Truiden</title>
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <style>
-        .groupname {
-            font-size: 0.85em;
-            font-style: italic;
-            color: #666;
-            margin-left: 0.25em;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=1">
 </head>
-<body>
-<div class="app" id="app">
-    <header class="app-header">
-        <div class="title">
-            <a href="/">
-                <img class="logo" src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden — Speelhof" />
+<body class="portal-body">
+@php($ss_user = session('ss_user'))
+@if($ss_user)
+    <div class="app portal-app">
+        <header class="portal-topbar">
+            <a class="portal-brand" href="{{ route('home') }}" aria-label="Atheneum Portaal, naar dashboard">
+                <img src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden" class="portal-brand-logo">
+                <span class="portal-brand-divider" aria-hidden="true"></span>
+                <span class="portal-brand-title">Atheneum Portaal</span>
             </a>
-        </div>
-        @php
-            $ss_user = session('ss_user');
-        @endphp
-
-        @if($ss_user)
-            <!-- Rechts: login info + uitloggen -->
-            <div class="user" id="userBox" aria-label="Ingelogde leerkracht">
-                <span class="avatar" aria-hidden="" style="display: none;"></span>
-                <span class="userline">
-                    <small class="muted">Aangemeld via Smartschool als</small><br>
-                    <strong id="userName">
-                        {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}
-                    </strong>
-                    @if(!empty($ss_user['groupname']))
-                        <span class="groupname">({{ ucwords($ss_user['groupname']) }})</span>
-                    @endif
+            <div class="portal-account">
+                <span class="portal-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ss_user['voornaam'] ?? 'G', 0, 1)) }}</span>
+                <span class="portal-account-copy">
+                    <strong>{{ trim(($ss_user['voornaam'] ?? '') . ' ' . ($ss_user['naam'] ?? '')) }}</strong>
+                    <small>{{ $ss_user['groupname'] ?? 'Personeelslid' }}</small>
                 </span>
-                <form action="{{ route('logout') }}" method="get" style="display:inline;">
-                    <button id="logoutBtn" type="submit" class="btn-logout">
-                        Uitloggen
-                    </button>
-                </form>
+                <a href="{{ route('logout') }}" class="portal-logout">Uitloggen</a>
             </div>
-        @else
-            <!-- Rechts: Smartschool login-knop (afbeelding) -->
-            <div style="display:flex; align-items:center;">
-                <a href="{{ route('login') }}" style="display:inline-block;">
-                    <img src="{{ asset('images/btn_aanmelden_met_smartschool_290x40.png') }}"
-                        alt="Aanmelden via Smartschool"
-                        style="height:40px; width:auto; display:block;">
-                </a>
-            </div>
-        @endif
-    </header>
-    {{-- Navigatie: toekomstige modules zijn zichtbaar maar niet aanklikbaar. --}}
-    @if($ss_user)
-        <nav class="sub-header" aria-label="LVS-navigatie">
-            <a href="{{ route('leerlingen.index') }}" class="btn btn-green btn--sm">
-                LVS
-            </a>
-            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
-                EMA's
-            </button>
-            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
-                Onboarding personeel
-            </button>
-            <button type="button" class="btn btn--sm btn-unavailable" disabled title="Binnenkort beschikbaar">
-                Nascholingen
-            </button>
-        </nav>
-    @endif
+        </header>
 
-    @yield('content')
-</div>
+        <div class="portal-workspace">
+            <aside class="portal-sidebar" aria-label="Hoofdnavigatie">
+                <span class="portal-sidebar-label">WERKOMGEVING</span>
+                <nav class="portal-nav" aria-label="Modules">
+                    <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('home') ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
+                        <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
+                    </a>
+                    <a href="{{ route('leerlingen.index') }}" class="portal-nav-link {{ request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') ? 'is-current' : '' }}" @if(request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*')) aria-current="page" @endif>
+                        <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
+                    </a>
+                    <span class="portal-sidebar-label portal-sidebar-label-secondary">BINNENKORT</span>
+                    <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▦</span> EMA's <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
+                    <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">⊕</span> Onboarding personeel <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
+                    <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">◇</span> Nascholingen <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
+                </nav>
+                <div class="portal-sidebar-foot">GO! Atheneum Sint-Truiden<br><span>Campus Speelhof</span></div>
+            </aside>
+            <div class="portal-content">
+                @yield('content')
+            </div>
+        </div>
+    </div>
+@else
+    <div class="app portal-public">
+        @yield('content')
+    </div>
+@endif
+
+{{-- Het leerlingzoekscript hoort alleen bij de leerlingenlijst. --}}
+@if(request()->routeIs('leerlingen.index'))
 <script src="{{ asset('js/lvs.js') }}"></script>
+@endif
 </body>
 </html>
