@@ -1,57 +1,83 @@
 @extends('layouts.app')
 
-@section('title', 'Welkom')
+@section('title', session('ss_user') ? 'Dashboard' : 'Aanmelden')
 
 @section('content')
-    <main class="screen">
-
-        {{-- DUIDELIJK ERRORBLOK BOVENAAN --}}
-        @if(session('error'))
-            <div
-                style="
-                    max-width: 860px;
-                    margin: 0 auto 16px auto;
-                    background: #fff1f2;
-                    border: 1px solid #fecdd3;
-                    color: #9f1239;
-                    padding: 14px 16px;
-                    border-radius: 12px;
-                    font-size: 0.95rem;
-                    line-height: 1.4;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-                "
-                role="alert"
-            >
-                <strong>⚠️ Aanmelden niet gelukt</strong><br>
-                {{ session('error') }}
-            </div>
-        @endif
-
-        {{-- NORMALE WELKOMSTCARD --}}
-        <div class="card">
-            <h2>Welkom!!</h2>
-
-            <p style="
-                margin: 0 0 18px;
-                font-size: 0.97rem;
-                color: #555;
-                line-height: 1.55;
-            ">
-                Het Leerlingvolgsysteem (LVS) van GO! Atheneum Sint-Truiden, campus Speelhof,
-                ondersteunt leerkrachten bij het opvolgen en begeleiden van leerlingen.
-                Je kan hiermee eenvoudig <strong>leerlingen opzoeken</strong>,
-                <strong>gedragsmeldingen registreren en opvolgen</strong>
-                en <strong>belangrijke leerlinginformatie raadplegen</strong>.
-                <br><br>
-                Daarnaast kunnen leerkrachten via het LVS ook <strong>EMA’s (extra-murosactiviteiten)</strong>
-                digitaal aanvragen en opvolgen. De goedkeuringsflow gebeurt centraal,
-                waardoor aanvragen sneller en overzichtelijker verwerkt kunnen worden.
-                <br><br>
-                Het LVS automatiseert bovendien enkele administratieve en privacy-gebonden processen,
-                zoals het <strong>automatisch informeren van leerlingen</strong> en het
-                <strong>uitschakelen van ouderaccounts wanneer een leerling 18 wordt</strong>,
-                conform de geldende regelgeving.
-            </p>
+    @if(session('error'))
+        <div class="portal-alert" role="alert">
+            <strong>Aanmelden niet gelukt</strong>
+            <p>{{ session('error') }}</p>
         </div>
-    </main>
+    @endif
+
+    @if(!session('ss_user'))
+        <main class="portal-login" aria-labelledby="login-title">
+            <section class="portal-login-panel">
+                <img class="portal-login-logo" src="{{ asset('images/logo.jpg') }}" alt="GO! Atheneum Sint-Truiden">
+                <div class="portal-accent-line" aria-hidden="true"></div>
+                <p class="portal-eyebrow">CAMPUS SPEELHOF</p>
+                <h1 id="login-title">Atheneum Portaal</h1>
+                <p class="portal-login-lead">Eén centrale plek voor leerlingenbegeleiding, aanvragen en schooladministratie.</p>
+                <a class="portal-login-cta" href="{{ route('login') }}">
+                    <span class="portal-smartschool-mark" aria-hidden="true">S</span>
+                    Aanmelden via Smartschool
+                    <span aria-hidden="true">→</span>
+                </a>
+                <p class="portal-login-help">Meld je aan met je Smartschool-account van GO! Atheneum Sint-Truiden.</p>
+            </section>
+            <aside class="portal-login-art" aria-hidden="true">
+                <div class="portal-art-orbit portal-art-orbit-one"></div>
+                <div class="portal-art-orbit portal-art-orbit-two"></div>
+                <div class="portal-art-building">
+                    <div class="portal-art-roof"></div>
+                    <div class="portal-art-windows"></div>
+                </div>
+                <div class="portal-art-label">Samen werken aan sterke schoolorganisatie.</div>
+            </aside>
+        </main>
+        <footer class="portal-public-footer">GO! Atheneum Sint-Truiden · Campus Speelhof</footer>
+    @else
+        <main class="portal-dashboard" aria-labelledby="dashboard-title">
+            <div class="portal-dashboard-intro">
+                <div>
+                    <p class="portal-eyebrow">MIJN WERKOMGEVING</p>
+                    <h1 id="dashboard-title">Welkom, {{ session('ss_user.voornaam', 'collega') }}!</h1>
+                    <p>Welkom in het Atheneum Portaal. Beheer leerlinginformatie, aanvragen en schooladministratie vanuit één centrale omgeving.</p>
+                </div>
+                <div class="portal-intro-art" aria-hidden="true">
+                    <div class="portal-mini-building"></div>
+                </div>
+            </div>
+
+            <h2 class="portal-section-title">Toepassingen</h2>
+            <div class="portal-module-grid">
+                <a class="portal-module portal-module-active" href="{{ route('leerlingen.index') }}">
+                    <span class="portal-module-icon" aria-hidden="true">◎</span>
+                    <strong>LVS</strong>
+                    <span>Leerlingen opvolgen, meldingen registreren en leerlinginformatie raadplegen.</span>
+                    <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
+                </a>
+                <div class="portal-module portal-module-disabled" aria-disabled="true">
+                    <span class="portal-module-icon" aria-hidden="true">▦</span><span class="portal-module-status">Binnenkort</span>
+                    <strong>EMA's</strong>
+                    <span>Extra-murosactiviteiten aanvragen, goedkeuren en opvolgen.</span>
+                </div>
+                <div class="portal-module portal-module-disabled" aria-disabled="true">
+                    <span class="portal-module-icon" aria-hidden="true">⊕</span><span class="portal-module-status">Binnenkort</span>
+                    <strong>Onboarding personeel</strong>
+                    <span>Nieuwe personeelsleden registreren en hun opstart begeleiden.</span>
+                </div>
+                <div class="portal-module portal-module-disabled" aria-disabled="true">
+                    <span class="portal-module-icon" aria-hidden="true">◇</span><span class="portal-module-status">Binnenkort</span>
+                    <strong>Nascholingen</strong>
+                    <span>Nascholingen aanvragen, opvolgen en beheren.</span>
+                </div>
+            </div>
+
+            <div class="portal-information">
+                <strong>Binnenkort beschikbaar</strong>
+                <span>EMA's, Onboarding personeel en Nascholingen worden later toegevoegd. Je kunt het LVS nu al gebruiken.</span>
+            </div>
+        </main>
+    @endif
 @endsection
