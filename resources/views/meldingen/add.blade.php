@@ -3,10 +3,18 @@
 @section('title', 'Nieuwe melding')
 
 @section('content')
-    <main class="screen">
+    <main class="screen lvs-screen">
+        <div class="lvs-page-heading">
+            <div>
+                <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / MELDINGEN</p>
+                <h1>Nieuwe melding</h1>
+                <p>Registreer een melding voor {{ $leerling->voornaam }} {{ $leerling->achternaam }}.</p>
+            </div>
+            <a href="{{ route('leerlingen.show', $leerling->id) }}" class="lvs-link-button lvs-link-button-subtle">← Leerlinggegevens</a>
+        </div>
 
         {{-- 1️⃣ Leerling-info --}}
-        <div class="card">
+        <div class="card lvs-panel">
             <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
             <p><b>Klas:</b> {{ optional($leerling->klas)->klasnaam ?? '—' }}</p>
             <p><b>Gebruikersnaam:</b> {{ $leerling->gebruikersnaam }}</p>
@@ -16,14 +24,19 @@
         </div>
 
         {{-- 2️⃣ Nieuwe melding invullen --}}
-        <div class="card" style="margin-top: 20px;">
+        <div class="card lvs-panel lvs-section-gap">
             <h2>Nieuwe melding</h2>
+            <p class="lvs-field-help">Vul alle velden in om de melding te registreren.</p>
+
+            @if($errors->any())
+                <div class="lvs-form-alert" role="alert">Controleer de invoervelden hieronder.</div>
+            @endif
 
             <form action="{{ url('/meldingen/add/' . $leerling->id) }}" method="POST" class="melding-form" id="meldingForm">
                 @csrf
 
                 {{-- Categorie --}}
-                <label for="categorie_id"><b>Categorie</b></label>
+                <label for="categorie_id" class="lvs-field-label">Categorie</label>
                 <select name="categorie_id" id="categorie_id" required>
                     <option value="">— Kies categorie —</option>
                     @foreach($categorieen as $cat)
@@ -37,7 +50,7 @@
                 @enderror
 
                 {{-- Soort --}}
-                <label for="soort_id"><b>Soort</b></label>
+                <label for="soort_id" class="lvs-field-label">Soort</label>
                 <select name="soort_id" id="soort_id" required data-old="{{ old('soort_id') }}">
                     <option value="">— Kies eerst een categorie —</option>
                     @foreach($categorieen as $cat)
@@ -53,7 +66,7 @@
                 @enderror
 
                 {{-- Gebeurd op --}}
-                <label for="gebeurdop"><b>Gebeurt op</b></label>
+                <label for="gebeurdop" class="lvs-field-label">Gebeurd op</label>
                 <input
                     type="date"
                     name="gebeurdop"
@@ -66,20 +79,20 @@
                 @enderror
 
                 {{-- Comment --}}
-                <label for="comment"><b>Omschrijving</b></label>
+                <label for="comment" class="lvs-field-label">Omschrijving</label>
                 <textarea name="comment" id="comment" rows="5" required>{{ old('comment') }}</textarea>
                 @error('comment')
                 <small style="color:#dc2626">{{ $message }}</small>
                 @enderror
 
                 <div class="card-footer">
-                    <button type="submit" class="btn btn-orange btn--sm">Opslaan</button>
+                    <button type="submit" class="lvs-link-button lvs-link-button-primary">Melding opslaan</button>
                 </div>
             </form>
         </div>
 
         {{-- 3️⃣ Bestaande meldingen (overzicht) --}}
-        <div class="card" style="margin-top: 20px;">
+        <div class="card lvs-panel lvs-section-gap">
             <h2>Meldingen voor deze leerling</h2>
 
             @if($meldingen->isEmpty())
@@ -116,7 +129,7 @@
         </div>
 
         <br>
-        <a href="{{ url('/leerlingen/' . $leerling->id) }}" class="back-btn">← Terug naar leerling</a>
+        <a href="{{ url('/leerlingen/' . $leerling->id) }}" class="lvs-link-button lvs-link-button-subtle">← Terug naar leerling</a>
     </main>
 
     {{-- 4️⃣ JavaScript – filter soorten op gekozen categorie --}}
