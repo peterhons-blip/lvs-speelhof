@@ -4,13 +4,19 @@
 
 @section('content')
     <main class="screen lvs-screen">
+        @include('partials.breadcrumbs', ['items' => [
+            ['label' => 'Dashboard', 'url' => route('home')],
+            ['label' => 'LVS', 'url' => route('leerlingen.index')],
+            ['label' => $leerling->voornaam . ' ' . $leerling->achternaam, 'url' => route('leerlingen.show', $leerling->id)],
+            ['label' => 'Nieuwe melding'],
+        ]])
+
         <div class="lvs-page-heading">
             <div>
                 <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / MELDINGEN</p>
                 <h1>Nieuwe melding</h1>
                 <p>Registreer een melding voor {{ $leerling->voornaam }} {{ $leerling->achternaam }}.</p>
             </div>
-            <a href="{{ route('leerlingen.show', $leerling->id) }}" class="lvs-link-button lvs-link-button-subtle">← Leerlinggegevens</a>
         </div>
 
         {{-- 1️⃣ Leerling-info --}}
