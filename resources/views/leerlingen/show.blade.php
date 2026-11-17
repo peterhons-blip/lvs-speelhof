@@ -4,13 +4,18 @@
 
 @section('content')
 <main class="screen lvs-screen">
+    @include('partials.breadcrumbs', ['items' => [
+        ['label' => 'Dashboard', 'url' => route('home')],
+        ['label' => 'LVS', 'url' => route('leerlingen.index')],
+        ['label' => $leerling->voornaam . ' ' . $leerling->achternaam],
+    ]])
+
     <div class="lvs-page-heading">
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
             <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
             <p>Leerlinggegevens en overzicht van de geregistreerde meldingen.</p>
         </div>
-        <a href="{{ route('leerlingen.index') }}" class="lvs-link-button lvs-link-button-subtle">← Leerlingen</a>
     </div>
 
     @if(session('success'))
