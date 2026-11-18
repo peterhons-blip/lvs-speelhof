@@ -23,6 +23,7 @@ return new class extends Migration {
         Schema::create('library_import_batches', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('total')->default(0);
+            $table->string('initiated_by', 120);
             $table->timestamps();
         });
 
