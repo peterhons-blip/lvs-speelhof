@@ -279,3 +279,26 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .library-name-result-select{font-size:.77rem;font-weight:750;color:#007780;white-space:nowrap}
 @media(max-width:760px){.library-name-search-row{flex-wrap:wrap}.library-name-search-input{flex:1;min-width:160px}}
 @media(max-width:530px){.library-name-lookup{padding:15px}.library-name-search-row .library-field:first-child{width:100%}.library-name-search-input{width:100%;flex-basis:100%}.library-name-result-select{display:none}}
+
+
+/* Bibliotheek: aparte editiekeuze met Nederlandse uitgaven eerst. */
+.library-edition-panel{padding:18px;margin:14px 0 18px;border:1px solid #C7E0E5;border-radius:13px;background:#fff}
+.library-edition-panel[hidden],.library-name-results[hidden]{display:none!important}
+.library-edition-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.library-edition-head h4{margin:0;color:var(--portal-navy);font-size:1.03rem}
+.library-edition-head .library-help{margin:6px 0}
+.library-edition-filter{max-width:260px;margin-bottom:14px}
+.library-edition-results{display:grid;gap:10px;max-height:540px;overflow-y:auto}
+.library-edition-item{display:flex;align-items:center;gap:15px;padding:12px;border:1px solid #DFE9EE;border-radius:11px}
+.library-edition-cover{width:62px;height:85px;flex:none;display:grid;place-items:center;background:#EAF3F5;border-radius:6px;overflow:hidden;color:#7B9DA5}
+.library-edition-cover img{width:100%;height:100%;object-fit:contain}
+.library-edition-info{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
+.library-edition-info strong{font-size:.92rem;color:var(--portal-navy)}
+.library-edition-info small{font-size:.79rem;color:#61788D;line-height:1.55}
+.library-edition-navigation{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+.library-edition-navigation span{font-size:.8rem;color:#61788D}
+.library-cover-preview{width:auto;height:auto;display:flex;align-items:flex-start;gap:14px}
+.library-cover-preview[hidden]{display:none!important}
+.library-cover-preview img{width:100px;height:135px}
+.library-cover-preview .library-button{white-space:normal}
+@media(max-width:760px){.library-edition-head{flex-direction:column}.library-edition-item{flex-wrap:wrap}.library-edition-item .library-button{margin-left:77px}.library-edition-navigation{flex-wrap:wrap}}
