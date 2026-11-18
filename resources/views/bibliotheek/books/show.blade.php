@@ -52,7 +52,8 @@
         <h2>Extra exemplaar registreren</h2>
         <form method="post" action="{{ route('bibliotheek.books.copies.store', $book) }}" class="library-form-grid">
             @csrf
-            <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer *</label><input id="barcode" name="barcode" value="{{ old('barcode') }}" required maxlength="60" placeholder="Bijv. BIB-00002"></div>
+            <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer *</label><input id="barcode" name="barcode" value="{{ old('barcode', $suggestedBarcode) }}" required maxlength="60"></div>
+            <p class="library-help library-wide">De barcode is automatisch ingevuld. Je kunt die aanpassen als het exemplaar al een eigen nummer heeft.</p>
             <div class="library-field"><label for="shelf_location">Rek / locatie</label><input id="shelf_location" name="shelf_location" value="{{ old('shelf_location') }}" maxlength="120"></div>
             <div class="library-field"><label for="condition">Staat</label><select id="condition" name="condition"><option value="nieuw">Nieuw</option><option value="goed" selected>Goed</option><option value="gebruikt">Gebruikt</option><option value="beschadigd">Beschadigd</option></select></div>
             <div class="library-field library-wide"><label for="notes">Opmerkingen</label><textarea id="notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea></div>
