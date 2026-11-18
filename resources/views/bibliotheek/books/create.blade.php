@@ -103,7 +103,7 @@
     const nameResults = document.getElementById('library-name-results');
 
     const applyBook = (book, fromName = false) => {
-        ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'cover_url'].forEach(key => {
+        ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'category', 'cover_url'].forEach(key => {
             const input = document.getElementById(key);
             if (!input) return;
             if (fromName && key === 'subtitle') {
