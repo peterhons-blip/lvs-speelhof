@@ -103,7 +103,7 @@
     const nameResults = document.getElementById('library-name-results');
 
     const applyBook = (book, fromName = false) => {
-        ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'category', 'cover_url'].forEach(key => {
+        ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'category', 'description', 'cover_url'].forEach(key => {
             const input = document.getElementById(key);
             if (!input) return;
             if (fromName && key === 'subtitle') {
@@ -178,13 +178,35 @@
                 choose.textContent = 'Kiezen →';
                 choose.className = 'library-name-result-select';
                 option.append(cover, info, choose);
-                option.addEventListener('click', () => {
+                option.addEventListener('click', async () => {
                     applyBook(book, true);
-                    nameFeedback.textContent = book.isbn
-                        ? 'ISBN ' + book.isbn + ' is voorgesteld. Controleer dit met het ISBN op jouw fysieke boek voordat je opslaat.'
-                        : 'Boekgegevens ingevuld, maar er is geen ISBN gevonden. Vul het ISBN zelf in indien beschikbaar.';
+                    const selectedTitle = book.title;
+                    nameFeedback.textContent = 'Boekgegevens ingevuld. Omschrijving ophalen…';
                     nameResults.hidden = true;
                     document.getElementById('title').focus();
+
+                    if (book.work_key) {
+                        try {
+                            const url = new URL(@json(route('bibliotheek.books.work-details')), window.location.origin);
+                            url.searchParams.set('key', book.work_key);
+                            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                            if (response.ok) {
+                                const details = await response.json();
+                                // Do not overwrite data if another book was selected meanwhile.
+                                if (document.getElementById('title').value === selectedTitle) {
+                                    if (details.description) document.getElementById('description').value = details.description;
+                                    if (details.category && !document.getElementById('category').value) {
+                                        document.getElementById('category').value = details.category;
+                                    }
+                                }
+                            }
+                        } catch {
+                            // Description is optional; the book can still be added manually.
+                        }
+                    }
+                    nameFeedback.textContent = book.isbn
+                        ? 'Controleer het voorgestelde ISBN ' + book.isbn + ' met jouw exemplaar. Genre en omschrijving zijn ingevuld waar beschikbaar.'
+                        : 'Controleer de boekgegevens. Genre en omschrijving zijn ingevuld waar beschikbaar; voeg eventueel zelf het ISBN toe.';
                 });
                 nameResults.append(option);
             });
