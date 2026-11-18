@@ -17,7 +17,7 @@
         <div>
             <p class="portal-eyebrow">BIBLIOTHEEK / BOEKENCATALOGUS</p>
             <h1 id="add-book-title">Nieuw boek registreren</h1>
-            <p>Scan of typ een ISBN om de gegevens op te halen. Controleer ze vóór het opslaan.</p>
+            <p>Zoek een boek via ISBN, titel of auteur. Controleer de gegevens vóór het opslaan.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Terug naar catalogus</a>
     </div>
@@ -37,6 +37,26 @@
                 <button type="button" class="library-button library-button-secondary" id="library-lookup">Gegevens ophalen</button>
             </div>
             <p class="library-help" id="library-lookup-result" role="status" aria-live="polite">Zonder ISBN kun je alle gegevens handmatig invullen.</p>
+            <div class="library-name-lookup">
+                <h3>Geen ISBN bij de hand? Zoek op naam</h3>
+                <div class="library-name-search-row">
+                    <div class="library-field">
+                        <label for="library-search-type">Zoeken op</label>
+                        <select id="library-search-type">
+                            <option value="title">Boektitel</option>
+                            <option value="author">Auteur</option>
+                        </select>
+                    </div>
+                    <div class="library-field library-name-search-input">
+                        <label for="library-name-query">Zoekterm</label>
+                        <input id="library-name-query" type="search" maxlength="120" placeholder="Bijv. De brief voor de koning" autocomplete="off">
+                    </div>
+                    <button type="button" class="library-button library-button-secondary" id="library-search-name">Zoeken</button>
+                </div>
+                <p class="library-help" id="library-name-feedback" role="status" aria-live="polite">Kies een gevonden boek om de invoervelden automatisch in te vullen.</p>
+                <div id="library-name-results" class="library-name-results" hidden></div>
+                <p class="library-help">De resultaten kunnen meerdere edities omvatten. Controleer de juiste editie en vul het ISBN zo nodig zelf in.</p>
+            </div>
 
             <div class="library-form-grid">
                 <div class="library-field library-wide"><label for="title">Titel <span aria-hidden="true">*</span></label><input id="title" name="title" value="{{ old('title') }}" required maxlength="255"></div>
@@ -75,6 +95,110 @@
     const message = document.getElementById('library-lookup-result');
     const coverPreview = document.getElementById('library-cover-preview');
     const coverImage = document.getElementById('library-cover-image');
+    const nameButton = document.getElementById('library-search-name');
+    const nameQuery = document.getElementById('library-name-query');
+    const nameType = document.getElementById('library-search-type');
+    const nameFeedback = document.getElementById('library-name-feedback');
+    const nameResults = document.getElementById('library-name-results');
+
+    const applyBook = (book, fromName = false) => {
+        ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'cover_url'].forEach(key => {
+            const input = document.getElementById(key);
+            if (!input) return;
+            if (fromName && (key === 'isbn' || key === 'subtitle')) {
+                input.value = '';
+            } else {
+                input.value = book[key] || '';
+            }
+        });
+        if (book.cover_url) {
+            coverImage.src = book.cover_url;
+            coverPreview.hidden = false;
+        } else {
+            coverImage.removeAttribute('src');
+            coverPreview.hidden = true;
+        }
+    };
+
+    const searchByName = async () => {
+        const q = nameQuery.value.trim();
+        nameResults.replaceChildren();
+        nameResults.hidden = true;
+        if (q.length < 2) {
+            nameFeedback.textContent = 'Geef minstens 2 tekens in om te zoeken.';
+            nameQuery.focus();
+            return;
+        }
+        nameButton.disabled = true;
+        nameFeedback.textContent = 'Zoeken in Open Library…';
+        try {
+            const url = new URL(@json(route('bibliotheek.books.search-external')), window.location.origin);
+            url.searchParams.set('q', q);
+            url.searchParams.set('type', nameType.value);
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            const data = await response.json();
+            if (!response.ok) {
+                nameFeedback.textContent = data.message || 'Zoeken is niet gelukt.';
+                return;
+            }
+            const books = data.books || [];
+            if (!books.length) {
+                nameFeedback.textContent = 'Geen boeken gevonden. Je kunt de gegevens handmatig invullen.';
+                return;
+            }
+            nameFeedback.textContent = books.length + ' resultaten gevonden. Kies het boek dat overeenkomt met jouw exemplaar.';
+            nameResults.hidden = false;
+            books.forEach(book => {
+                const option = document.createElement('button');
+                option.type = 'button';
+                option.className = 'library-name-result';
+
+                const cover = document.createElement('span');
+                cover.className = 'library-name-result-cover';
+                if (book.cover_url) {
+                    const image = document.createElement('img');
+                    image.src = book.cover_url;
+                    image.alt = '';
+                    image.loading = 'lazy';
+                    cover.append(image);
+                } else {
+                    cover.textContent = '▤';
+                }
+
+                const info = document.createElement('span');
+                info.className = 'library-name-result-info';
+                const title = document.createElement('strong');
+                title.textContent = book.title || 'Zonder titel';
+                const author = document.createElement('small');
+                author.textContent = [book.authors, book.published_year].filter(Boolean).join(' · ');
+                info.append(title, author);
+
+                const choose = document.createElement('span');
+                choose.textContent = 'Kiezen →';
+                choose.className = 'library-name-result-select';
+                option.append(cover, info, choose);
+                option.addEventListener('click', () => {
+                    applyBook(book, true);
+                    nameFeedback.textContent = 'Boekgegevens ingevuld. Controleer de editie en vul indien beschikbaar het ISBN in.';
+                    nameResults.hidden = true;
+                    document.getElementById('title').focus();
+                });
+                nameResults.append(option);
+            });
+        } catch {
+            nameFeedback.textContent = 'De zoekdienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
+        } finally {
+            nameButton.disabled = false;
+        }
+    };
+    nameButton.addEventListener('click', searchByName);
+    nameQuery.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchByName();
+        }
+    });
+
     button.addEventListener('click', async () => {
         const isbn = isbnInput.value.trim();
         if (!isbn) { message.textContent = 'Vul eerst een ISBN in.'; isbnInput.focus(); return; }
@@ -85,17 +209,7 @@
             const result = await response.json();
             if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; return; }
             const book = result.book;
-            ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'cover_url'].forEach(key => {
-                const input = document.getElementById(key);
-                if (input && book[key] !== null && book[key] !== undefined) input.value = book[key];
-            });
-            if (book.cover_url) {
-                coverImage.src = book.cover_url;
-                coverPreview.hidden = false;
-            } else {
-                coverImage.removeAttribute('src');
-                coverPreview.hidden = true;
-            }
+            applyBook(book);
             message.textContent = 'Gegevens gevonden. Controleer de velden en vul de exemplaarbarcode in.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
