@@ -35,7 +35,7 @@ class LibraryBookController extends Controller
 
     public function create(): View
     {
-        return view('bibliotheek.books.create');
+        return view('bibliotheek.books.create', ['suggestedBarcode' => LibraryCopy::generateBarcode()]);
     }
 
     public function lookup(Request $request, LibraryIsbnLookup $lookup): JsonResponse
@@ -69,6 +69,10 @@ class LibraryBookController extends Controller
     {
         $input = $request->all();
         $input['isbn'] = $this->normalizedIsbn((string) ($input['isbn'] ?? ''));
+        $input['barcode'] = trim((string) ($input['barcode'] ?? ''));
+        if ($input['barcode'] === '') {
+            $input['barcode'] = LibraryCopy::generateBarcode();
+        }
 
         $data = validator($input, [
             'isbn' => ['nullable', 'string', 'max:13', Rule::unique('library_books', 'isbn')],
@@ -112,17 +116,26 @@ class LibraryBookController extends Controller
     public function show(LibraryBook $book): View
     {
         $book->load(['copies' => fn ($q) => $q->orderBy('barcode')]);
-        return view('bibliotheek.books.show', compact('book'));
+        return view('bibliotheek.books.show', [
+            'book' => $book,
+            'suggestedBarcode' => LibraryCopy::generateBarcode(),
+        ]);
     }
 
     public function addCopy(Request $request, LibraryBook $book): RedirectResponse
     {
-        $data = $request->validate([
+        $input = $request->all();
+        $input['barcode'] = trim((string) ($input['barcode'] ?? ''));
+        if ($input['barcode'] === '') {
+            $input['barcode'] = LibraryCopy::generateBarcode();
+        }
+
+        $data = validator($input, [
             'barcode' => ['required', 'string', 'max:60', Rule::unique('library_copies', 'barcode')],
             'shelf_location' => ['nullable', 'string', 'max:120'],
             'condition' => ['required', Rule::in(['nieuw', 'goed', 'gebruikt', 'beschadigd'])],
             'notes' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ])->validate();
 
         $book->copies()->create($data);
 
