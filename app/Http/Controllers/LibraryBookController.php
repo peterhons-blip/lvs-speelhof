@@ -242,6 +242,50 @@ class LibraryBookController extends Controller
             ->with('success', 'Exemplaar '.$copy->barcode.' aangepast.');
     }
 
+    public function destroyCopy(LibraryBook $book, LibraryCopy $copy): RedirectResponse
+    {
+        return DB::transaction(function () use ($book, $copy) {
+            // Never delete a copy belonging to another book; lock it before checking availability.
+            $copy = $book->copies()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
+
+            if ($copy->status !== 'beschikbaar') {
+                return back()->withErrors([
+                    'delete' => 'Dit exemplaar kan niet verwijderd worden omdat het niet beschikbaar of uitgeleend is.',
+                ]);
+            }
+
+            // Also check loan records, even if the copy status is accidentally still 'beschikbaar'.
+            if (\Illuminate\Support\Facades\Schema::hasTable('library_loans')) {
+                if (! \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'copy_id')
+                    || ! \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'returned_at')) {
+                    return back()->withErrors([
+                        'delete' => 'Verwijderen is geblokkeerd: de uitleenregistraties kunnen niet veilig gecontroleerd worden.',
+                    ]);
+                }
+
+                if (DB::table('library_loans')->where('copy_id', $copy->id)
+                    ->whereNull('returned_at')->exists()) {
+                    return back()->withErrors([
+                        'delete' => 'Dit exemplaar kan niet verwijderd worden: er staat nog een actieve uitlening open.',
+                    ]);
+                }
+
+                // Keep the historical lending records intact.
+                if (DB::table('library_loans')->where('copy_id', $copy->id)->exists()) {
+                    return back()->withErrors([
+                        'delete' => 'Dit exemplaar heeft een uitleenhistoriek en kan daarom niet definitief verwijderd worden.',
+                    ]);
+                }
+            }
+
+            $barcode = $copy->barcode;
+            $copy->delete();
+
+            return redirect()->route('bibliotheek.books.show', $book)
+                ->with('success', 'Exemplaar '.$barcode.' verwijderd. Het boek en de andere exemplaren blijven behouden.');
+        });
+    }
+
     private function normalizedIsbn(string $value): string
     {
         return strtoupper(preg_replace('/[\s-]+/', '', trim($value)) ?? '');
