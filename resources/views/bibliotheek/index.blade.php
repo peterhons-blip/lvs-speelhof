@@ -15,18 +15,18 @@
             <div>
                 <p class="portal-eyebrow">ATHENEUM PORTAAL</p>
                 <h1 id="library-title">Bibliotheek</h1>
-                <p>Beheer binnenkort alle boeken, uitleenbeurten en herinneringen vanuit één centrale omgeving.</p>
+                <p>Registreer boeken en fysieke exemplaren in de catalogus. Uitlenen en herinneringen volgen later.</p>
             </div>
-            <span class="portal-library-status">In voorbereiding</span>
+            <span class="portal-library-status">Catalogus beschikbaar na installatie</span>
         </div>
 
         <div class="portal-library-feature-grid" aria-label="Geplande bibliotheekfuncties">
-            <section class="portal-library-feature">
+            <a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">▤</span>
                 <h2>Boekencatalogus</h2>
                 <p>Boeken registreren via ISBN, met titel, auteur, omslag en meerdere exemplaren.</p>
-                <span class="portal-library-feature-state">Binnenkort</span>
-            </section>
+                <span class="portal-library-feature-state">Open de catalogus →</span>
+            </a>
             <section class="portal-library-feature">
                 <span class="portal-library-feature-icon" aria-hidden="true">↗</span>
                 <h2>Boek uitlenen</h2>
@@ -58,6 +58,6 @@
                 <span class="portal-library-feature-state">Binnenkort</span>
             </section>
         </div>
-        <p class="portal-library-notice">Dit is voorlopig een startpagina. Er worden nog geen boeken, uitleningen of Smartschool-berichten verwerkt.</p>
+        <p class="portal-library-notice">De catalogus kan boeken en exemplaren registreren. Uitlenen en Smartschool-berichten zijn nog niet actief.</p>
     </main>
 @endsection
