@@ -54,4 +54,47 @@ class LibraryIsbnLookup
             return null;
         }
     }
+
+    /**
+     * Search at work level by title or author. ISBN is intentionally left blank:
+     * Open Library's work result can represent many editions with different ISBNs.
+     */
+    public function searchByName(string $query, string $type = 'title'): array
+    {
+        try {
+            $parameter = $type === 'author' ? 'author' : 'title';
+            $response = Http::acceptJson()->timeout(8)->retry(1, 200)
+                ->get('https://openlibrary.org/search.json', [
+                    $parameter => $query,
+                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher',
+                    'limit' => 12,
+                    'lang' => 'nl',
+                ]);
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            return collect($response->json('docs', []))
+                ->filter(fn ($book) => is_array($book) && ! empty($book['title']))
+                ->take(12)
+                ->map(function ($book) {
+                    $coverId = $book['cover_i'] ?? null;
+                    return [
+                        'isbn' => '',
+                        'title' => mb_substr((string) $book['title'], 0, 255),
+                        'authors' => mb_substr(implode(', ', array_slice((array) ($book['author_name'] ?? []), 0, 5)), 0, 255),
+                        'publisher' => mb_substr((string) (($book['publisher'] ?? [])[0] ?? ''), 0, 255),
+                        'published_year' => mb_substr((string) ($book['first_publish_year'] ?? ''), 0, 20),
+                        'cover_url' => is_numeric($coverId) && (int) $coverId > 0
+                            ? 'https://covers.openlibrary.org/b/id/'.(int) $coverId.'-M.jpg'
+                            : null,
+                    ];
+                })
+                ->values()->all();
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
 }
