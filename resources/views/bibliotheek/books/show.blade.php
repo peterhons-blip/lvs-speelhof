@@ -19,6 +19,18 @@
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    <div class="library-form-actions">
+        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.edit', $book) }}">Boek bewerken</a>
+        @if($book->copies->every(fn ($copy) => $copy->status === 'beschikbaar'))
+            <form method="post" action="{{ route('bibliotheek.books.destroy', $book) }}" onsubmit="return confirm('Dit boek en alle bijbehorende exemplaren definitief verwijderen? Dit kan niet ongedaan gemaakt worden.');">
+                @csrf
+                @method('DELETE')
+                <button class="library-button library-button-secondary" type="submit">Boek verwijderen</button>
+            </form>
+        @else
+            <span class="library-help">Verwijderen niet mogelijk: een exemplaar is niet beschikbaar of uitgeleend.</span>
+        @endif
+    </div>
     <section class="library-detail-card">
         <div class="library-detail-cover">
             @if($book->cover_url)<img src="{{ $book->cover_url }}" alt="Omslag van {{ $book->title }}" referrerpolicy="no-referrer">@else <span aria-hidden="true">▤</span>@endif
