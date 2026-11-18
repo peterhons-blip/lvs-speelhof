@@ -19,23 +19,19 @@ class DashboardController extends Controller
 
         if (Schema::hasTable('leerlingen')) {
             $lvs['leerlingen'] = DB::table('leerlingen')->where('active', 1)->count();
-            if (Schema::hasColumn('leerlingen', 'geboortedatum')) {
-                $lvs['jarig_vandaag'] = DB::table('leerlingen')
-                    ->where('active', 1)->whereNotNull('geboortedatum')
-                    ->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') = ?", [now()->format('m-d')])
-                    ->count();
-            }
+            $lvs['jarig_vandaag'] = DB::table('leerlingen')
+                ->where('active', 1)->whereNotNull('geboortedatum')
+                ->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') = ?", [now()->format('m-d')])
+                ->count();
         }
 
         if (Schema::hasTable('meldingen')) {
             $lvs['meldingen'] = DB::table('meldingen')->count();
-            if (Schema::hasColumn('meldingen', 'gebeurdop')) {
-                $lvs['meldingen_maand'] = DB::table('meldingen')
-                    ->whereBetween('gebeurdop', [
-                        now()->startOfMonth()->toDateString(),
-                        now()->endOfMonth()->toDateString(),
-                    ])->count();
-            }
+            $lvs['meldingen_maand'] = DB::table('meldingen')
+                ->whereBetween('gebeurdop', [
+                    now()->startOfMonth()->toDateString(),
+                    now()->endOfMonth()->toDateString(),
+                ])->count();
         }
 
         $bibliotheek = [
@@ -67,17 +63,9 @@ class DashboardController extends Controller
                 ->where('status', 'wachten')->count();
         }
 
-        // Toon geen fictieve 0 uitleningen zolang de uitleenmodule niet bestaat.
-        if (Schema::hasTable('library_loans') && Schema::hasColumn('library_loans', 'returned_at')) {
-            $bibliotheek['uitleningen'] = DB::table('library_loans')->whereNull('returned_at')->count();
-            foreach (['due_at', 'due_date', 'return_due_at'] as $dueColumn) {
-                if (Schema::hasColumn('library_loans', $dueColumn)) {
-                    $bibliotheek['te_laat'] = DB::table('library_loans')
-                        ->whereNull('returned_at')->where($dueColumn, '<', now())->count();
-                    break;
-                }
-            }
-        }
+        // De uitleenmodule bestaat nog niet; laat de uitleencijfers leeg
+        // in plaats van kolominspectie te gebruiken (legacy MariaDB ondersteunt
+        // 'generation_expression' niet in information_schema.columns).
 
         return view('home', compact('lvs', 'bibliotheek'));
     }
