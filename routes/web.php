@@ -21,6 +21,15 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index');
 
+    Route::prefix('bibliotheek/boeken')->name('bibliotheek.books.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index');
+        Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create');
+        Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup');
+        Route::post('/', [\App\Http\Controllers\LibraryBookController::class, 'store'])->name('store');
+        Route::get('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'show'])->whereNumber('book')->name('show');
+        Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store');
+    });
+
     Route::prefix('leerlingen')->name('leerlingen.')->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');
