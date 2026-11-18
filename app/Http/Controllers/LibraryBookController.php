@@ -53,6 +53,18 @@ class LibraryBookController extends Controller
         return response()->json(['book' => $book]);
     }
 
+    public function searchExternal(Request $request, LibraryIsbnLookup $lookup): JsonResponse
+    {
+        $data = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:120'],
+            'type' => ['nullable', Rule::in(['title', 'author'])],
+        ]);
+
+        $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
+
+        return response()->json(['books' => $books]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $input = $request->all();
