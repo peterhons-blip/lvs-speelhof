@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=6">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=7">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -43,6 +43,9 @@
                     </a>
                     <a href="{{ route('leerlingen.index') }}" class="portal-nav-link {{ request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') ? 'is-current' : '' }}" @if(request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
+                    </a>
+                    <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ request()->routeIs('bibliotheek.*') ? 'is-current' : '' }}" @if(request()->routeIs('bibliotheek.*')) aria-current="page" @endif>
+                        <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek
                     </a>
                     <span class="portal-sidebar-label portal-sidebar-label-secondary">BINNENKORT</span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▦</span> EMA's <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
