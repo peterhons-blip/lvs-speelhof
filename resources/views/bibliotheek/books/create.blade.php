@@ -106,11 +106,7 @@
         ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'category', 'description', 'cover_url'].forEach(key => {
             const input = document.getElementById(key);
             if (!input) return;
-            if (fromName && key === 'subtitle') {
-                input.value = '';
-            } else {
-                input.value = book[key] || '';
-            }
+            input.value = book[key] || '';
         });
         if (book.cover_url) {
             coverImage.src = book.cover_url;
@@ -195,6 +191,7 @@
                                 // Do not overwrite data if another book was selected meanwhile.
                                 if (document.getElementById('title').value === selectedTitle) {
                                     if (details.description) document.getElementById('description').value = details.description;
+                                    if (details.subtitle) document.getElementById('subtitle').value = details.subtitle;
                                     if (details.category && !document.getElementById('category').value) {
                                         document.getElementById('category').value = details.category;
                                     }
