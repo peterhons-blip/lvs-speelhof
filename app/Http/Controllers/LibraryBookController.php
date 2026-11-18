@@ -65,6 +65,16 @@ class LibraryBookController extends Controller
         return response()->json(['books' => $books]);
     }
 
+    public function editions(Request $request, LibraryIsbnLookup $lookup): JsonResponse
+    {
+        $data = $request->validate([
+            'key' => ['required', 'string', 'regex:~^/works/OL[0-9]+W$~'],
+            'offset' => ['nullable', 'integer', 'min:0', 'max:10000'],
+        ]);
+
+        return response()->json($lookup->editions($data['key'], (int) ($data['offset'] ?? 0)));
+    }
+
     public function workDetails(Request $request, LibraryIsbnLookup $lookup): JsonResponse
     {
         $data = $request->validate([
