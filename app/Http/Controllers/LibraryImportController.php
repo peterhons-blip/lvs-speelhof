@@ -13,7 +13,7 @@ class LibraryImportController extends Controller
 {
     public function create(): View
     {
-        return view('bibliotheek.import.create');
+        return view('bibliotheek.books.import.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -60,7 +60,7 @@ class LibraryImportController extends Controller
         }
 
         $duplicates = $entries->count() - $unique->count();
-        return redirect()->route('bibliotheek.import.show', $ids['batchId'])
+        return redirect()->route('bibliotheek.books.import.show', $ids['batchId'])
             ->with('success', 'Import gestart voor '.$unique->count().' unieke ISBN-nummers.'
                 .($duplicates ? ' '.$duplicates.' dubbele invoerregels overgeslagen.' : ''));
     }
@@ -70,7 +70,7 @@ class LibraryImportController extends Controller
         $batchRecord = $this->ownedBatch($request, $batch);
         $items = DB::table('library_import_items')->where('batch_id', $batch)->orderBy('id')->get();
         $counts = $items->countBy('status');
-        return view('bibliotheek.import.show', [
+        return view('bibliotheek.books.import.show', [
             'batch' => $batchRecord, 'items' => $items, 'counts' => $counts,
         ]);
     }
