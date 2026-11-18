@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=7">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=12">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -41,12 +41,32 @@
                     <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('home') ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
                     </a>
-                    <a href="{{ route('leerlingen.index') }}" class="portal-nav-link {{ request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') ? 'is-current' : '' }}" @if(request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*')) aria-current="page" @endif>
-                        <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
-                    </a>
-                    <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ request()->routeIs('bibliotheek.*') ? 'is-current' : '' }}" @if(request()->routeIs('bibliotheek.*')) aria-current="page" @endif>
-                        <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek
-                    </a>
+                    @php($lvsActive = request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*'))
+                    <div class="portal-nav-module">
+                        <a href="{{ route('leerlingen.index') }}" class="portal-nav-link {{ $lvsActive ? 'is-current' : '' }}" @if($lvsActive) aria-expanded="true" @endif>
+                            <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
+                        </a>
+                        @if($lvsActive)
+                            <nav class="portal-nav-submenu" aria-label="LVS-subnavigatie">
+                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') || request()->routeIs('meldingen.*') ? 'is-active' : '' }}" @if(request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') || request()->routeIs('meldingen.*')) aria-current="page" @endif>Leerlingenoverzicht</a>
+                                <a href="{{ route('leerlingen.verjaardagen') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.verjaardagen') ? 'is-active' : '' }}" @if(request()->routeIs('leerlingen.verjaardagen')) aria-current="page" @endif>Verjaardagen</a>
+                            </nav>
+                        @endif
+                    </div>
+                    @php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
+                    <div class="portal-nav-module">
+                        <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ $bibliotheekActive ? 'is-current' : '' }}" @if($bibliotheekActive) aria-expanded="true" @endif>
+                            <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek
+                        </a>
+                        @if($bibliotheekActive)
+                            <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
+                                <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
+                                <a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
+                                <a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.*')) aria-current="page" @endif>ISBN-lijst importeren</a>
+                                <a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
+                            </nav>
+                        @endif
+                    </div>
                     <span class="portal-sidebar-label portal-sidebar-label-secondary">BINNENKORT</span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▦</span> EMA's <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">⊕</span> Onboarding personeel <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>

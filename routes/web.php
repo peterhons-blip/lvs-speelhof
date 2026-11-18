@@ -21,6 +21,28 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index');
 
+    Route::prefix('bibliotheek/boeken')->name('bibliotheek.books.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index');
+        Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create');
+        Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup');
+        Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external');
+        Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions');
+        Route::get('/werkbeschrijving', [\App\Http\Controllers\LibraryBookController::class, 'workDetails'])->middleware('throttle:30,1')->name('work-details');
+        Route::get('/importeren', [\App\Http\Controllers\LibraryImportController::class, 'create'])->name('import.create');
+        Route::post('/importeren', [\App\Http\Controllers\LibraryImportController::class, 'store'])->name('import.store');
+        Route::get('/importeren/{batch}', [\App\Http\Controllers\LibraryImportController::class, 'show'])->whereNumber('batch')->name('import.show');
+        Route::get('/importeren/{batch}/status', [\App\Http\Controllers\LibraryImportController::class, 'status'])->whereNumber('batch')->name('import.status');
+        Route::get('/{book}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'edit'])->whereNumber('book')->name('edit');
+        Route::put('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'update'])->whereNumber('book')->name('update');
+        Route::delete('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'destroy'])->whereNumber('book')->name('destroy');
+        Route::post('/', [\App\Http\Controllers\LibraryBookController::class, 'store'])->name('store');
+        Route::get('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'show'])->whereNumber('book')->name('show');
+        Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store');
+        Route::get('/{book}/exemplaren/{copy}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'editCopy'])->whereNumber(['book', 'copy'])->name('copies.edit');
+        Route::put('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'updateCopy'])->whereNumber(['book', 'copy'])->name('copies.update');
+
+    });
+
     Route::prefix('leerlingen')->name('leerlingen.')->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');
