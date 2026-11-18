@@ -158,7 +158,7 @@ class LibraryIsbnLookup
                             ? 'https://covers.openlibrary.org/b/id/'.(int) $coverId.'-M.jpg'
                             : null,
                         'languages' => $langCodes,
-                        'description' => $this->descriptionText($edition['description'] ?? ($edition['notes'] ?? null)),
+                        'description' => $this->descriptionText($edition['description'] ?? null),
                     ];
                 })->values()->all();
 
