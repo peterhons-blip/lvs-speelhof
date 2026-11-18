@@ -13,7 +13,10 @@
     <div class="library-page-head">
         <div><p class="portal-eyebrow">BIBLIOTHEEK / ISBN-IMPORT</p><h1>Importoverzicht</h1>
         <p>{{ $batch->total }} unieke ISBN-nummers ingevoerd. De verwerking verloopt via de bibliotheekwachtrij.</p></div>
-        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.create') }}">Nieuwe import</a>
+        <div class="library-form-actions" style="margin:0">
+            <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.history') }}">Importhistoriek</a>
+            <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.create') }}">Nieuwe import</a>
+        </div>
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     <section class="library-form-card">
@@ -40,6 +43,8 @@
 (() => {
     const progress = document.getElementById('import-progress');
     const url = @json(route('bibliotheek.books.import.status', $batch->id));
+    // Finished batches do not need polling (and must not reload endlessly).
+    if (@json((int) ($counts['wachten'] ?? 0)) === 0) return;
     let polls = 0;
     const timer = setInterval(async () => {
         if (polls++ > 180) return clearInterval(timer);

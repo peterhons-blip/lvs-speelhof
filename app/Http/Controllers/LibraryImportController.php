@@ -16,6 +16,34 @@ class LibraryImportController extends Controller
         return view('bibliotheek.import.create');
     }
 
+    public function history(Request $request): View
+    {
+        $user = (string) data_get($request->session()->get('ss_user'), 'gebruikersnaam',
+            data_get($request->session()->get('ss_user'), 'id', ''));
+
+        abort_if($user === '', 403);
+
+        $results = DB::table('library_import_items')
+            ->select('batch_id')
+            ->selectRaw("SUM(CASE WHEN status = 'wachten' THEN 1 ELSE 0 END) AS waiting")
+            ->selectRaw("SUM(CASE WHEN status = 'toegevoegd' THEN 1 ELSE 0 END) AS added")
+            ->selectRaw("SUM(CASE WHEN status = 'dubbel' THEN 1 ELSE 0 END) AS duplicates")
+            ->selectRaw("SUM(CASE WHEN status = 'niet_gevonden' THEN 1 ELSE 0 END) AS not_found")
+            ->selectRaw("SUM(CASE WHEN status = 'fout' THEN 1 ELSE 0 END) AS errors")
+            ->groupBy('batch_id');
+
+        $batches = DB::table('library_import_batches as batches')
+            ->leftJoinSub($results, 'results', fn ($join) => $join->on('batches.id', '=', 'results.batch_id'))
+            ->where('batches.initiated_by', $user)
+            ->select('batches.*', 'results.waiting', 'results.added',
+                'results.duplicates', 'results.not_found', 'results.errors')
+            ->orderByDesc('batches.created_at')
+            ->orderByDesc('batches.id')
+            ->paginate(20);
+
+        return view('bibliotheek.import.history', compact('batches'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $input = $request->validate([
