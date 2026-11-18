@@ -20,7 +20,8 @@ return new class extends Migration {
             $table->string('cover_url', 500)->nullable();
             $table->timestamps();
 
-            $table->index('title');
+            // Geen index op volledige titel (255 x utf8mb4 > 767 bytes op oudere MySQL).
+            // De zoekfunctie gebruikt LIKE met een begin-wildcard, waarvoor die index niet helpt.
         });
 
         Schema::create('library_copies', function (Blueprint $table) {
