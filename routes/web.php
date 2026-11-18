@@ -10,7 +10,7 @@ use App\Services\SmartschoolSoap;
 
 
 // ===== Publiek / SSO =====
-Route::view('/', 'home')->name('home');   // <— publieke landing page
+Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('home');   // <— publieke landing page
 
 Route::get('/login', [SmartschoolController::class, 'redirect'])->name('login');
 Route::get('/auth/smartschool/callback', [SmartschoolController::class, 'callback'])->name('smartschool.callback');
