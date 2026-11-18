@@ -25,6 +25,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create');
         Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup');
+        Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external');
         Route::post('/', [\App\Http\Controllers\LibraryBookController::class, 'store'])->name('store');
         Route::get('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'show'])->whereNumber('book')->name('show');
         Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store');
