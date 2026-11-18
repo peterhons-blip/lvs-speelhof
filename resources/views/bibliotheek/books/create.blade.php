@@ -160,8 +160,22 @@
 
                 const cover = document.createElement('span');
                 cover.className = 'library-name-result-cover';
-                // Search results combine multiple editions; do not display an unrelated edition cover.
-                cover.textContent = '▤';
+                // Show the work-level thumbnail to help identify the book.
+                // Do not save this image as the selected edition's cover.
+                if (book.cover_url) {
+                    const image = document.createElement('img');
+                    image.src = book.cover_url;
+                    image.alt = '';
+                    image.loading = 'lazy';
+                    image.referrerPolicy = 'no-referrer';
+                    image.addEventListener('error', () => {
+                        image.remove();
+                        cover.textContent = '▤';
+                    });
+                    cover.append(image);
+                } else {
+                    cover.textContent = '▤';
+                }
 
                 const info = document.createElement('span');
                 info.className = 'library-name-result-info';
