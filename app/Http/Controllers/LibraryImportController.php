@@ -13,7 +13,7 @@ class LibraryImportController extends Controller
 {
     public function create(): View
     {
-        return view('bibliotheek.books.import.create');
+        return view('bibliotheek.import.create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -70,7 +70,7 @@ class LibraryImportController extends Controller
         $batchRecord = $this->ownedBatch($request, $batch);
         $items = DB::table('library_import_items')->where('batch_id', $batch)->orderBy('id')->get();
         $counts = $items->countBy('status');
-        return view('bibliotheek.books.import.show', [
+        return view('bibliotheek.import.show', [
             'batch' => $batchRecord, 'items' => $items, 'counts' => $counts,
         ]);
     }
