@@ -51,10 +51,10 @@
         <h2>Fysieke exemplaren ({{ $book->copies->count() }})</h2>
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>Opmerking</th></tr></thead>
+                <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>Opmerking</th><th>Actie</th></tr></thead>
                 <tbody>
                     @foreach($book->copies as $copy)
-                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td></tr>
+                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td><td><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a></td></tr>
                     @endforeach
                 </tbody>
             </table>
