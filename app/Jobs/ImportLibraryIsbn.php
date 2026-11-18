@@ -43,9 +43,9 @@ class ImportLibraryIsbn implements ShouldQueue
         }
 
         try {
-            DB::transaction(function () use ($isbn, $metadata) {
+            $created = DB::transaction(function () use ($isbn, $metadata) {
                 if (LibraryBook::where('isbn', $isbn)->exists()) {
-                    return;
+                    return false;
                 }
 
                 $book = LibraryBook::create([
@@ -63,9 +63,10 @@ class ImportLibraryIsbn implements ShouldQueue
                     'barcode' => LibraryCopy::generateBarcode(),
                     'condition' => 'goed',
                 ]);
+                return true;
             });
 
-            $status = LibraryBook::where('isbn', $isbn)->exists() ? 'toegevoegd' : 'dubbel';
+            $status = $created ? 'toegevoegd' : 'dubbel';
             $this->finish($status, $status === 'toegevoegd' ? $metadata['title'] : 'ISBN bestaat al.');
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             $this->finish('dubbel', 'ISBN is ondertussen al geregistreerd.');
