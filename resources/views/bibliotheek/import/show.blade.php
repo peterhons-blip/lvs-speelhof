@@ -13,7 +13,7 @@
     <div class="library-page-head">
         <div><p class="portal-eyebrow">BIBLIOTHEEK / ISBN-IMPORT</p><h1>Importoverzicht</h1>
         <p>{{ $batch->total }} unieke ISBN-nummers ingevoerd. De verwerking verloopt via de bibliotheekwachtrij.</p></div>
-        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.import.create') }}">Nieuwe import</a>
+        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.create') }}">Nieuwe import</a>
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     <section class="library-form-card">
@@ -39,7 +39,7 @@
 <script>
 (() => {
     const progress = document.getElementById('import-progress');
-    const url = @json(route('bibliotheek.import.status', $batch->id));
+    const url = @json(route('bibliotheek.books.import.status', $batch->id));
     let polls = 0;
     const timer = setInterval(async () => {
         if (polls++ > 180) return clearInterval(timer);
