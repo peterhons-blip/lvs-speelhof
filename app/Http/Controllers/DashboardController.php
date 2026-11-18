@@ -49,7 +49,7 @@ class DashboardController extends Controller
                 ->selectRaw("COUNT(*) AS totaal")
                 ->selectRaw("SUM(CASE WHEN status = 'beschikbaar' THEN 1 ELSE 0 END) AS beschikbaar")
                 ->selectRaw("SUM(CASE WHEN status <> 'beschikbaar' THEN 1 ELSE 0 END) AS niet_beschikbaar")
-                ->selectRaw("SUM(CASE WHEN condition = 'beschadigd' THEN 1 ELSE 0 END) AS beschadigd")
+                ->selectRaw("SUM(CASE WHEN `condition` = 'beschadigd' THEN 1 ELSE 0 END) AS beschadigd")
                 ->first();
 
             $bibliotheek['exemplaren'] = (int) $counts->totaal;
