@@ -114,6 +114,85 @@ class LibraryIsbnLookup
     }
 
 
+
+    /**
+     * Fetch edition-specific metadata. A work may have many translations and covers.
+     * Keep pagination so users can browse every edition without assuming a cover/ISBN match.
+     */
+    public function editions(string $workKey, int $offset = 0): array
+    {
+        $limit = 100;
+        try {
+            $response = Http::acceptJson()->timeout(12)
+                ->get('https://openlibrary.org'.$workKey.'/editions.json', [
+                    'limit' => $limit,
+                    'offset' => $offset,
+                ]);
+
+            if (! $response->successful()) {
+                return ['editions' => [], 'total' => 0, 'offset' => $offset, 'limit' => $limit, 'error' => true];
+            }
+
+            $editions = collect($response->json('entries', []))
+                ->filter(fn ($edition) => is_array($edition) && ! empty($edition['title']))
+                ->map(function ($edition) {
+                    $isbn = collect(array_merge((array) ($edition['isbn_13'] ?? []), (array) ($edition['isbn_10'] ?? [])))
+                        ->first(fn ($value) => is_string($value) && $this->isValidIsbn($value)) ?: '';
+                    $coverId = collect((array) ($edition['covers'] ?? []))
+                        ->first(fn ($value) => is_numeric($value) && (int) $value > 0);
+                    $langCodes = collect((array) ($edition['languages'] ?? []))
+                        ->map(function ($language) {
+                            $key = is_array($language) ? ($language['key'] ?? '') : '';
+                            return is_string($key) ? basename($key) : '';
+                        })->filter()->unique()->values()->all();
+
+                    return [
+                        'title' => mb_substr((string) $edition['title'], 0, 255),
+                        'subtitle' => mb_substr((string) ($edition['subtitle'] ?? ''), 0, 255),
+                        'publisher' => mb_substr((string) (($edition['publishers'] ?? [])[0] ?? ''), 0, 255),
+                        'published_year' => mb_substr((string) ($edition['publish_date'] ?? ''), 0, 20),
+                        'isbn' => $isbn,
+                        'cover_url' => $coverId
+                            ? 'https://covers.openlibrary.org/b/id/'.(int) $coverId.'-M.jpg'
+                            : null,
+                        'languages' => $langCodes,
+                        'description' => $this->descriptionText($edition['description'] ?? ($edition['notes'] ?? null)),
+                    ];
+                })->values()->all();
+
+            return [
+                'editions' => $editions,
+                'total' => (int) $response->json('size', count($editions)),
+                'offset' => $offset,
+                'limit' => $limit,
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+            return ['editions' => [], 'total' => 0, 'offset' => $offset, 'limit' => $limit, 'error' => true];
+        }
+    }
+
+    private function isValidIsbn(string $isbn): bool
+    {
+        if (preg_match('/^\d{13}$/', $isbn)) {
+            $sum = 0;
+            foreach (str_split($isbn) as $i => $digit) {
+                $sum += (int) $digit * ($i % 2 === 0 ? 1 : 3);
+            }
+            return $sum % 10 === 0;
+        }
+
+        if (preg_match('/^\d{9}[\dX]$/', $isbn)) {
+            $sum = 0;
+            foreach (str_split($isbn) as $i => $digit) {
+                $sum += (10 - $i) * ($digit === 'X' ? 10 : (int) $digit);
+            }
+            return $sum % 11 === 0;
+        }
+
+        return false;
+    }
+
     /**
      * Retrieve a description for a selected work, not for all search results.
      * The work key is validated by the controller, and the HTTP host is fixed.
