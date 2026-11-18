@@ -20,6 +20,7 @@
         </div>
         <div class="library-form-actions" style="margin:0">
             <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.create') }}">ISBN-lijst importeren</a>
+            <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.history') }}">Importhistoriek</a>
             <a class="library-button library-button-primary" href="{{ route('bibliotheek.books.create') }}">+ Boek toevoegen</a>
         </div>
     </div>
