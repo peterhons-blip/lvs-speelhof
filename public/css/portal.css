@@ -175,3 +175,87 @@ body.portal-body{background:var(--portal-surface);color:var(--portal-ink)}
 .portal-library-notice{font-size:.84rem;color:#7D8B9D;margin:22px 0}
 @media(max-width:1050px){.portal-library-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.portal-library-feature-grid{grid-template-columns:1fr}.portal-library-heading{flex-direction:column;gap:13px}.portal-library-feature{min-height:0}}
+
+
+/* Bibliotheek: boekencatalogus, formulieren en fysieke exemplaren */
+a.portal-library-feature-active{text-decoration:none;color:inherit;border-color:#A2DDE0;box-shadow:0 5px 18px rgba(18,112,125,.1)}
+a.portal-library-feature-active:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(18,112,125,.15)}
+a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-magenta);outline-offset:3px}
+.portal-library-feature-active .portal-library-feature-state{color:#087884}
+.library-page{max-width:1220px;margin:0 auto}
+.library-page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:26px}
+.library-page-head h1{color:var(--portal-navy-deep);font-size:clamp(1.8rem,3vw,2.5rem);margin:6px 0 10px;letter-spacing:-.025em}
+.library-page-head p:not(.portal-eyebrow){color:#687B8D;line-height:1.6;margin:0}
+.library-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:10px 16px;border-radius:10px;border:1px solid transparent;text-decoration:none;font-weight:700;font-size:.88rem;white-space:nowrap;cursor:pointer;font-family:inherit}
+.library-button:disabled{opacity:.6;cursor:wait}
+.library-button-primary{background:var(--portal-magenta);color:white}
+.library-button-primary:hover,.library-button-primary:focus-visible{background:#AD0041;color:white}
+.library-button-secondary{background:white;color:var(--portal-navy);border-color:#D7E1EA}
+.library-button-secondary:hover,.library-button-secondary:focus-visible{background:#EDF5F8}
+.library-button:focus-visible,.library-page input:focus-visible,.library-page select:focus-visible,.library-page textarea:focus-visible{outline:3px solid #83CFD2;outline-offset:2px}
+.library-search,.library-form-card{background:white;border:1px solid var(--portal-border);border-radius:16px;padding:23px;margin-bottom:22px}
+.library-search label,.library-field label{display:block;color:var(--portal-navy);font-size:.86rem;font-weight:750;margin:0 0 8px}
+.library-search-row,.library-isbn-row{display:flex;gap:12px;align-items:flex-end}
+.library-search-row input{flex:1;min-width:0}
+.library-page input,.library-page select,.library-page textarea{font:inherit;box-sizing:border-box;min-height:43px;width:100%;border:1px solid #CFDCE7;border-radius:9px;padding:10px 12px;background:white;color:var(--portal-ink)}
+.library-page textarea{min-height:78px;resize:vertical}
+.library-list{border:1px solid var(--portal-border);border-radius:16px;background:white;overflow:hidden}
+.library-list-item{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid #EDF1F5;text-decoration:none;color:var(--portal-ink);transition:background .15s}
+.library-list-item:last-child{border-bottom:0}
+.library-list-item:hover,.library-list-item:focus-visible{background:#F1FAFA}
+.library-cover{flex:none;width:52px;height:70px;background:#EDF4F7;border-radius:7px;display:grid;place-items:center;color:#6D9BA5;font-size:2rem;overflow:hidden}
+.library-cover img,.library-detail-cover img{width:100%;height:100%;object-fit:contain}
+.library-list-info{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.library-list-info strong{font-size:1rem;color:var(--portal-navy)}
+.library-list-info span,.library-list-info small{font-size:.82rem;color:#63788E}
+.library-stock{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:82px}
+.library-stock strong{color:#0B727B}.library-stock small{font-size:.7rem;color:#74859A}
+.library-arrow{font-size:1.4rem;color:#6B8998}
+.library-empty{text-align:center;padding:60px 20px;color:#687B8D}
+.library-empty strong{display:block;color:var(--portal-navy);margin-bottom:8px;font-size:1.12rem}
+.library-empty p{margin:0}
+.library-pagination{padding-top:18px}
+.library-form-card h2{font-size:1.16rem;color:var(--portal-navy);margin:0 0 17px}
+.library-form-card>p{color:#6F8294;line-height:1.6;margin:-6px 0 20px;font-size:.88rem}
+.library-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 20px}
+.library-field{min-width:0}
+.library-wide{grid-column:1/-1}
+.library-isbn-row{margin-bottom:4px}
+.library-isbn-row .library-field{flex:1}
+.library-help{color:#75869A;font-size:.82rem;margin:10px 0 22px;line-height:1.5}
+.library-cover-preview{margin-top:20px;width:100px;height:135px}
+.library-cover-preview img{width:100%;height:100%;object-fit:contain;border-radius:7px;border:1px solid #E1EAF1}
+.library-form-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0}
+.library-errors,.library-message{padding:14px 18px;border-radius:10px;margin-bottom:20px;line-height:1.6}
+.library-errors{background:#FFF0F4;border:1px solid #F1BACD;color:#8F2547}
+.library-errors ul{margin:7px 0 0;padding-left:20px}
+.library-message{background:#EEF9F4;border:1px solid #C3E9D6;color:#21654A}
+.library-detail-card{display:flex;gap:28px;background:#fff;border:1px solid var(--portal-border);border-radius:16px;padding:24px;margin-bottom:22px}
+.library-detail-cover{flex:none;width:165px;height:220px;background:#EDF4F7;border-radius:9px;overflow:hidden;display:grid;place-items:center;font-size:5rem;color:#6D9BA5}
+.library-detail-data{flex:1;min-width:0}
+.library-detail-data h2{margin:0 0 15px;color:var(--portal-navy);font-size:1.05rem}
+.library-detail-data dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px;margin:0}
+.library-detail-data dt{color:#708398;font-size:.76rem;font-weight:700;margin-bottom:3px}
+.library-detail-data dd{color:var(--portal-ink);margin:0;overflow-wrap:anywhere}
+.library-description{white-space:pre-wrap;line-height:1.65;color:#5B6F84;margin:17px 0 0}
+.library-table-wrap{overflow-x:auto}
+.library-table{width:100%;border-collapse:collapse;font-size:.87rem;text-align:left}
+.library-table th,.library-table td{padding:12px 10px;border-bottom:1px solid #E8EEF3;vertical-align:top}
+.library-table th{font-size:.77rem;color:#71869A;text-transform:uppercase;letter-spacing:.04em}
+.library-table tbody tr:last-child td{border-bottom:0}
+.library-pill{background:#E8F6F4;color:#0A757B;padding:5px 9px;border-radius:99px;font-size:.78rem;font-weight:700}
+@media(max-width:760px){
+ .library-page-head{flex-direction:column;gap:16px}
+ .library-form-grid,.library-detail-data dl{grid-template-columns:1fr}
+ .library-isbn-row{flex-direction:column;align-items:stretch}
+ .library-detail-card{flex-direction:column}
+ .library-detail-cover{width:125px;height:165px}
+}
+@media(max-width:530px){
+ .library-search-row{flex-wrap:wrap}
+ .library-search-row input{flex-basis:100%}
+ .library-list-item{padding:12px;gap:10px}
+ .library-stock{min-width:60px}
+ .library-arrow{display:none}
+ .library-search,.library-form-card{padding:17px}
+}
