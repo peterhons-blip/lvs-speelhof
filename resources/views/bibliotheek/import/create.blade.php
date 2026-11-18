@@ -17,7 +17,7 @@
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Terug naar catalogus</a>
     </div>
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <form action="{{ route('bibliotheek.import.store') }}" method="post" class="library-form-card">
+    <form action="{{ route('bibliotheek.books.import.store') }}" method="post" class="library-form-card">
         @csrf
         <div class="library-field">
             <label for="isbns">ISBN-nummers</label>
