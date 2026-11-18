@@ -321,3 +321,14 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .library-copy-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
 .library-copy-actions form{margin:0}
 .library-copy-actions .library-help{margin:0;max-width:220px}
+
+/* Dashboard: compact, responsive statistics inside the application tiles. */
+.portal-module-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%;margin:4px 0 8px}
+.portal-module .portal-module-stat{display:flex;flex-direction:column;gap:4px;min-width:0;border:1px solid #E5EDF1;border-radius:10px;padding:10px;background:#F7FAFB}
+.portal-module .portal-module-stat span{font-size:.73rem;line-height:1.3;color:#617489}
+.portal-module .portal-module-stat strong{font-size:1.42rem;line-height:1.15;color:var(--portal-navy);font-variant-numeric:tabular-nums}
+.portal-module .portal-module-alert{display:block;width:100%;padding:8px 10px;border-radius:9px;font-size:.76rem;font-weight:700;line-height:1.4}
+.portal-module .portal-module-alert-danger{color:#A52A34;background:#FFF0F0;border:1px solid #F1C1C4}
+.portal-module .portal-module-alert-warning{color:#91601B;background:#FFF7E7;border:1px solid #F1D9A6}
+.portal-module .portal-module-hint{font-size:.72rem;color:#77889A;line-height:1.4}
+@media(max-width:640px){.portal-module-stats{gap:7px}.portal-module .portal-module-stat{padding:9px}}
