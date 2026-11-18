@@ -141,6 +141,62 @@ class LibraryBookController extends Controller
         ]);
     }
 
+    public function edit(LibraryBook $book): View
+    {
+        return view('bibliotheek.books.edit', compact('book'));
+    }
+
+    public function update(Request $request, LibraryBook $book): RedirectResponse
+    {
+        $input = $request->all();
+        $input['isbn'] = $this->normalizedIsbn((string) ($input['isbn'] ?? ''));
+        $data = validator($input, [
+            'isbn' => ['nullable', 'string', 'max:13', Rule::unique('library_books', 'isbn')->ignore($book->id)],
+            'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
+            'authors' => ['nullable', 'string', 'max:255'],
+            'publisher' => ['nullable', 'string', 'max:255'],
+            'published_year' => ['nullable', 'string', 'max:20'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'cover_url' => ['nullable', 'string', 'max:500', 'url', 'starts_with:https://covers.openlibrary.org/'],
+        ])->validate();
+
+        if ($data['isbn'] !== '' && ! $this->validIsbn($data['isbn'])) {
+            return back()->withErrors(['isbn' => 'Ongeldig ISBN-controlecijfer.'])->withInput();
+        }
+        if ($data['isbn'] === '') {
+            $data['isbn'] = null;
+        }
+
+        $book->update($data);
+        return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Boekgegevens aangepast.');
+    }
+
+    public function destroy(LibraryBook $book): RedirectResponse
+    {
+        return DB::transaction(function () use ($book) {
+            // Lock copy rows so an active loan cannot be overlooked on deletion.
+            $copies = $book->copies()->lockForUpdate()->get();
+
+            if ($copies->contains(fn ($copy) => $copy->status !== 'beschikbaar')) {
+                return back()->withErrors(['delete' => 'Verwijderen is niet mogelijk: minstens één exemplaar is niet beschikbaar of uitgeleend.']);
+            }
+
+            // The loan module is still in development. Protect active loans if its table exists.
+            if (\Illuminate\Support\Facades\Schema::hasTable('library_loans')
+                && \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'copy_id')
+                && \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'returned_at')
+                && DB::table('library_loans')->whereIn('copy_id', $copies->pluck('id'))
+                    ->whereNull('returned_at')->exists()) {
+                return back()->withErrors(['delete' => 'Verwijderen is niet mogelijk: er staat nog een actieve uitlening open.']);
+            }
+
+            $book->delete();
+            return redirect()->route('bibliotheek.books.index')->with('success', 'Boek en bijbehorende exemplaren verwijderd.');
+        });
+    }
+
     public function addCopy(Request $request, LibraryBook $book): RedirectResponse
     {
         $input = $request->all();
