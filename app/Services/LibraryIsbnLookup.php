@@ -68,7 +68,7 @@ class LibraryIsbnLookup
             $response = Http::acceptJson()->timeout(8)->retry(1, 200)
                 ->get('https://openlibrary.org/search.json', [
                     $parameter => $query,
-                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn,subject',
+                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn,subject,edition_count',
                     'limit' => 12,
                     'lang' => 'nl',
                 ]);
@@ -94,7 +94,9 @@ class LibraryIsbnLookup
                         return $sum % 10 === 0;
                     });
                     return [
-                        'work_key' => preg_match('~^/works/OL[0-9]+W$~', (string) ($book['key'] ?? '')) ? $book['key'] : null,
+                        'work_key' => preg_match('~^/?works/OL[0-9]+W$~', (string) ($book['key'] ?? ''))
+                            ? '/'.ltrim((string) $book['key'], '/') : null,
+                        'edition_count' => (int) ($book['edition_count'] ?? 0),
                         'isbn' => $suggestedIsbn ?: '',
                         'category' => $this->genreFromSubjects($book['subject'] ?? []),
                         'title' => mb_substr((string) $book['title'], 0, 255),
