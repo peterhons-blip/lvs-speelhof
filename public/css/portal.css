@@ -316,3 +316,8 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
  .portal-nav-submenu{margin:2px 0 4px 15px;padding-left:7px}
  .portal-nav-subitem{white-space:nowrap;font-size:.78rem;padding:7px 9px}
 }
+
+/* Acties voor een afzonderlijk fysiek exemplaar. */
+.library-copy-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.library-copy-actions form{margin:0}
+.library-copy-actions .library-help{margin:0;max-width:220px}

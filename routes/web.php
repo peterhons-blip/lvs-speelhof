@@ -41,6 +41,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store');
         Route::get('/{book}/exemplaren/{copy}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'editCopy'])->whereNumber(['book', 'copy'])->name('copies.edit');
         Route::put('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'updateCopy'])->whereNumber(['book', 'copy'])->name('copies.update');
+        Route::delete('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'destroyCopy'])->whereNumber(['book', 'copy'])->name('copies.destroy');
 
     });
 

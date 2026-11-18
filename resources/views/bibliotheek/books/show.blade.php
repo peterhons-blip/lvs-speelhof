@@ -54,7 +54,20 @@
                 <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>Opmerking</th><th>Actie</th></tr></thead>
                 <tbody>
                     @foreach($book->copies as $copy)
-                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td><td><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a></td></tr>
+                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td><td>
+                            <div class="library-copy-actions">
+                                <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
+                                @if($copy->status === 'beschikbaar')
+                                    <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="library-button library-button-secondary" aria-label="Exemplaar {{ $copy->barcode }} verwijderen">Verwijderen</button>
+                                    </form>
+                                @else
+                                    <small class="library-help">Niet verwijderbaar zolang het exemplaar niet beschikbaar is.</small>
+                                @endif
+                            </div>
+                        </td></tr>
                     @endforeach
                 </tbody>
             </table>
