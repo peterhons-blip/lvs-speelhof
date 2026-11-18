@@ -55,12 +55,36 @@
                     <span class="portal-module-icon" aria-hidden="true">◎</span>
                     <strong>LVS</strong>
                     <span>Leerlingen opvolgen, meldingen registreren en leerlinginformatie raadplegen.</span>
+                    <div class="portal-module-stats" aria-label="LVS-statistieken">
+                        <div class="portal-module-stat"><span>Actieve leerlingen</span><strong>{{ isset($lvs['leerlingen']) ? number_format($lvs['leerlingen'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Meldingen totaal</span><strong>{{ isset($lvs['meldingen']) ? number_format($lvs['meldingen'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Meldingen deze maand</span><strong>{{ isset($lvs['meldingen_maand']) ? number_format($lvs['meldingen_maand'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Vandaag jarig</span><strong>{{ isset($lvs['jarig_vandaag']) ? number_format($lvs['jarig_vandaag'], 0, ',', '.') : '—' }}</strong></div>
+                    </div>
                     <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
                 </a>
                 <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
                     <span class="portal-module-icon" aria-hidden="true">▤</span>
                     <strong>Bibliotheek</strong>
-                    <span>Boeken registreren, uitlenen en opvolgen. Binnenkort ook herinneringen via Smartschool.</span>
+                    <span>Boeken en fysieke exemplaren beheren. Uitlenen en herinneringen volgen later.</span>
+                    <div class="portal-module-stats" aria-label="Bibliotheekstatistieken">
+                        <div class="portal-module-stat"><span>Boektitels</span><strong>{{ isset($bibliotheek['boeken']) ? number_format($bibliotheek['boeken'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Exemplaren</span><strong>{{ isset($bibliotheek['exemplaren']) ? number_format($bibliotheek['exemplaren'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Beschikbaar</span><strong>{{ isset($bibliotheek['beschikbaar']) ? number_format($bibliotheek['beschikbaar'], 0, ',', '.') : '—' }}</strong></div>
+                        <div class="portal-module-stat"><span>Actieve uitleningen</span><strong>{{ isset($bibliotheek['uitleningen']) ? number_format($bibliotheek['uitleningen'], 0, ',', '.') : '—' }}</strong></div>
+                    </div>
+                    @if(($bibliotheek['te_laat'] ?? 0) > 0)
+                        <span class="portal-module-alert portal-module-alert-danger">⚠ {{ $bibliotheek['te_laat'] }} uitlening(en) te laat</span>
+                    @endif
+                    @if(($bibliotheek['beschadigd'] ?? 0) > 0)
+                        <span class="portal-module-alert portal-module-alert-danger">⚠ {{ $bibliotheek['beschadigd'] }} beschadigde exemplaren</span>
+                    @endif
+                    @if(($bibliotheek['imports_wachten'] ?? 0) > 0)
+                        <span class="portal-module-alert portal-module-alert-warning">⏳ {{ $bibliotheek['imports_wachten'] }} ISBN('s) wachten op verwerking</span>
+                    @endif
+                    @if(!isset($bibliotheek['uitleningen']))
+                        <span class="portal-module-hint">Uitleningen en achterstallige boeken: binnenkort beschikbaar</span>
+                    @endif
                     <span class="portal-module-footer">Bekijk de module <span aria-hidden="true">→</span></span>
                 </a>
                 <div class="portal-module portal-module-disabled" aria-disabled="true">
