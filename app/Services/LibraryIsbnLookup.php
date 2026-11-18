@@ -125,7 +125,7 @@ class LibraryIsbnLookup
                 ->get('https://openlibrary.org'.$workKey.'.json');
 
             if (! $response->successful()) {
-                return ['description' => '', 'category' => ''];
+                return ['description' => '', 'category' => '', 'subtitle' => ''];
             }
 
             $data = $response->json();
@@ -135,6 +135,7 @@ class LibraryIsbnLookup
 
             return [
                 'description' => $this->descriptionText($data['description'] ?? null),
+                'subtitle' => mb_substr((string) ($data['subtitle'] ?? ''), 0, 255),
                 'category' => $this->genreFromSubjects(is_array($data['subjects'] ?? null) ? $data['subjects'] : []),
             ];
         } catch (\Throwable $e) {
