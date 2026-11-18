@@ -201,7 +201,7 @@
                 const title = document.createElement('strong');
                 title.textContent = book.title || 'Zonder titel';
                 const author = document.createElement('small');
-                author.textContent = [book.authors, book.published_year, book.isbn ? 'Voorgesteld ISBN: ' + book.isbn : 'ISBN niet gevonden'].filter(Boolean).join(' · ');
+                author.textContent = [book.authors, book.published_year, book.edition_count ? book.edition_count + ' uitgaven' : 'Edities bekijken'].filter(Boolean).join(' · ');
                 info.append(title, author);
 
                 const choose = document.createElement('span');
