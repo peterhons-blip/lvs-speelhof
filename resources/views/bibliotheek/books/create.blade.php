@@ -55,7 +55,7 @@
                 </div>
                 <p class="library-help" id="library-name-feedback" role="status" aria-live="polite">Kies een gevonden boek om de invoervelden automatisch in te vullen.</p>
                 <div id="library-name-results" class="library-name-results" hidden></div>
-                <p class="library-help">De resultaten kunnen meerdere edities omvatten. Controleer de juiste editie en vul het ISBN zo nodig zelf in.</p>
+                <p class="library-help">Open Library kan een ISBN van een andere editie voorstellen. Controleer het voorgestelde ISBN altijd op de achterkant van jouw boek.</p>
             </div>
 
             <div class="library-form-grid">
@@ -75,7 +75,8 @@
             <h2>2. Eerste fysiek exemplaar</h2>
             <p>Elk exemplaar heeft een eigen barcode, ook wanneer meerdere boeken hetzelfde ISBN hebben.</p>
             <div class="library-form-grid">
-                <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer <span aria-hidden="true">*</span></label><input id="barcode" name="barcode" value="{{ old('barcode') }}" maxlength="60" required placeholder="Bijv. BIB-00001"></div>
+                <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer <span aria-hidden="true">*</span></label><input id="barcode" name="barcode" value="{{ old('barcode', $suggestedBarcode) }}" maxlength="60" required></div>
+                <p class="library-help library-wide">Een unieke barcode is automatisch ingevuld. Je mag die indien nodig aanpassen.</p>
                 <div class="library-field"><label for="shelf_location">Rek / locatie</label><input id="shelf_location" name="shelf_location" value="{{ old('shelf_location') }}" maxlength="120" placeholder="Bijv. A3"></div>
                 <div class="library-field"><label for="condition">Staat</label><select id="condition" name="condition"><option value="nieuw" @selected(old('condition') === 'nieuw')>Nieuw</option><option value="goed" @selected(old('condition', 'goed') === 'goed')>Goed</option><option value="gebruikt" @selected(old('condition') === 'gebruikt')>Gebruikt</option><option value="beschadigd" @selected(old('condition') === 'beschadigd')>Beschadigd</option></select></div>
                 <div class="library-field library-wide"><label for="notes">Opmerkingen over dit exemplaar</label><textarea id="notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea></div>
@@ -105,7 +106,7 @@
         ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'cover_url'].forEach(key => {
             const input = document.getElementById(key);
             if (!input) return;
-            if (fromName && (key === 'isbn' || key === 'subtitle')) {
+            if (fromName && key === 'subtitle') {
                 input.value = '';
             } else {
                 input.value = book[key] || '';
@@ -170,7 +171,7 @@
                 const title = document.createElement('strong');
                 title.textContent = book.title || 'Zonder titel';
                 const author = document.createElement('small');
-                author.textContent = [book.authors, book.published_year].filter(Boolean).join(' · ');
+                author.textContent = [book.authors, book.published_year, book.isbn ? 'Voorgesteld ISBN: ' + book.isbn : 'ISBN niet gevonden'].filter(Boolean).join(' · ');
                 info.append(title, author);
 
                 const choose = document.createElement('span');
@@ -179,7 +180,9 @@
                 option.append(cover, info, choose);
                 option.addEventListener('click', () => {
                     applyBook(book, true);
-                    nameFeedback.textContent = 'Boekgegevens ingevuld. Controleer de editie en vul indien beschikbaar het ISBN in.';
+                    nameFeedback.textContent = book.isbn
+                        ? 'ISBN ' + book.isbn + ' is voorgesteld. Controleer dit met het ISBN op jouw fysieke boek voordat je opslaat.'
+                        : 'Boekgegevens ingevuld, maar er is geen ISBN gevonden. Vul het ISBN zelf in indien beschikbaar.';
                     nameResults.hidden = true;
                     document.getElementById('title').focus();
                 });
@@ -210,7 +213,7 @@
             if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; return; }
             const book = result.book;
             applyBook(book);
-            message.textContent = 'Gegevens gevonden. Controleer de velden en vul de exemplaarbarcode in.';
+            message.textContent = 'Gegevens gevonden. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
         } finally {
