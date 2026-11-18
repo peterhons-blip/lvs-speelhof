@@ -1,0 +1,145 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\LibraryBook;
+use App\Models\LibraryCopy;
+use App\Services\LibraryIsbnLookup;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class LibraryBookController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $query = trim((string) $request->query('q', ''));
+        $books = LibraryBook::query()
+            ->withCount(['copies', 'copies as available_copies_count' => fn ($q) => $q->where('status', 'beschikbaar')])
+            ->when($query !== '', function ($q) use ($query) {
+                $q->where(function ($sub) use ($query) {
+                    $sub->where('title', 'like', '%'.$query.'%')
+                        ->orWhere('isbn', 'like', '%'.$query.'%')
+                        ->orWhere('authors', 'like', '%'.$query.'%')
+                        ->orWhereHas('copies', fn ($copies) => $copies->where('barcode', 'like', '%'.$query.'%'));
+                });
+            })
+            ->orderBy('title')
+            ->paginate(15)->withQueryString();
+
+        return view('bibliotheek.books.index', compact('books', 'query'));
+    }
+
+    public function create(): View
+    {
+        return view('bibliotheek.books.create');
+    }
+
+    public function lookup(Request $request, LibraryIsbnLookup $lookup): JsonResponse
+    {
+        $isbn = $this->normalizedIsbn((string) $request->query('isbn', ''));
+        if (! $this->validIsbn($isbn)) {
+            return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
+        }
+
+        $book = $lookup->find($isbn);
+        if ($book === null) {
+            return response()->json(['message' => 'Geen gegevens gevonden. Vul het boek handmatig in.'], 404);
+        }
+
+        return response()->json(['book' => $book]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $input = $request->all();
+        $input['isbn'] = $this->normalizedIsbn((string) ($input['isbn'] ?? ''));
+
+        $data = validator($input, [
+            'isbn' => ['nullable', 'string', 'max:13', Rule::unique('library_books', 'isbn')],
+            'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
+            'authors' => ['nullable', 'string', 'max:255'],
+            'publisher' => ['nullable', 'string', 'max:255'],
+            'published_year' => ['nullable', 'string', 'max:20'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'cover_url' => ['nullable', 'string', 'max:500', 'url', 'starts_with:https://covers.openlibrary.org/'],
+            'barcode' => ['required', 'string', 'max:60', Rule::unique('library_copies', 'barcode')],
+            'shelf_location' => ['nullable', 'string', 'max:120'],
+            'condition' => ['required', Rule::in(['nieuw', 'goed', 'gebruikt', 'beschadigd'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ])->validate();
+
+        if ($data['isbn'] !== '' && ! $this->validIsbn($data['isbn'])) {
+            return back()->withErrors(['isbn' => 'Ongeldig ISBN-controlecijfer.'])->withInput();
+        }
+        if ($data['isbn'] === '') {
+            $data['isbn'] = null;
+        }
+
+        $book = DB::transaction(function () use ($data) {
+            $book = LibraryBook::create(collect($data)->only([
+                'isbn','title','subtitle','authors','publisher','published_year',
+                'category','description','cover_url',
+            ])->all());
+
+            $book->copies()->create(collect($data)->only([
+                'barcode', 'shelf_location', 'condition', 'notes',
+            ])->all());
+
+            return $book;
+        });
+
+        return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Boek en eerste exemplaar geregistreerd.');
+    }
+
+    public function show(LibraryBook $book): View
+    {
+        $book->load(['copies' => fn ($q) => $q->orderBy('barcode')]);
+        return view('bibliotheek.books.show', compact('book'));
+    }
+
+    public function addCopy(Request $request, LibraryBook $book): RedirectResponse
+    {
+        $data = $request->validate([
+            'barcode' => ['required', 'string', 'max:60', Rule::unique('library_copies', 'barcode')],
+            'shelf_location' => ['nullable', 'string', 'max:120'],
+            'condition' => ['required', Rule::in(['nieuw', 'goed', 'gebruikt', 'beschadigd'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $book->copies()->create($data);
+
+        return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Extra exemplaar toegevoegd.');
+    }
+
+    private function normalizedIsbn(string $value): string
+    {
+        return strtoupper(preg_replace('/[\s-]+/', '', trim($value)) ?? '');
+    }
+
+    private function validIsbn(string $isbn): bool
+    {
+        if (preg_match('/^\d{9}[\dX]$/', $isbn)) {
+            $sum = 0;
+            foreach (str_split($isbn) as $index => $digit) {
+                $sum += (10 - $index) * ($digit === 'X' ? 10 : (int) $digit);
+            }
+            return $sum % 11 === 0;
+        }
+
+        if (preg_match('/^\d{13}$/', $isbn)) {
+            $sum = 0;
+            foreach (str_split($isbn) as $index => $digit) {
+                $sum += (int) $digit * ($index % 2 === 0 ? 1 : 3);
+            }
+            return $sum % 10 === 0;
+        }
+
+        return false;
+    }
+}
