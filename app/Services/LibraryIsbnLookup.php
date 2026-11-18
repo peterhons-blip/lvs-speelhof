@@ -49,6 +49,7 @@ class LibraryIsbnLookup
                 'published_year' => mb_substr((string) ($book['publish_date'] ?? ''), 0, 20),
                 'cover_url' => $cover,
                 'category' => $this->genreFromSubjects($book['subjects'] ?? []),
+                'description' => $this->descriptionText($book['notes'] ?? ($book['excerpts'][0]['text'] ?? null)),
             ];
         } catch (\Throwable $e) {
             report($e);
@@ -93,6 +94,7 @@ class LibraryIsbnLookup
                         return $sum % 10 === 0;
                     });
                     return [
+                        'work_key' => preg_match('~^/works/OL[0-9]+W$~', (string) ($book['key'] ?? '')) ? $book['key'] : null,
                         'isbn' => $suggestedIsbn ?: '',
                         'category' => $this->genreFromSubjects($book['subject'] ?? []),
                         'title' => mb_substr((string) $book['title'], 0, 255),
@@ -109,6 +111,42 @@ class LibraryIsbnLookup
             report($e);
             return [];
         }
+    }
+
+
+    /**
+     * Retrieve a description for a selected work, not for all search results.
+     * The work key is validated by the controller, and the HTTP host is fixed.
+     */
+    public function workDetails(string $workKey): array
+    {
+        try {
+            $response = Http::acceptJson()->timeout(7)
+                ->get('https://openlibrary.org'.$workKey.'.json');
+
+            if (! $response->successful()) {
+                return ['description' => '', 'category' => ''];
+            }
+
+            $data = $response->json();
+            if (! is_array($data)) {
+                return ['description' => '', 'category' => ''];
+            }
+
+            return [
+                'description' => $this->descriptionText($data['description'] ?? null),
+                'category' => $this->genreFromSubjects(is_array($data['subjects'] ?? null) ? $data['subjects'] : []),
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+            return ['description' => '', 'category' => ''];
+        }
+    }
+
+    private function descriptionText(mixed $value): string
+    {
+        $text = is_array($value) ? ($value['value'] ?? '') : $value;
+        return is_string($text) ? mb_substr(trim($text), 0, 5000) : '';
     }
 
     /**
