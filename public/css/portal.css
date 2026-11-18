@@ -259,3 +259,23 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
  .library-arrow{display:none}
  .library-search,.library-form-card{padding:17px}
 }
+
+
+/* Bibliotheek: boeken op naam zoeken in Open Library. */
+.library-name-lookup{margin:23px 0 24px;padding:20px;background:#F7FAFB;border:1px solid #E2EBF0;border-radius:13px}
+.library-name-lookup h3{font-size:1rem;color:var(--portal-navy);margin:0 0 16px}
+.library-name-search-row{display:flex;gap:11px;align-items:flex-end}
+.library-name-search-row .library-field:first-child{width:150px;flex:none}
+.library-name-search-input{flex:1}
+.library-name-search-row>.library-button{flex:none}
+.library-name-results{display:grid;gap:8px;max-height:410px;overflow-y:auto;margin:8px 0 15px}
+.library-name-result{width:100%;display:flex;align-items:center;gap:14px;padding:10px 13px;text-align:left;border:1px solid #DCE8EE;border-radius:10px;background:white;color:var(--portal-ink);cursor:pointer;font-family:inherit}
+.library-name-result:hover,.library-name-result:focus-visible{background:#EAF7F8;border-color:#A1D6D9}
+.library-name-result-cover{width:44px;height:58px;flex:none;background:#EAF3F5;display:grid;place-items:center;overflow:hidden;border-radius:5px;font-size:1.5rem;color:#7B9DA5}
+.library-name-result-cover img{width:100%;height:100%;object-fit:contain}
+.library-name-result-info{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0}
+.library-name-result-info strong{font-size:.9rem;line-height:1.3}
+.library-name-result-info small{font-size:.77rem;color:#6F8294}
+.library-name-result-select{font-size:.77rem;font-weight:750;color:#007780;white-space:nowrap}
+@media(max-width:760px){.library-name-search-row{flex-wrap:wrap}.library-name-search-input{flex:1;min-width:160px}}
+@media(max-width:530px){.library-name-lookup{padding:15px}.library-name-search-row .library-field:first-child{width:100%}.library-name-search-input{width:100%;flex-basis:100%}.library-name-result-select{display:none}}
