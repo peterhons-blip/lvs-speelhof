@@ -217,6 +217,31 @@ class LibraryBookController extends Controller
         return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Extra exemplaar toegevoegd.');
     }
 
+    public function editCopy(LibraryBook $book, LibraryCopy $copy): View
+    {
+        $copy = $book->copies()->whereKey($copy->id)->firstOrFail();
+
+        return view('bibliotheek.books.edit-copy', compact('book', 'copy'));
+    }
+
+    public function updateCopy(Request $request, LibraryBook $book, LibraryCopy $copy): RedirectResponse
+    {
+        $copy = $book->copies()->whereKey($copy->id)->firstOrFail();
+
+        $data = $request->validate([
+            'barcode' => ['required', 'string', 'max:60', Rule::unique('library_copies', 'barcode')->ignore($copy->id)],
+            'shelf_location' => ['nullable', 'string', 'max:120'],
+            'condition' => ['required', Rule::in(['nieuw', 'goed', 'gebruikt', 'beschadigd'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        // The loan state is never editable here; it belongs to the lending workflow.
+        $copy->update($data);
+
+        return redirect()->route('bibliotheek.books.show', $book)
+            ->with('success', 'Exemplaar '.$copy->barcode.' aangepast.');
+    }
+
     private function normalizedIsbn(string $value): string
     {
         return strtoupper(preg_replace('/[\s-]+/', '', trim($value)) ?? '');
