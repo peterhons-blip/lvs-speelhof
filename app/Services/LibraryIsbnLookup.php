@@ -56,8 +56,8 @@ class LibraryIsbnLookup
     }
 
     /**
-     * Search at work level by title or author. ISBN is intentionally left blank:
-     * Open Library's work result can represent many editions with different ISBNs.
+     * Search at work level by title or author. A suggested ISBN may belong to
+     * another edition: always ask the user to verify the number on their book.
      */
     public function searchByName(string $query, string $type = 'title'): array
     {
@@ -66,7 +66,7 @@ class LibraryIsbnLookup
             $response = Http::acceptJson()->timeout(8)->retry(1, 200)
                 ->get('https://openlibrary.org/search.json', [
                     $parameter => $query,
-                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher',
+                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn',
                     'limit' => 12,
                     'lang' => 'nl',
                 ]);
@@ -80,8 +80,19 @@ class LibraryIsbnLookup
                 ->take(12)
                 ->map(function ($book) {
                     $coverId = $book['cover_i'] ?? null;
+                    $isbnOptions = (array) ($book['isbn'] ?? []);
+                    $suggestedIsbn = collect($isbnOptions)->first(function ($value) {
+                        if (! is_string($value) || ! preg_match('/^\\d{13}$/', $value)) {
+                            return false;
+                        }
+                        $sum = 0;
+                        foreach (str_split($value) as $index => $digit) {
+                            $sum += (int) $digit * ($index % 2 === 0 ? 1 : 3);
+                        }
+                        return $sum % 10 === 0;
+                    });
                     return [
-                        'isbn' => '',
+                        'isbn' => $suggestedIsbn ?: '',
                         'title' => mb_substr((string) $book['title'], 0, 255),
                         'authors' => mb_substr(implode(', ', array_slice((array) ($book['author_name'] ?? []), 0, 5)), 0, 255),
                         'publisher' => mb_substr((string) (($book['publisher'] ?? [])[0] ?? ''), 0, 255),
