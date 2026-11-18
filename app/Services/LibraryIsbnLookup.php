@@ -82,7 +82,7 @@ class LibraryIsbnLookup
                     $coverId = $book['cover_i'] ?? null;
                     $isbnOptions = (array) ($book['isbn'] ?? []);
                     $suggestedIsbn = collect($isbnOptions)->first(function ($value) {
-                        if (! is_string($value) || ! preg_match('/^\\d{13}$/', $value)) {
+                        if (! is_string($value) || ! preg_match('/^\d{13}$/', $value)) {
                             return false;
                         }
                         $sum = 0;
