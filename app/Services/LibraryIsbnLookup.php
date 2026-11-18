@@ -48,6 +48,7 @@ class LibraryIsbnLookup
                 'publisher' => mb_substr((string) data_get($book, 'publishers.0.name', ''), 0, 255),
                 'published_year' => mb_substr((string) ($book['publish_date'] ?? ''), 0, 20),
                 'cover_url' => $cover,
+                'category' => $this->genreFromSubjects($book['subjects'] ?? []),
             ];
         } catch (\Throwable $e) {
             report($e);
@@ -66,7 +67,7 @@ class LibraryIsbnLookup
             $response = Http::acceptJson()->timeout(8)->retry(1, 200)
                 ->get('https://openlibrary.org/search.json', [
                     $parameter => $query,
-                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn',
+                    'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn,subject',
                     'limit' => 12,
                     'lang' => 'nl',
                 ]);
@@ -93,6 +94,7 @@ class LibraryIsbnLookup
                     });
                     return [
                         'isbn' => $suggestedIsbn ?: '',
+                        'category' => $this->genreFromSubjects($book['subject'] ?? []),
                         'title' => mb_substr((string) $book['title'], 0, 255),
                         'authors' => mb_substr(implode(', ', array_slice((array) ($book['author_name'] ?? []), 0, 5)), 0, 255),
                         'publisher' => mb_substr((string) (($book['publisher'] ?? [])[0] ?? ''), 0, 255),
@@ -107,5 +109,51 @@ class LibraryIsbnLookup
             report($e);
             return [];
         }
+    }
+
+    /**
+     * Convert Open Library subjects into one readable library genre.
+     * Subjects can be very specific, so a recognized genre takes priority.
+     */
+    private function genreFromSubjects(array $subjects): string
+    {
+        $subjects = collect($subjects)->map(function ($subject) {
+            if (is_array($subject)) {
+                return (string) ($subject['name'] ?? '');
+            }
+            return is_string($subject) ? $subject : '';
+        })->filter()->values();
+
+        $genres = [
+            'Fantasy' => ['fantasy', 'fantasie', 'magie', 'magic', 'tovenaars', 'wizards'],
+            'Sciencefiction' => ['science fiction', 'science-fiction', 'sci-fi', 'dystopia'],
+            'Thriller' => ['thriller', 'suspense', 'spionage'],
+            'Detective / misdaad' => ['detective', 'mystery', 'crime fiction', 'misdaad', 'murder'],
+            'Horror' => ['horror', 'ghost stories', 'griezel'],
+            'Romantiek' => ['romance', 'romantic fiction', 'liefdesverhalen'],
+            'Historische roman' => ['historical fiction', 'historische roman'],
+            'Avontuur' => ['adventure', 'avonturen'],
+            'Stripverhaal' => ['comics', 'graphic novels', 'stripverhalen'],
+            'Poëzie' => ['poetry', 'poems', 'gedichten', 'poëzie'],
+            'Biografie' => ['biography', 'autobiography', 'biografie', 'memoir'],
+            'Geschiedenis' => ['history', 'geschiedenis'],
+            'Wetenschap' => ['science', 'wetenschap'],
+            'Educatief' => ['education', 'educational', 'onderwijs'],
+            'Kinder- en jeugdboeken' => ['juvenile fiction', 'children', 'kinderboeken', 'jeugdboeken'],
+            'Roman' => ['fiction', 'novels', 'romans'],
+        ];
+
+        foreach ($genres as $genre => $keywords) {
+            foreach ($subjects as $subject) {
+                $text = mb_strtolower($subject);
+                foreach ($keywords as $keyword) {
+                    if (str_contains($text, $keyword)) {
+                        return $genre;
+                    }
+                }
+            }
+        }
+
+        return '';
     }
 }
