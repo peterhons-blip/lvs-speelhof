@@ -18,6 +18,9 @@ Route::get('/logout', [SmartschoolController::class, 'logout'])->name('logout');
 
 // ===== Protected (na SSO) =====
 Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
+    // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
+    Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index');
+
     Route::prefix('leerlingen')->name('leerlingen.')->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');

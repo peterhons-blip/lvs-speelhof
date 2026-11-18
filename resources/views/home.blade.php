@@ -57,6 +57,12 @@
                     <span>Leerlingen opvolgen, meldingen registreren en leerlinginformatie raadplegen.</span>
                     <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
                 </a>
+                <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
+                    <span class="portal-module-icon" aria-hidden="true">▤</span>
+                    <strong>Bibliotheek</strong>
+                    <span>Boeken registreren, uitlenen en opvolgen. Binnenkort ook herinneringen via Smartschool.</span>
+                    <span class="portal-module-footer">Bekijk de module <span aria-hidden="true">→</span></span>
+                </a>
                 <div class="portal-module portal-module-disabled" aria-disabled="true">
                     <span class="portal-module-icon" aria-hidden="true">▦</span><span class="portal-module-status">Binnenkort</span>
                     <strong>EMA's</strong>
