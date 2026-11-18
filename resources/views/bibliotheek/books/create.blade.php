@@ -68,7 +68,8 @@
                 <div class="library-field library-wide"><label for="description">Omschrijving</label><textarea id="description" name="description" rows="3" maxlength="5000">{{ old('description') }}</textarea></div>
                 <input type="hidden" id="cover_url" name="cover_url" value="{{ old('cover_url') }}">
             </div>
-            <div class="library-cover-preview" id="library-cover-preview" hidden><img id="library-cover-image" alt="Opgehaalde boekomslag" referrerpolicy="no-referrer"></div>
+            <div class="library-cover-preview" id="library-cover-preview" hidden><img id="library-cover-image" alt="Opgehaalde boekomslag" referrerpolicy="no-referrer"><button type="button" class="library-button library-button-secondary" id="library-clear-cover">Verkeerde omslag? Verwijderen</button></div>
+            <p class="library-help">Controleer de omslag met jouw fysieke boek. Bij zoeken op naam wordt geen willekeurige editie-omslag opgeslagen: controleer het ISBN en klik daarna op Gegevens ophalen.</p>
         </section>
 
         <section class="library-form-card">
@@ -96,6 +97,14 @@
     const message = document.getElementById('library-lookup-result');
     const coverPreview = document.getElementById('library-cover-preview');
     const coverImage = document.getElementById('library-cover-image');
+    const clearCoverButton = document.getElementById('library-clear-cover');
+    const clearCover = () => {
+        document.getElementById('cover_url').value = '';
+        coverImage.removeAttribute('src');
+        coverPreview.hidden = true;
+    };
+    clearCoverButton.addEventListener('click', clearCover);
+    coverImage.addEventListener('error', clearCover);
     const nameButton = document.getElementById('library-search-name');
     const nameQuery = document.getElementById('library-name-query');
     const nameType = document.getElementById('library-search-type');
@@ -106,14 +115,13 @@
         ['isbn', 'title', 'subtitle', 'authors', 'publisher', 'published_year', 'category', 'description', 'cover_url'].forEach(key => {
             const input = document.getElementById(key);
             if (!input) return;
-            input.value = book[key] || '';
+            input.value = fromName && key === 'cover_url' ? '' : (book[key] || '');
         });
-        if (book.cover_url) {
+        if (book.cover_url && !fromName) {
             coverImage.src = book.cover_url;
             coverPreview.hidden = false;
         } else {
-            coverImage.removeAttribute('src');
-            coverPreview.hidden = true;
+            clearCover();
         }
     };
 
@@ -152,15 +160,8 @@
 
                 const cover = document.createElement('span');
                 cover.className = 'library-name-result-cover';
-                if (book.cover_url) {
-                    const image = document.createElement('img');
-                    image.src = book.cover_url;
-                    image.alt = '';
-                    image.loading = 'lazy';
-                    cover.append(image);
-                } else {
-                    cover.textContent = '▤';
-                }
+                // Search results combine multiple editions; do not display an unrelated edition cover.
+                cover.textContent = '▤';
 
                 const info = document.createElement('span');
                 info.className = 'library-name-result-info';
@@ -177,7 +178,7 @@
                 option.addEventListener('click', async () => {
                     applyBook(book, true);
                     const selectedTitle = book.title;
-                    nameFeedback.textContent = 'Boekgegevens ingevuld. Omschrijving ophalen…';
+                    nameFeedback.textContent = 'Boekgegevens ingevuld. Controleer ISBN en haal de juiste editie-omslag op via Gegevens ophalen. Omschrijving ophalen…';
                     nameResults.hidden = true;
                     document.getElementById('title').focus();
 
@@ -202,8 +203,8 @@
                         }
                     }
                     nameFeedback.textContent = book.isbn
-                        ? 'Controleer het voorgestelde ISBN ' + book.isbn + ' met jouw exemplaar. Genre en omschrijving zijn ingevuld waar beschikbaar.'
-                        : 'Controleer de boekgegevens. Genre en omschrijving zijn ingevuld waar beschikbaar; voeg eventueel zelf het ISBN toe.';
+                        ? 'Controleer ISBN ' + book.isbn + ' op jouw boek en klik op Gegevens ophalen voor de bijbehorende omslag.'
+                        : 'Controleer de boekgegevens. Vul indien mogelijk het ISBN in en klik op Gegevens ophalen voor de juiste omslag.';
                 });
                 nameResults.append(option);
             });
