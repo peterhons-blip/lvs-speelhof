@@ -51,6 +51,11 @@
             <p class="library-help">Alleen actieve leerlingen kunnen uitlenen. Zoek hierboven om hun gebruikersnaam in te vullen.</p>
         </div>
         <div class="library-field">
+            <label for="loan_days_override">Uitleentermijn (optioneel)</label>
+            <input id="loan_days_override" name="loan_days_override" type="number" min="1" max="365" value="{{ old('loan_days_override') }}" placeholder="Leeg = globale instelling">
+            <p class="library-help">Laat leeg om de standaard uitleentermijn te gebruiken. Vul eventueel een afwijkend aantal dagen in voor deze uitlening.</p>
+        </div>
+        <div class="library-field">
             <label for="reminder_days_before">Herinnering vooraf (optioneel)</label>
             <select name="reminder_days_before" id="reminder_days_before">
                 <option value="">Globale instelling gebruiken</option>
