@@ -317,11 +317,11 @@
             due.textContent = '—';
         } else {
             const now = new Date();
-            const ymd = new Intl.DateTimeFormat('en-CA', {
+            const dateParts = new Intl.DateTimeFormat('en-GB', {
                 timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(now);
-            const parts = ymd.split('-').map(Number);
-            const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + days));
+            }).formatToParts(now);
+            const value = type => Number(dateParts.find(part => part.type === type).value);
+            const date = new Date(Date.UTC(value('year'), value('month') - 1, value('day') + days));
             due.textContent = new Intl.DateTimeFormat('nl-BE', {
                 timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'
             }).format(date);
@@ -334,10 +334,13 @@
         else submit.disabled = true;
     });
     if (initialStudent) selectStudent(initialStudent);
-    if (initialCopy && initialCopy.status === 'beschikbaar') addBook(initialCopy.barcode, true);
-    else if (Array.isArray(oldBarcodes)) oldBarcodes.forEach(code => addBook(code, true));
     renderBooks();
     updateDate();
+    (async () => {
+        const initialBarcodes = Array.isArray(oldBarcodes) && oldBarcodes.length
+            ? oldBarcodes : (initialCopy && initialCopy.status === 'beschikbaar' ? [initialCopy.barcode] : []);
+        for (const code of initialBarcodes) await addBook(code, true);
+    })();
 })();
 </script>
 @endpush
