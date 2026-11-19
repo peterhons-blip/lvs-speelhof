@@ -32,21 +32,16 @@ class LibraryAccess
         'administratie' => 'Administratie',
     ];
 
-    // Explicit individual grants. Full administration also includes rights delegation.
-    public const PERSONAL_MANAGEMENT = [
-        'beheer.full' => 'Volledig beheer (alle modules, gebruikers en rechten)',
-        'beheer.staff.manage' => 'Personeelsbeheer',
-        'beheer.students.manage' => 'Leerlingenbeheer',
-        'beheer.smartschool_test.send' => 'Smartschool-testbericht',
-        'beheer.student_sync.manage' => 'Leerlingensynchronisatie',
-        'beheer.staff_sync.manage' => 'Personeelssynchronisatie',
-        'beheer.scheduled_tasks.view' => 'Geplande taken en logs',
+    public const MANAGEMENT_PERMISSIONS = [
+        'beheer.users.manage', 'beheer.permissions.manage',
+        'beheer.staff.manage', 'beheer.students.manage',
+        'beheer.smartschool_test.send', 'beheer.student_sync.manage',
+        'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
     ];
 
     public function requireIctManager(Request $request): void
     {
-        abort_unless($this->has($request, 'beheer.permissions.manage'), 403,
-            'Je hebt geen toestemming om beheerrechten toe te kennen of te wijzigen.');
+        $this->requirePermission($request, 'beheer.permissions.manage');
     }
 
     public function username(Request $request): string
@@ -85,27 +80,9 @@ class LibraryAccess
             ->contains($permission);
         if (! $known) return false;
 
-        // ICT role always retains full access, regardless of personal permission settings.
+        // ICT-coördinator behoudt altijd volledige beheertoegang.
         if ($role === 'ict_coordinator') return true;
-
-        // A grant for 'beheer.full' is personal: the school role Directie alone gives no admin access.
-        $granted = [];
-        if (Schema::hasTable('portal_user_permissions')) {
-            $userId = DB::table('users')->where('smartschool_gebruikersnaam', $this->username($request))
-                ->where('allowed_login', 1)
-                ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
-                ->value('id');
-            if ($userId !== null) {
-                $granted = DB::table('portal_user_permissions')->where('user_id', $userId)
-                    ->pluck('permission')->all();
-            }
-        }
-        if (in_array('beheer.full', $granted, true)) return true;
-        if (array_key_exists($permission, self::PERSONAL_MANAGEMENT)) {
-            return in_array($permission, $granted, true);
-        }
-        // Sensitive legacy administration permissions cannot be granted by an entire school role.
-        if (in_array($permission, ['beheer.users.manage', 'beheer.permissions.manage'], true)) return false;
+        // Alle rechten, ook beheermodules, worden per schoolrol toegekend.
         if (! Schema::hasTable('portal_role_permissions')) return false;
 
         return DB::table('portal_role_permissions')
@@ -121,7 +98,7 @@ class LibraryAccess
     public function isManager(Request $request): bool
     {
         if ($this->role($request) === 'ict_coordinator') return true;
-        foreach (array_keys(self::PERSONAL_MANAGEMENT) as $permission) {
+        foreach (self::MANAGEMENT_PERMISSIONS as $permission) {
             if ($this->has($request, $permission)) return true;
         }
         return false;
