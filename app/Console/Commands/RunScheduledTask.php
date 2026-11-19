@@ -29,8 +29,21 @@ class RunScheduledTask extends Command
         }
 
         if (! Schema::hasTable('scheduled_task_runs')) {
-            $this->error('Monitoringmigratie ontbreekt: voer de migratie voor scheduled_task_runs uit.');
-            return self::FAILURE;
+            // Monitoring must never stop the underlying pupil/privacy jobs.
+            // Keep scheduled commands running even when a new migration is pending.
+            $this->warn('Monitoring nog niet geïnstalleerd; taak wordt zonder registratie uitgevoerd.');
+            try {
+                $task = self::TASKS[$key];
+                $code = Artisan::call($task['command'], $task['parameters'] ?? []);
+                $output = trim(Artisan::output());
+                if ($output !== '') $this->line($output);
+                return $code === 0 ? self::SUCCESS : self::FAILURE;
+            } catch (\Throwable $e) {
+                Log::error('Geplande taak mislukt zonder monitoring', [
+                    'task' => $key, 'error' => $e->getMessage(),
+                ]);
+                return self::FAILURE;
+            }
         }
 
         $runId = DB::table('scheduled_task_runs')->insertGetId([
