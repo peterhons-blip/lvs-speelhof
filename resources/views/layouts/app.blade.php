@@ -73,7 +73,16 @@
                     </div>
                     @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     <div class="portal-nav-module">
-                        <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <a
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage')) href="{{ route('beheer.users.index') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage')) href="{{ route('beheer.students.index') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage')) href="{{ route('beheer.permissions.index') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send')) href="{{ route('beheer.smartschool-test.create') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage')) href="{{ route('beheer.smartschool-sync.index') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage')) href="{{ route('beheer.staff-sync.index') }}"
+                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view')) href="{{ route('beheer.scheduled-tasks.index') }}"
+                            @endif
+                            class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
