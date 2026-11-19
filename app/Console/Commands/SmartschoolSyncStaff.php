@@ -111,11 +111,12 @@ class SmartschoolSyncStaff extends Command
             return self::FAILURE;
         }
 
-        // Legacy LVS-accounts hebben soms geen schoolid. Zoek ook in de bestaande
-        // volledige users-tabel zodat ze niet onterecht als 'nieuw' verschijnen.
+        // Smartschool-gebruikersnaam is de matchsleutel. users.gebruikersnaam
+        // bevat de Google-naam en mag NIET voor matching gebruikt of overschreven worden.
+        // Legacy LVS-accounts kunnen schoolid=null hebben.
         $allUsers = DB::table('users')->get();
-        $existing = $allUsers->filter(fn ($user) => trim((string) $user->gebruikersnaam) !== '')
-            ->keyBy(fn ($user) => mb_strtolower(trim((string) $user->gebruikersnaam)));
+        $existing = $allUsers->filter(fn ($user) => trim((string) $user->smartschool_gebruikersnaam) !== '')
+            ->keyBy(fn ($user) => mb_strtolower(trim((string) $user->smartschool_gebruikersnaam)));
         $localSchool = $allUsers->filter(fn ($user) =>
             $user->schoolid === null || (int) $user->schoolid === $schoolId);
         $this->line('Bestaande users: '.$allUsers->count().' | schoolid='.$schoolId
@@ -128,12 +129,12 @@ class SmartschoolSyncStaff extends Command
         $matchedWithoutSchool = 0;
         $disable = [];
         $unmatchedLocal = $localSchool->filter(fn ($user) =>
-            trim((string) $user->gebruikersnaam) !== ''
-            && ! isset($accounts[mb_strtolower(trim((string) $user->gebruikersnaam))]));
+            trim((string) $user->smartschool_gebruikersnaam) !== ''
+            && ! isset($accounts[mb_strtolower(trim((string) $user->smartschool_gebruikersnaam))]));
         // Ook bestaande lokale accounts met een standaardrol opnemen in de
         // controle; speciale rollen en serviceaccounts worden niet automatisch verwijderd.
         foreach ($localSchool as $user) {
-            $username = mb_strtolower(trim((string) $user->gebruikersnaam));
+            $username = mb_strtolower(trim((string) $user->smartschool_gebruikersnaam));
             if ($username !== '' && in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)) {
                 $managed[] = $username;
             }
@@ -172,7 +173,7 @@ class SmartschoolSyncStaff extends Command
             $existingUser = $existing[$username] ?? null;
             if ($existingUser && $existingUser->schoolid !== null
                 && (int) $existingUser->schoolid !== $schoolId) {
-                $this->error('Gebruikersnaam komt voor bij een andere school: '.$username.'. Niets gewijzigd.');
+                $this->error('Smartschool-gebruikersnaam komt voor bij een andere school: '.$username.'. Niets gewijzigd.');
                 return self::FAILURE;
             }
             if (! $existingUser) {
@@ -189,12 +190,12 @@ class SmartschoolSyncStaff extends Command
         $this->line('Lokale gebruikers niet teruggevonden in Smartschool: '.$unmatchedLocal->count()
             .' (hiervan '.count($disable).' automatisch uit te schakelen; overige speciale/onbekende rollen worden beschermd).');
         $this->line('Niet teruggevonden lokaal: '.implode(', ', $unmatchedLocal
-            ->pluck('gebruikersnaam')->take(25)->all()).($unmatchedLocal->count() > 25 ? ', ...' : ''));
+            ->pluck('smartschool_gebruikersnaam')->take(25)->all()).($unmatchedLocal->count() > 25 ? ', ...' : ''));
         $this->info(($apply ? 'UITVOEREN' : 'PREVIEW').': leerkrachtgroep '.$totals['leerkracht']
             .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
-        $this->line('Nieuw: '.$changes['nieuw'].' | Bijwerken: '.$changes['bijwerken']
+        $this->line('Nieuw: '.$changes['nieuw'].' (nieuwe accounts voorlopig geblokkeerd zonder Google-koppeling) | Bijwerken: '.$changes['bijwerken']
             .' | Uitschakelen: '.$changes['uitschakelen']);
-        $this->line('Bestaande gebruikers zonder schoolid die werden herkend: '.$matchedWithoutSchool);
+        $this->line('Bestaande Smartschool-accounts zonder schoolid die werden herkend: '.$matchedWithoutSchool);
         if ($missingUsernames) $this->line('Nog niet lokaal gevonden: '.implode(', ', $missingUsernames));
         if ($disable) $this->warn('Uitschakelen: '.implode(', ', $disable));
         if (! $apply) {
@@ -217,14 +218,16 @@ class SmartschoolSyncStaff extends Command
                     }
                     DB::table('users')->insert([
                         'schoolid' => $schoolId,
-                        'gebruikersnaam' => $username,
+                        // Google-gebruikersnaam mag niet met een Smartschool-naam gevuld worden.
+                        // Tijdelijke unieke identificatie: blijft geblokkeerd tot Google-login gekoppeld is.
+                        'gebruikersnaam' => 'ss-pending-'.substr(hash('sha256', $schoolId.':'.$username), 0, 32),
                         'smartschool_gebruikersnaam' => $username,
                         'voornaam' => $row['first'],
                         'name' => $row['last'] !== '' ? $row['last'] : $username,
                         'email' => $email,
                         'password' => Hash::make(Str::random(64)),
                         'groupId' => (int) $groupIds[$row['role']],
-                        'allowed_login' => 1,
+                        'allowed_login' => 0,
                         'created_at' => now(), 'updated_at' => now(),
                     ]);
                 }
