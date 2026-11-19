@@ -25,6 +25,16 @@ return new class extends Migration {
             $table->index(['returned_at', 'due_date'], 'library_loans_overdue_idx');
         });
 
+        Schema::create('library_loan_events', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('loan_id')->constrained('library_loans')->cascadeOnDelete();
+            $table->string('action', 40);
+            $table->string('actor', 120)->nullable();
+            $table->text('details')->nullable();
+            $table->timestamps();
+            $table->index(['loan_id', 'created_at']);
+        });
+
         Schema::create('library_loan_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('loan_id')->constrained('library_loans')->cascadeOnDelete();
@@ -63,6 +73,7 @@ return new class extends Migration {
     {
         Schema::dropIfExists('library_settings');
         Schema::dropIfExists('library_loan_notifications');
+        Schema::dropIfExists('library_loan_events');
         Schema::dropIfExists('library_loans');
     }
 };
