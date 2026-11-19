@@ -86,6 +86,7 @@ class LibraryAccess
 
         // Existing ICT-coordinator group (id=4 in current test DB) always retains admin access.
         if ($role === 'ict_coordinator') return true;
+        if (in_array($permission, ['beheer.users.manage', 'beheer.permissions.manage'], true)) return false;
         // Delegated management rights require an explicit per-user grant, never a school role.
         if (array_key_exists($permission, self::PERSONAL_MANAGEMENT)) {
             if (! Schema::hasTable('portal_user_permissions')) return false;
