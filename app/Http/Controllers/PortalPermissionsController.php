@@ -189,6 +189,58 @@ class PortalPermissionsController extends Controller
         });
     }
 
+    public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requireManager($request);
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'min:1'],
+            'action' => ['required', Rule::in(['role', 'allow', 'block'])],
+            'role' => ['required_if:action,role', 'nullable', Rule::in(array_keys(LibraryAccess::ROLES))],
+        ]);
+
+        $ids = array_map('intval', $data['ids']);
+        $action = $data['action'];
+        DB::transaction(function () use ($request, $access, $ids, $action, $data) {
+            $staff = DB::table('users')->whereIn('id', $ids)->lockForUpdate()->get();
+            if ($staff->count() !== count($ids)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['ids' => 'Een geselecteerd personeelsaccount bestaat niet meer.']);
+            }
+
+            $self = $access->username($request);
+            $targetRole = $action === 'role' ? $data['role'] : null;
+            $targetGroupId = $action === 'role' ? $this->groupId($targetRole) : null;
+            $ictId = $this->groupId('ict_coordinator');
+            $activeIct = DB::table('users')->where('groupId', $ictId)->where('allowed_login', 1)->count();
+
+            $removedIct = 0;
+            foreach ($staff as $user) {
+                if ($user->smartschool_active !== null && (int) $user->smartschool_active === 0) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['ids' => 'Een geselecteerd account is niet meer actief in Smartschool.']);
+                }
+                $isSelf = mb_strtolower((string) $user->smartschool_gebruikersnaam) === $self;
+                if ($isSelf && ($action === 'block' || ($action === 'role' && $targetRole !== 'ict_coordinator'))) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['ids' => 'Je kunt je eigen ICT-beheerrechten of aanmeldtoegang niet verwijderen.']);
+                }
+                if ((int) $user->groupId === $ictId && (int) $user->allowed_login === 1
+                    && ($action === 'block' || ($action === 'role' && $targetGroupId !== $ictId))) {
+                    $removedIct++;
+                }
+            }
+            if ($activeIct - $removedIct < 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['ids' => 'Er moet minstens één actieve ICT-coördinator overblijven.']);
+            }
+
+            if ($action === 'role') {
+                DB::table('users')->whereIn('id', $ids)->update(['groupId' => $targetGroupId]);
+            } else {
+                DB::table('users')->whereIn('id', $ids)->update(['allowed_login' => $action === 'allow' ? 1 : 0]);
+            }
+        });
+
+        return back()->with('success', count($ids).' personeelsaccounts in één keer bijgewerkt.');
+    }
+
     private function changeGroup(Request $request, LibraryAccess $access, int $userId, string $role): RedirectResponse
     {
         $targetGroupId = $this->groupId($role);
