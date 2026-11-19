@@ -87,6 +87,7 @@ class SmartschoolSyncStaff extends Command
                         'first' => trim((string) ($row['voornaam'] ?? '')),
                         'last' => trim((string) ($row['naam'] ?? '')),
                         'email' => trim((string) ($row['emailadres'] ?? '')),
+                        'birthdate' => $this->normalizeDate($row['geboortedatum'] ?? null),
                         'role' => $role,
                     ];
                 }
@@ -225,6 +226,7 @@ class SmartschoolSyncStaff extends Command
                         'voornaam' => $row['first'],
                         'name' => $row['last'] !== '' ? $row['last'] : $username,
                         'email' => $email,
+                        'geboortedatum' => $row['birthdate'],
                         'password' => Hash::make(Str::random(64)),
                         'groupId' => (int) $groupIds[$row['role']],
                         'allowed_login' => 0,
@@ -246,6 +248,21 @@ class SmartschoolSyncStaff extends Command
         return self::SUCCESS;
     }
 
+    private function normalizeDate($value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') return null;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            $date = $value;
+        } elseif (preg_match('/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/', $value, $m)) {
+            $date = $m[3].'-'.$m[2].'-'.$m[1];
+        } else {
+            return null;
+        }
+        [$year, $month, $day] = array_map('intval', explode('-', $date));
+        return checkdate($month, $day, $year) ? $date : null;
+    }
+
     private function needsUpdate(object $user, array $row, array $groupIds): bool
     {
         return $this->updatedFields($user, $row, $groupIds) !== [];
@@ -258,6 +275,11 @@ class SmartschoolSyncStaff extends Command
             if ($row[$key] !== '' && (string) $user->{$column} !== $row[$key]) {
                 $fields[$column] = $row[$key];
             }
+        }
+        // Een lege/ongeldige Smartschool-geboortedatum wist geen bestaande datum.
+        if ($row['birthdate'] !== null
+            && substr((string) ($user->geboortedatum ?? ''), 0, 10) !== $row['birthdate']) {
+            $fields['geboortedatum'] = $row['birthdate'];
         }
         // Enkel twee door de sync beheerde standaardrollen mogen van groep veranderen.
         if (in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)
