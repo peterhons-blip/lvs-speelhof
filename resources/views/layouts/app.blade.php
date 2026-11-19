@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=25">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=26">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -73,18 +73,10 @@
                     </div>
                     @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     <div class="portal-nav-module">
-                        <a
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage')) href="{{ route('beheer.users.index') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage')) href="{{ route('beheer.students.index') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage')) href="{{ route('beheer.permissions.index') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send')) href="{{ route('beheer.smartschool-test.create') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage')) href="{{ route('beheer.smartschool-sync.index') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage')) href="{{ route('beheer.staff-sync.index') }}"
-                            @elseif(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view')) href="{{ route('beheer.scheduled-tasks.index') }}"
-                            @endif
-                            class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
+                            <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
                             <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
                             @endif
