@@ -411,3 +411,52 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
  .portal-role-content-head{align-items:flex-start;flex-direction:column}
  .portal-role-actions .library-button{width:100%}
 }
+
+
+/* Gebruikersbeheer en Smartschool-test: rustigere typografie, correcte formulierruimte. */
+.portal-users-page .library-form-card{padding:25px 28px}
+.portal-users-page .library-form-card>h2{margin:0 0 8px}
+.portal-users-card-intro{font-size:.9rem;line-height:1.55;color:#64788c;margin:0 0 22px}
+.portal-users-assign-form{display:grid;grid-template-columns:minmax(220px,1.55fr) minmax(180px,1fr) auto;gap:18px;align-items:end}
+.portal-users-page .portal-users-assign-form .library-field,
+.portal-test-message-page .portal-test-message-form .library-field{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0}
+.portal-users-page .portal-users-assign-form .library-field label,
+.portal-test-message-page .portal-test-message-form .library-field label{font-size:.86rem;font-weight:700;color:#29465d;line-height:1.4;margin:0}
+.portal-users-page .portal-users-assign-form input,
+.portal-users-page .portal-users-assign-form select,
+.portal-users-page .portal-user-role-form select,
+.portal-test-message-page .portal-test-message-form input:not([type=checkbox]),
+.portal-test-message-page .portal-test-message-form textarea{
+    box-sizing:border-box;width:100%;min-width:0;height:45px;padding:10px 14px;
+    font-size:.92rem;line-height:1.5;color:#1b3851;background:#fff;border:1px solid #cbdbe5;
+    border-radius:9px;outline:none
+}
+.portal-test-message-page .portal-test-message-form textarea{height:auto;min-height:170px;resize:vertical;line-height:1.6;padding:13px 15px}
+.portal-users-page .portal-users-assign-form input:focus,
+.portal-users-page .portal-users-assign-form select:focus,
+.portal-users-page .portal-user-role-form select:focus,
+.portal-test-message-page .portal-test-message-form input:focus,
+.portal-test-message-page .portal-test-message-form textarea:focus{border-color:#2683a1;box-shadow:0 0 0 3px rgba(38,131,161,.11)}
+.portal-users-assign-action{display:flex;align-items:end}
+.portal-users-assign-action .library-button{min-height:45px;white-space:nowrap}
+.portal-users-note{display:flex;align-items:flex-start;gap:12px;margin-top:20px;padding:13px 16px;background:#f4f8fb;border:1px solid #dfebf2;border-radius:10px}
+.portal-users-note>span{flex:0 0 23px;display:grid;place-items:center;height:23px;border-radius:100%;background:#e2edf5;color:#275a7a;font-weight:800;font-size:.78rem}
+.portal-users-note p{margin:0;color:#526e82;font-size:.84rem;line-height:1.6}
+.portal-users-note strong{color:#2e526e}
+.portal-users-table-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}
+.portal-users-table-heading h2{margin:0 0 4px}
+.portal-users-table-heading p{margin:0;font-size:.83rem;color:#708597}
+.portal-users-total{white-space:nowrap;color:#527086;background:#eff5f8;border:1px solid #dce8ee;padding:7px 10px;border-radius:100px;font-size:.78rem;font-weight:700}
+.portal-users-page .portal-user-role-form{display:flex;align-items:center;gap:8px}
+.portal-users-page .portal-user-role-form select{min-width:165px;max-width:260px}
+.portal-users-page .portal-user-role-form .library-button{white-space:nowrap;flex-shrink:0}
+.portal-users-pagination{margin-top:19px}
+.portal-test-message-form{display:grid;gap:24px}
+.portal-test-message-two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
+.portal-test-message-form .library-help{font-size:.8rem;line-height:1.5;margin:0;color:#718598}
+.portal-test-message-warning{margin:0 0 22px;background:#fffaf0;border-color:#f3deb2}
+.portal-test-message-warning>span{background:#fce8bc;color:#956012}
+.portal-test-message-consent{display:flex;align-items:flex-start;gap:12px;font-size:.88rem;line-height:1.55;color:#355069;cursor:pointer}
+.portal-test-message-consent input{width:17px;height:17px;flex:none;margin:3px 0 0;accent-color:#227a94}
+@media(max-width:900px){.portal-users-assign-form{grid-template-columns:1fr 1fr}.portal-users-assign-action{grid-column:1/-1}}
+@media(max-width:650px){.portal-users-page .library-form-card{padding:17px}.portal-users-assign-form,.portal-test-message-two-col{grid-template-columns:1fr}.portal-users-assign-action{grid-column:auto}.portal-users-table-heading{align-items:flex-start;flex-direction:column}}
