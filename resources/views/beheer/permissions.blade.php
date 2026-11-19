@@ -27,6 +27,7 @@
                     <legend>{{ $module['label'] }}</legend>
                     <div class="portal-permission-list">
                     @foreach($module['permissions'] as $permission => $label)
+                        @continue(in_array($permission, ['beheer.users.manage', 'beheer.permissions.manage'], true))
                         <label class="portal-permission-option">
                             <input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked(in_array($permission, $stored[$role] ?? [], true))>
                             <span>{{ $label }}</span>
