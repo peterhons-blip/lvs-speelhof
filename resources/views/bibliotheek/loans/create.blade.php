@@ -50,6 +50,24 @@
             @endif
             <p class="library-help">Alleen actieve leerlingen kunnen uitlenen. Zoek hierboven om hun gebruikersnaam in te vullen.</p>
         </div>
+        <div class="library-field">
+            <label for="reminder_days_before">Herinnering vooraf (optioneel)</label>
+            <select name="reminder_days_before" id="reminder_days_before">
+                <option value="">Globale instelling gebruiken</option>
+                @foreach([0, 1, 2, 3, 5, 7, 10, 14] as $days)
+                    <option value="{{ $days }}" @selected(old('reminder_days_before') !== null && (string) old('reminder_days_before') === (string) $days)>{{ $days === 0 ? 'Geen herinnering vooraf' : $days.' dagen voor de inleverdatum' }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="library-field">
+            <label for="remind_on_due_date">Bericht op uiterste inleverdatum</label>
+            <select name="remind_on_due_date" id="remind_on_due_date">
+                <option value="">Globale instelling gebruiken</option>
+                <option value="1" @selected(old('remind_on_due_date') === '1')>Ja</option>
+                <option value="0" @selected(old('remind_on_due_date') === '0')>Neen</option>
+            </select>
+        </div>
+        <p class="library-help">Smartschool-berichten worden verzonden vanuit het account <strong>bib</strong>, zodra verzending in de globale instellingen is ingeschakeld.</p>
         <button type="submit" class="library-button library-button-primary">Uitlening registreren</button>
     </form>
 </main>
