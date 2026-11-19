@@ -21,6 +21,10 @@ class SmartschoolStudentSyncController extends Controller
         $runs = $ready
             ? DB::table('smartschool_sync_runs')->where('school_id', 1)
                 ->orderByDesc('id')->limit(12)->get()
+                ->map(function ($run) {
+                    $run->display_summary = $this->formatStudentSyncSummary($run->summary);
+                    return $run;
+                })
             : collect();
 
         $pupils = DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)->count();
@@ -93,4 +97,21 @@ class SmartschoolStudentSyncController extends Controller
         return redirect()->route('beheer.smartschool-sync.index')->with('success',
             'Synchronisatie aangevraagd. De Smartschool-syncworker verwerkt deze opdracht.');
     }
+    private function formatStudentSyncSummary(?string $summary): string
+    {
+        if (! $summary) return 'Nog geen resultaat beschikbaar.';
+        if (preg_match('/Processed=(\\d+).*?created=(\\d+).*?updated=(\\d+).*?scancodes_updated=(\\d+).*?scancodes_missing=(\\d+).*?scancodes_conflicts=(\\d+).*?failed_classes=(\\d+).*?empty_classes=(\\d+)/', $summary, $m)) {
+            $parts = [
+                "{$m[1]} leerlingen verwerkt", "{$m[2]} nieuw", "{$m[3]} bijgewerkt",
+                "{$m[4]} QR-codes bijgewerkt"
+            ];
+            if ((int) $m[5] > 0) $parts[] = "{$m[5]} QR-codes ontbreken";
+            if ((int) $m[6] > 0) $parts[] = "{$m[6]} codeconflicten";
+            if ((int) $m[7] > 0) $parts[] = "{$m[7]} klassen niet opgehaald";
+            if ((int) $m[8] > 0) $parts[] = "{$m[8]} lege klassen; deactivering overgeslagen";
+            return implode(' · ', $parts).'.';
+        }
+        return 'Raadpleeg het technische log voor details.';
+    }
+
 }
