@@ -19,6 +19,8 @@
             <p>Beheer bestaande leerlinggegevens uit het LVS. Gegevens uit Smartschool worden iedere nacht opnieuw gesynchroniseerd.</p>
         </div>
     </div>
+    @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="library-form-card" data-live-management>
         <div class="portal-users-table-heading">
             <div><h2>Leerlingen</h2><p>Zoek op naam, Smartschool-gebruikersnaam of klas.</p></div>
