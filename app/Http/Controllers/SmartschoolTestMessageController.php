@@ -7,6 +7,8 @@ use App\Services\SmartschoolSoap;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SmartschoolTestMessageController extends Controller
@@ -20,17 +22,71 @@ class SmartschoolTestMessageController extends Controller
         return view('beheer.smartschool-test', compact('sender', 'recipient'));
     }
 
+    public function recipients(Request $request, LibraryAccess $access): \Illuminate\Http\JsonResponse
+    {
+        $access->requireManager($request);
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:80']]);
+        $term = trim($data['q']);
+        if (mb_strlen($term) < 2) return response()->json([]);
+
+        $students = DB::table('leerlingen')
+            ->where('active', 1)
+            ->whereNotNull('gebruikersnaam')
+            ->where(function ($query) use ($term) {
+                $query->where('voornaam', 'like', '%'.$term.'%')
+                    ->orWhere('naam', 'like', '%'.$term.'%')
+                    ->orWhere('gebruikersnaam', 'like', '%'.$term.'%');
+            })
+            ->select('gebruikersnaam', 'voornaam', 'naam')
+            ->orderBy('naam')->orderBy('voornaam')->limit(10)->get()
+            ->map(fn ($person) => [
+                'username' => $person->gebruikersnaam,
+                'name' => trim(($person->voornaam ?? '').' '.($person->naam ?? '')),
+                'type' => 'Leerling',
+            ]);
+
+        $staff = DB::table('users')
+            ->where('allowed_login', 1)
+            ->whereNotNull('gebruikersnaam')
+            ->where(function ($query) use ($term) {
+                $query->where('voornaam', 'like', '%'.$term.'%')
+                    ->orWhere('name', 'like', '%'.$term.'%')
+                    ->orWhere('gebruikersnaam', 'like', '%'.$term.'%');
+            })
+            ->select('gebruikersnaam', 'voornaam', 'name')
+            ->orderBy('name')->orderBy('voornaam')->limit(10)->get()
+            ->map(fn ($person) => [
+                'username' => $person->gebruikersnaam,
+                'name' => trim(($person->voornaam ?? '').' '.($person->name ?? '')),
+                'type' => 'Personeel',
+            ]);
+
+        return response()->json($students->concat($staff)->unique('username')->take(16)->values());
+    }
+
     public function send(Request $request, LibraryAccess $access): RedirectResponse
     {
         $access->requireManager($request);
 
         $data = $request->validate([
-            'sender' => ['required', 'string', 'max:120', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/'],
+            'sender' => ['required', Rule::in(['lvs', 'bib'])],
             'recipient' => ['required', 'string', 'max:120', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/'],
             'subject' => ['required', 'string', 'max:200'],
             'message' => ['required', 'string', 'max:5000'],
             'confirm_send' => ['accepted'],
         ]);
+
+        // Only known, active Smartschool-linked LVS accounts are eligible for this manual test.
+        $knownRecipient = DB::table('users')->where('gebruikersnaam', $data['recipient'])
+            ->where('allowed_login', 1)->exists()
+            || DB::table('leerlingen')->where('gebruikersnaam', $data['recipient'])
+                ->where('active', 1)->exists();
+
+        if (! $knownRecipient) {
+            return back()->withInput()->withErrors([
+                'recipient' => 'Kies een actieve leerling of medewerker uit de zoeklijst.',
+            ]);
+        }
 
         $sender = trim($data['sender']);
         $recipient = trim($data['recipient']);
