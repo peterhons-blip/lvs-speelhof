@@ -628,3 +628,40 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-staff-sync-page .portal-role-actions{margin-top:4px}
 .portal-staff-sync-page .portal-sync-result{overflow-wrap:anywhere}
 @media(max-width:850px){.portal-night-jobs{margin-top:18px}}
+
+
+/* Sortable management-table headers: match regular headings, never default blue links. */
+.library-table th a.portal-column-sort,
+.library-table th a.portal-column-sort:link,
+.library-table th a.portal-column-sort:visited {
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    color:inherit;
+    font:inherit;
+    font-weight:inherit;
+    letter-spacing:inherit;
+    text-transform:inherit;
+    text-decoration:none;
+    text-underline-offset:3px;
+    border-radius:4px;
+    transition:color .15s ease;
+}
+.library-table th a.portal-column-sort:hover {
+    color:var(--portal-navy, #173b58);
+    text-decoration:none;
+}
+.library-table th a.portal-column-sort:focus-visible {
+    outline:2px solid currentColor;
+    outline-offset:3px;
+}
+.library-table th a.portal-column-sort span[aria-hidden] {
+    display:inline-block;
+    color:#93a4b5;
+    font-size:.72rem;
+    font-weight:600;
+    line-height:1;
+}
+.library-table th a.portal-column-sort[aria-label] span[aria-hidden] {
+    color:var(--portal-navy, #173b58);
+}
