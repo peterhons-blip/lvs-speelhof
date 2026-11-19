@@ -579,3 +579,21 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
  .library-checkout-actions button{width:100%}
 }
 @media(max-width:520px){.library-checkout-inline{flex-direction:column}.library-checkout-inline button{width:100%}.library-checkout-counter{display:none}}
+
+
+/* Leerlingensynchronisatie — status en handmatige opstart */
+.portal-sync-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 22px}
+.portal-sync-stat{display:flex;flex-direction:column;gap:8px;padding:20px 22px;background:#fff;border:1px solid #e1eaf0;border-radius:13px}
+.portal-sync-stat span{font-size:.83rem;color:#73879b}
+.portal-sync-stat strong{font-size:1.28rem;font-weight:800;color:#153954}
+.portal-sync-form{display:grid;gap:18px}
+.portal-sync-option{display:flex;align-items:flex-start;gap:12px;color:#24455c;font-size:.88rem;line-height:1.55;cursor:pointer}
+.portal-sync-option input{flex:none;width:18px;height:18px;margin:3px 0 0;accent-color:#197c91}
+.portal-sync-option span{display:grid;gap:3px}
+.portal-sync-option small{color:#71899a;font-size:.81rem}
+.portal-sync-status{display:inline-flex;border-radius:20px;padding:6px 10px;font-weight:700;font-size:.76rem;white-space:nowrap;background:#e9eff5;color:#4b6377}
+.portal-sync-status-completed{background:#e4f5ed;color:#23664d}
+.portal-sync-status-failed{background:#fff0f0;color:#a23343}
+.portal-sync-status-running{background:#e6f4ff;color:#27638e}
+.portal-sync-status-waiting{background:#f9f1dd;color:#936d21}
+@media(max-width:850px){.portal-sync-stats{grid-template-columns:1fr}.portal-sync-stat{padding:16px}}
