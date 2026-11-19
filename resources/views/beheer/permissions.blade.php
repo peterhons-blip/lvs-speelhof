@@ -24,7 +24,7 @@
 
     <section class="library-form-card" style="margin-bottom:1.5rem;">
         <h2>Persoonlijke beheerrechten</h2>
-        <p class="portal-users-card-intro">Geef een individuele medewerker toegang tot specifieke onderdelen van <strong>Beheer</strong>, zonder de schoolrol van die medewerker te veranderen. Alleen ICT-coördinatoren kunnen deze rechten toekennen. Rechtenbeheer zelf kan niet worden gedelegeerd.</p>
+        <p class="portal-users-card-intro">Geef een individuele medewerker toegang tot specifieke onderdelen van <strong>Beheer</strong>, zonder de schoolrol van die medewerker te veranderen. Met <strong>Volledig beheer</strong> kan bijvoorbeeld een directeur alle beheerschermen openen, inclusief Rollen en rechten, zonder van schoolrol te veranderen. Dit wordt uitsluitend per medewerker toegekend en niet automatisch aan alle directieleden.</p>
         @if(!$personalReady)
             <div class="library-errors" role="alert">De tabel voor persoonlijke beheerrechten is nog niet geïnstalleerd. Voer de gerichte migratie uit voordat je individuele rechten kunt opslaan.</div>
         @else
@@ -42,9 +42,9 @@
                 <p style="font-weight:700;margin:1.25rem 0 .75rem;">2. Welke beheersonderdelen mag deze persoon gebruiken?</p>
                 <div class="portal-permission-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem;">
                     @foreach($personalPermissions as $permission => $label)
-                        <label class="portal-permission-option">
+                        <label class="portal-permission-option" @if($permission === 'beheer.full') style="grid-column:1/-1;border:1px solid #b5c8d6;border-radius:10px;padding:1rem;background:#f2f7fa;" @endif>
                             <input type="checkbox" name="permissions[]" value="{{ $permission }}" data-personal-permission disabled>
-                            <span>{{ $label }}</span>
+                            <span><strong>{{ $label }}</strong>@if($permission === 'beheer.full')<small style="display:block;color:#64748b;margin-top:.25rem;">Geeft toegang tot alle beheermodules, inclusief het toekennen van rechten aan andere medewerkers.</small>@endif</span>
                         </label>
                     @endforeach
                 </div>
@@ -166,7 +166,7 @@
             }
             submit.disabled = !selected;
             summary.textContent = selected
-                ? 'De aangevinkte onderdelen zijn de huidige persoonlijke beheerrechten. Wijzig de selectie en klik op Opslaan.'
+                ? 'De aangevinkte onderdelen zijn de huidige persoonlijke beheerrechten. Volledig beheer omvat ook Rollen en rechten. Wijzig de selectie en klik op Opslaan.'
                 : 'Kies eerst een medewerker. De huidige persoonlijke rechten worden dan ingevuld.';
         };
         personSelect.addEventListener('change', refresh);
