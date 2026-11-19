@@ -19,8 +19,8 @@
     <section class="library-form-card portal-night-jobs">
         <div class="portal-users-table-heading">
             <div>
-                <h2>Geplande nachtelijke taken</h2>
-                <p>Werkelijke uitvoering en resultaat, bijgehouden vanaf de installatie van deze monitoring.</p>
+                <h2>Geplande taken</h2>
+                <p>Alle vijf Laravel-schedulertaken. Laatste uitvoering, status en logbestanden op één plaats.</p>
             </div>
             <a class="library-button library-button-secondary" href="{{ route('beheer.scheduled-tasks.index') }}">Verversen</a>
         </div>
@@ -30,7 +30,7 @@
             <div class="library-table-wrap">
                 <table class="library-table portal-night-table">
                     <thead>
-                    <tr><th>Taak</th><th>Planning</th><th>Laatste uitvoering</th><th>Status</th><th>Resultaat</th></tr>
+                    <tr><th>Taak en type</th><th>Planning</th><th>Laatste uitvoering</th><th>Status</th><th>Resultaat</th><th>Log</th></tr>
                     </thead>
                     <tbody>
                     @foreach($scheduledTasks as $taskKey => $task)
@@ -46,6 +46,7 @@
                             <td class="portal-night-nowrap">{{ $last ? \Illuminate\Support\Carbon::parse($last->started_at)->timezone('Europe/Brussels')->format('d/m/Y H:i') : '—' }}</td>
                             <td><span class="portal-sync-status portal-sync-status-{{ $lastStatus }}">{{ $lastStatusText }}</span></td>
                             <td class="portal-sync-result">{{ $last?->summary ?: 'Nog geen gemonitorde uitvoering.' }}</td>
+                            <td><a class="library-button library-button-secondary" href="{{ route('beheer.scheduled-tasks.log', $taskKey) }}" target="_blank" rel="noopener noreferrer">Bekijk log</a></td>
                         </tr>
                     @endforeach
                     </tbody>
