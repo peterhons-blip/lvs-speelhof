@@ -197,7 +197,7 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .library-search label,.library-field label{display:block;color:var(--portal-navy);font-size:.86rem;font-weight:750;margin:0 0 8px}
 .library-search-row,.library-isbn-row{display:flex;gap:12px;align-items:flex-end}
 .library-search-row input{flex:1;min-width:0}
-.library-page input,.library-page select,.library-page textarea{font:inherit;box-sizing:border-box;min-height:43px;width:100%;border:1px solid #CFDCE7;border-radius:9px;padding:10px 12px;background:white;color:var(--portal-ink)}
+.library-page input:not([type="checkbox"]):not([type="radio"]),.library-page select,.library-page textarea{font:inherit;box-sizing:border-box;min-height:43px;width:100%;border:1px solid #CFDCE7;border-radius:9px;padding:10px 12px;background:white;color:var(--portal-ink)}
 .library-page textarea{min-height:78px;resize:vertical}
 .library-list{border:1px solid var(--portal-border);border-radius:16px;background:white;overflow:hidden}
 .library-list-item{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid #EDF1F5;text-decoration:none;color:var(--portal-ink);transition:background .15s}
@@ -588,7 +588,7 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-sync-stat strong{font-size:1.28rem;font-weight:800;color:#153954}
 .portal-sync-form{display:grid;gap:18px}
 .portal-sync-option{display:flex;align-items:flex-start;gap:12px;color:#24455c;font-size:.88rem;line-height:1.55;cursor:pointer}
-.portal-sync-option input{flex:none;width:18px;height:18px;margin:3px 0 0;accent-color:#197c91}
+.portal-student-sync-page .portal-sync-option input[type="checkbox"]{appearance:auto;flex:0 0 18px;display:block;box-sizing:border-box;width:18px;height:18px;min-width:18px;min-height:18px;max-width:18px;max-height:18px;padding:0;margin:2px 0 0;border:initial;border-radius:3px;accent-color:#197c91;align-self:flex-start}
 .portal-sync-option span{display:grid;gap:3px}
 .portal-sync-option small{color:#71899a;font-size:.81rem}
 .portal-sync-status{display:inline-flex;border-radius:20px;padding:6px 10px;font-weight:700;font-size:.76rem;white-space:nowrap;background:#e9eff5;color:#4b6377}
@@ -597,3 +597,12 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-sync-status-running{background:#e6f4ff;color:#27638e}
 .portal-sync-status-waiting{background:#f9f1dd;color:#936d21}
 @media(max-width:850px){.portal-sync-stats{grid-template-columns:1fr}.portal-sync-stat{padding:16px}}
+
+/* Synchronisatie: vaste compacte keuzeopties zonder conflicten met algemene invoervelden. */
+.portal-student-sync-page .portal-sync-form{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:0}
+.portal-student-sync-page .portal-sync-option{display:flex;flex-direction:row;align-items:flex-start;gap:12px;width:100%;box-sizing:border-box;padding:12px 14px;margin:0;border:1px solid #e2ebf1;background:#fafcfd;border-radius:10px;line-height:1.5}
+.portal-student-sync-page .portal-sync-option + .portal-sync-option{margin-top:11px}
+.portal-student-sync-page .portal-sync-option>span{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;line-height:1.5}
+.portal-student-sync-page .portal-sync-option strong{font-weight:700;color:#193b54}
+.portal-student-sync-page .portal-sync-form>.portal-role-actions{margin-top:22px;padding-top:16px;border-top:1px solid #edf1f4;align-items:center}
+.portal-student-sync-page .portal-sync-form>.portal-role-actions .library-button{min-height:44px}
