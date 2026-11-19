@@ -33,7 +33,7 @@ class LibraryAccess
     ];
 
     public const MANAGEMENT_PERMISSIONS = [
-        'beheer.users.manage', 'beheer.permissions.manage',
+        'beheer.permissions.manage',
         'beheer.staff.manage', 'beheer.students.manage',
         'beheer.smartschool_test.send', 'beheer.student_sync.manage',
         'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
@@ -111,7 +111,7 @@ class LibraryAccess
 
     public function requireManager(Request $request): void
     {
-        $this->requirePermission($request, 'beheer.users.manage');
+        $this->requirePermission($request, 'beheer.staff.manage');
     }
 
     public function requireOperator(Request $request): void
