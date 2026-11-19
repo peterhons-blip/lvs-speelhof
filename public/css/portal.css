@@ -460,3 +460,10 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .portal-test-message-consent input{width:17px;height:17px;flex:none;margin:3px 0 0;accent-color:#227a94}
 @media(max-width:900px){.portal-users-assign-form{grid-template-columns:1fr 1fr}.portal-users-assign-action{grid-column:1/-1}}
 @media(max-width:650px){.portal-users-page .library-form-card{padding:17px}.portal-users-assign-form,.portal-test-message-two-col{grid-template-columns:1fr}.portal-users-assign-action{grid-column:auto}.portal-users-table-heading{align-items:flex-start;flex-direction:column}}
+
+/* Toegang tot het portaal rechtstreeks vanuit bestaande users.allowed_login. */
+.portal-login-toggle-form{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.portal-login-toggle-form .library-button{white-space:nowrap}
+.portal-login-status{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 9px;font-size:.76rem;font-weight:700;border-radius:99px}
+.portal-login-status-yes{color:#22644c;background:#e7f5ec;border:1px solid #c5e5d1}
+.portal-login-status-no{color:#9c3443;background:#fff0f2;border:1px solid #f3c9cf}
