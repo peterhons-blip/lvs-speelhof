@@ -82,7 +82,7 @@
                         <td>{{ $run->requested_by }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($run->created_at)->timezone('Europe/Brussels')->format('d/m/Y H:i') }}</td>
                         <td><span class="portal-sync-status portal-sync-status-{{ $displayStatus }}">{{ $displayText }}</span></td>
-                        <td class="portal-sync-result">{{ $run->summary ?: '—' }}</td>
+                        <td class="portal-sync-result">{{ $run->display_summary }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="4">Nog geen handmatige synchronisaties uitgevoerd.</td></tr>
