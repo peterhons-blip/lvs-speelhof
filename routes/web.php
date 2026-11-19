@@ -125,9 +125,6 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::put('/gebruikers/{staff}', [\App\Http\Controllers\PortalPermissionsController::class, 'updateUser'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.update');
         Route::patch('/gebruikers/{staff}/aanmelden', [\App\Http\Controllers\PortalPermissionsController::class, 'updateLogin'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.login');
         Route::get('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'index'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.index');
-        Route::post('/rechten/persoonlijk', [\App\Http\Controllers\PortalPermissionsController::class, 'updatePersonalPermissions'])
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')
-            ->name('permissions.personal.update');
         Route::post('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'update'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.update');
     });
 
