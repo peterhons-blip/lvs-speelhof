@@ -28,3 +28,12 @@ Schedule::command('smartschool:sync-leerlingen --schoolid=1')
     ->timezone('Europe/Brussels')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/smartschool_sync_leerlingen.log'));
+
+ 
+// Bibliotheek: herinnering enkele dagen vooraf en op de uiterste inleverdatum.
+// Verzending blijft standaard UIT tot de beheerder dit expliciet inschakelt.
+Schedule::command('bibliotheek:herinneringen')
+    ->dailyAt('08:00')
+    ->timezone('Europe/Brussels')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/bibliotheek_herinneringen.log'));
