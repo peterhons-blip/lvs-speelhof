@@ -88,3 +88,75 @@ Om herinneringen op productie te activeren moet eerst het Smartschool-account `b
 - QR-labelprint en verdere administratieve wensen apart testen en toevoegen
 
 De branch is nog niet naar `main` gemerged.
+
+
+## Nieuwe uitleenflow en QR-scancodes
+De uitleenflow begint bij de leerling: kies een actieve leerling of scan de QR-code, voeg meerdere boeken toe en controleer de standaard ingevulde uitleentermijn. Herinneringen blijven globaal ingesteld.
+
+De nieuwe nullable en unieke kolom leerlingen.scannable_code wordt bij de bestaande nachtelijke Smartschool-leerlingensynchronisatie om 03:00 (Europe/Brussels) gesynchroniseerd. De scan in de bibliotheek raadpleegt uitsluitend de lokale database.
+
+De QR-code wordt eerst uit getAllAccountsExtended gehaald als het veld daar aanwezig is. Anders probeert de sync getUserDetails, maar alleen voor leerlingen zonder opgeslagen code of bij expliciete --refresh-scancodes. Of dit werkt hangt af van de respons en de rechten van het Smartschool-webserviceprofiel. Controleer de QR-dekkingsgraad na de sync.
+
+Bij een onvolledige respons (lege of mislukte klassen) deactiveert de sync geen leerlingen. De nachtelijke en handmatige sync delen een lock.
+
+Beheer -> Leerlingensynchronisatie laat ICT-coordinatoren handmatig een leerlingensync aanvragen, de QR-code-dekkingsgraad bekijken en recente runs controleren. Handmatige syncs werken via een aparte databasewachtrij.
+
+Gerichte migraties (alleen op een gecontroleerde testdatabase):
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_150000_add_scannable_code_to_leerlingen.php
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_160000_create_smartschool_sync_runs_table.php
+  C:\xampp\php\php.exe artisan optimize:clear
+
+Klik op Synchronisatie starten, en verwerk de wachtende opdracht op de ontwikkelpc met:
+  C:\xampp\php\php.exe artisan queue:work smartschool_sync --queue=smartschool-sync --stop-when-empty --tries=1 --timeout=1800
+
+Voor continue verwerking op de server: gebruik Windows Taakplanner die dit workercommando iedere minuut start en geen nieuwe instantie toelaat terwijl de vorige actief is. De queue-connection smartschool_sync heeft retry_after 2100. De nachtelijke sync blijft via de bestaande Laravel Scheduler werken.
+
+Na de eerste sync moet Leerlingen met QR-code stijgen. Geen QR-codes? Dan eerst de Smartschool-webservice respons/permissions controleren; de bibliotheekfunctie gebruikt nooit een live SOAP-call tijdens scannen.
+
+Alle wijzigingen staan op de aparte featurebranch, niet op main of productie.
+
+## Monitoring van nachtelijke taken (featurebranch)
+
+Het beheerscherm Leerlingensynchronisatie toont voortaan ook het werkelijk geregistreerde resultaat van deze vier geplande taken:
+- 01.00: 18-jarigen, co-accounts en waarschuwingen
+- 02.00: verjaardagsberichten leerlingen en personeel
+- 03.00: Smartschool-leerlingensync met QR-codes
+- 08.00: bibliotheekherinneringen (geen berichten zolang uitgeschakeld).
+
+De bestaande Laravel scheduler blijft deze taken dagelijks uitvoeren. De commandowrapper monitor:scheduled registreert status, starttijd, eindtijd en een privacyveilige samenvatting in scheduled_task_runs. De oude console-logbestanden blijven behouden. Bij ontbrekende monitortabel loopt de onderliggende taak veilig door, zonder monitoring. Oude uitvoeringen worden NIET als succesvol ingevuld.
+
+Gerichte extra migratie (uitsluitend gescheiden testdatabase):
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_170000_create_scheduled_task_runs_table.php
+  C:\xampp\php\php.exe artisan optimize:clear
+
+Lege Smartschoolklassen zonder fout bij ophalen leiden tot status 'Deels voltooid', niet volledig 'Mislukt'. De deactivering van leerlingen blijft bij een onvolledige klassensnapshot geblokkeerd. Opgeslagen QR-codes en bijwerkingen blijven behouden.
+
+Let op: de pagina toont enkel uitvoeringen die sinds deze uitbreiding gemonitord werden. Een scheduler die op de server niet loopt, veroorzaakt geen nieuwe registraties. Controleer Laravel Taakplanner/schedule:run en de serverlogs als er na een geplande nacht geen resultaten verschijnen. De bestaande CLI-functies kunnen gedeeltelijke Smartschool-afleverfouten intern opvangen; een succesvolle exitcode bewijst niet altijd een volledige aflevering.
+
+
+## Volgende werksessie: bibliotheek — openstaande uitbreidingen (19-11-2026)
+
+De gebruiker heeft de huidige bibliotheekfunctionaliteit zelf functioneel getest en bevestigd dat ze goed werkt. De onderstaande uitbreidingen zijn **nog niet afgetest of afgerond** en mogen niet als gerealiseerd worden beschouwd.
+
+### Smartschool-berichten bij bibliotheekuitleningen
+
+- Bericht bij het uitlenen van een boek.
+- Herinnering **3 dagen vóór** de uiterste inleverdatum.
+- Herinnering **op de uiterste inleverdatum**.
+- Bericht **bij de effectieve terugbrenging/inlevering** van een boek.
+- Rekening houden met het reeds aanwezige bibliotheek-berichtensysteem, het Smartschool-account `bib`, globale instellingen en notificatielogging; test eerst met een testontvanger, vermijd dubbele berichten.
+- Controleer bestaande implementaties en stem de exacte tekst, ontvanger en timing af vóór activeren op productie. De bestaande berichtenverzending kan standaard uitgeschakeld zijn.
+
+### QR-codes voor fysieke boeken / exemplaren
+
+- QR-codes kunnen genereren voor boeken, bij voorkeur **per fysiek exemplaar** met unieke `library_copies.barcode`.
+- **Bijhouden van welke exemplaren al een QR-code is aangemaakt en welke nog niet** (bijvoorbeeld status, aanmaakmoment en desgewenst printstatus). Eerst datamodel en verschil tussen *gegenereerd* en *geprint* afspreken.
+- Losse QR-codegeneratie mogelijk maken vanuit boekencatalogus/een boekdetail.
+- QR-code automatisch of met een keuze kunnen genereren **tijdens het aanmaken van één boek**.
+- QR-codegeneratie ondersteunen **bij bulktoevoeging/import van meerdere boeken**.
+- Een apart scherm voorzien om alle nog niet voorziene exemplaren te selecteren en QR-codes in bulk te genereren en af te drukken als etiketten.
+- Bestaande barcodes en uitleengeschiedenis respecteren: geen nieuwe exemplaaridentiteiten aanmaken bij het genereren van QR-labels.
+
+### Werkwijze voor de volgende sessie
+
+Eerst actuele code op `main` nalopen en een nieuwe featurebranch maken. Implementeren en lokaal testen zonder Smartschool-berichten automatisch live te versturen. Pas na expliciete goedkeuring samenvoegen en op productie uitrollen.

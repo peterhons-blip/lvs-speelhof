@@ -25,6 +25,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('student-scan');
+        Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('copy-scan');
         Route::post('/inleveren-met-barcode', [\App\Http\Controllers\LibraryLoanController::class, 'returnByBarcode'])->name('return-barcode')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::get('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'settings'])->name('settings')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.settings.manage');
@@ -70,6 +72,14 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'send'])
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:5,1'])
         ->name('beheer.smartschool-test.send');
+
+    // Leerlingensynchronisatie handmatig starten via de wachtrij (alleen ICT-beheer).
+    Route::get('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.smartschool-sync.index');
+    Route::post('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'start'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
+        ->name('beheer.smartschool-sync.start');
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {

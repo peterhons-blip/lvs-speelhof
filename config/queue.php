@@ -43,6 +43,17 @@ return [
             'after_commit' => false,
         ],
 
+        // Separate connection for long Smartschool synchronizations; shares the jobs table,
+        // but unlike short library imports has a retry window longer than the 30-minute job timeout.
+        'smartschool_sync' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'smartschool-sync',
+            'retry_after' => 2100,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
