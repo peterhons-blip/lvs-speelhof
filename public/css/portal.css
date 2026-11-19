@@ -516,3 +516,66 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
     margin:0!important;padding:0!important;flex:0 0 18px!important;accent-color:#176f8b
 }
 .portal-test-message-page .portal-test-message-form .portal-test-message-consent span{display:block;flex:1;min-width:0;color:#38556a}
+
+
+/* Bibliotheek: rustig uitleenproces in drie stappen met scan- en boekenlijst. */
+.library-checkout-page{max-width:1290px}
+.library-checkout-page #library-checkout-form{display:grid;gap:21px}
+.library-checkout-card{background:#fff;border:1px solid #dfe9ef;border-radius:16px;box-shadow:0 2px 7px rgba(18,45,70,.03);overflow:hidden}
+.library-checkout-section-head{display:flex;align-items:center;gap:15px;padding:21px 25px;border-bottom:1px solid #eaf0f4;background:#fafdfe}
+.library-checkout-section-head>div{flex:1;min-width:0}
+.library-checkout-section-head h2{font-size:1.08rem;line-height:1.35;color:#153854;margin:0 0 5px;font-weight:750}
+.library-checkout-section-head p{font-size:.85rem;line-height:1.55;color:#73869a;margin:0}
+.library-checkout-step{display:grid;place-items:center;flex:0 0 36px;height:36px;border-radius:10px;background:#e0f3f4;color:#057c89;font-weight:800;font-size:1.05rem}
+.library-checkout-section-body{padding:25px;display:grid;gap:20px}
+.library-checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px}
+.library-checkout-page .library-field{display:flex;flex-direction:column;gap:9px;min-width:0}
+.library-checkout-page .library-field label{font-size:.89rem;font-weight:750;color:#24435d;margin:0;line-height:1.4}
+.library-checkout-page .library-field input{box-sizing:border-box;width:100%;min-width:0;height:46px;padding:11px 14px;border:1px solid #ccdce6;border-radius:9px;background:#fff;color:#1b3850;font-size:.92rem;line-height:1.4}
+.library-checkout-page .library-field input:focus{outline:none;border-color:#3d9caf;box-shadow:0 0 0 3px rgba(61,156,175,.12)}
+.library-checkout-page .library-field .library-help{margin:0;font-size:.81rem;line-height:1.55;color:#778b9c}
+.library-checkout-inline{display:flex;align-items:stretch;gap:10px}
+.library-checkout-inline input{flex:1}
+.library-checkout-inline button{flex:none;min-height:46px;white-space:nowrap}
+.library-checkout-results{display:grid;gap:5px;max-height:230px;overflow:auto}
+.library-checkout-result{display:block;text-align:left;border:1px solid #e0eaf0;border-radius:8px;padding:10px 13px;background:#f9fcfd;color:#294b60;cursor:pointer;font-size:.86rem}
+.library-checkout-result:hover,.library-checkout-result:focus-visible{outline:none;background:#e8f5f8;border-color:#90c8d3}
+.library-checkout-feedback{padding:11px 14px;border:1px solid #cbe7e0;border-radius:9px;background:#effaf6;color:#28745d;font-size:.85rem;line-height:1.5}
+.library-checkout-feedback.is-error{color:#9e3340;background:#fff2f4;border-color:#f0cad0}
+.library-checkout-feedback[hidden],.library-checkout-selected[hidden],.library-checkout-pairing[hidden]{display:none}
+.library-checkout-selected{display:flex;gap:13px;align-items:center;padding:14px 17px;border:1px solid #b9dfd6;border-radius:11px;background:#f3faf8}
+.library-checkout-avatar{display:grid;place-items:center;flex:0 0 37px;height:37px;border-radius:50%;background:#d7f1e8;color:#24745c;font-weight:850}
+.library-checkout-selected>div{flex:1;min-width:0;display:grid;gap:4px}
+.library-checkout-selected strong{font-size:.93rem;color:#174f40}
+.library-checkout-selected small{font-size:.81rem;color:#5f7f75}
+.library-checkout-pairing{display:grid;gap:12px;padding:16px 18px;border:1px solid #eedeb6;border-radius:11px;background:#fff9eb}
+.library-checkout-pairing p{margin:0;font-size:.86rem;line-height:1.55;color:#715b30}
+.library-checkout-pairing button{justify-self:start}
+.library-checkout-counter{flex:none;background:#ecf5f9;color:#32657b;font-size:.81rem;font-weight:700;padding:7px 12px;border-radius:99px;white-space:nowrap}
+.library-checkout-table-wrap{overflow-x:auto;border:1px solid #e1eaf0;border-radius:10px}
+.library-checkout-table{width:100%;border-collapse:collapse;min-width:490px}
+.library-checkout-table thead th{text-align:left;background:#f5f9fb;color:#496579;font-size:.8rem;font-weight:750;padding:13px 15px;border-bottom:1px solid #e5edf1}
+.library-checkout-table tbody td{padding:13px 15px;border-bottom:1px solid #ecf1f4;font-size:.86rem;color:#29485f;vertical-align:middle}
+.library-checkout-table tbody tr:last-child td{border-bottom:0}
+.library-checkout-table tbody td:first-child{font-weight:700}
+.library-checkout-table tbody td:last-child{text-align:right;width:110px}
+.library-checkout-remove{border:0;background:transparent;color:#a93247;cursor:pointer;font-size:.8rem;font-weight:650;padding:7px}
+.library-checkout-remove:hover{text-decoration:underline}
+.library-checkout-caption{margin:0;color:#74899a;font-size:.82rem;line-height:1.5}
+.library-checkout-term-row{display:flex;align-items:end;gap:22px;flex-wrap:wrap}
+.library-checkout-term-row>.library-field{width:230px;max-width:100%}
+.library-checkout-due{display:grid;gap:7px;min-height:46px}
+.library-checkout-due span{font-size:.81rem;color:#74899a}
+.library-checkout-due strong{font-size:1.07rem;color:#193d57;line-height:1.45}
+.library-checkout-actions{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:4px 2px 14px}
+.library-checkout-actions>span{font-size:.83rem;color:#798d9d}
+.library-checkout-actions button{min-height:46px;white-space:nowrap}
+.library-checkout-actions button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:800px){
+ .library-checkout-grid{grid-template-columns:1fr;gap:19px}
+ .library-checkout-section-body{padding:18px}
+ .library-checkout-section-head{padding:17px}
+ .library-checkout-actions{flex-direction:column;align-items:stretch}
+ .library-checkout-actions button{width:100%}
+}
+@media(max-width:520px){.library-checkout-inline{flex-direction:column}.library-checkout-inline button{width:100%}.library-checkout-counter{display:none}}
