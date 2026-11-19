@@ -11,6 +11,7 @@ Onze Laravel-code blijft de bron van waarheid:
 - `library_loans`: **nieuwe** uitleningen verwijzen naar **copy_id**, niet rechtstreeks naar book_id. Hiermee kunnen verschillende exemplaren van hetzelfde boek apart uitgeleend worden.
 - `library_settings`: looptijden, grenzen en herinneringen.
 - `library_loan_notifications`: verzending/dubbelpreventie per lening, type en datum.
+- `library_loan_events`: auditlog bij uitlenen, inleveren, verlengen en per-leninginstellingen.
 
 De originele SQL-dump bevat demonstratie-/persoonsgegevens en wordt **niet** ingeladen. De originele .env en vendor uit de ZIP worden niet overgenomen.
 
@@ -20,7 +21,7 @@ De originele SQL-dump bevat demonstratie-/persoonsgegevens en wordt **niet** ing
 - Maximaal aantal openstaande uitleningen, dubbele uitlening voorkomen
 - Barcode-gebaseerd snel inleveren, verlengen met maximum
 - Actieve, historische en te late uitleningen, te laat in rood
-- Globale uitleentermijn en aantal toegestane uitleningen/verlengingen
+- Globale uitleentermijn en aantal toegestane uitleningen/verlengingen; per uitlening afwijkende duur of inleverdatum
 - Smartschool-uitleningsbevestiging, herinnering vooraf (standaard 3 dagen) en op vervaldag
 - Herinnering per individuele uitlening overschrijven, ook achteraf
 - Smartschool-afzender standaard `bib`, uitsluitend hoofdaccount
@@ -35,6 +36,17 @@ De originele SQL-dump bevat demonstratie-/persoonsgegevens en wordt **niet** ing
 - QR-code-PNG-opslag en een massaprintfunctie: daarvoor moet een compatibele QR-bibliotheek voor onze Laravel-versie eerst gekozen, geïnstalleerd en getest worden. Gewone barcode-invoer werkt reeds.
 - Mailherinneringen aan secretariaat/semesterperiodes: vervangen door de gevraagde Smartschool-reminders; afzonderlijke opvolgmeldingen vergen bijkomende afspraken.
 - Import van Svens historische gegevens: pas na expliciete controle van mapping en toestemming.
+
+## Toegangsrechten
+
+Voeg voor je lokale test deze variabelen toe aan je eigen `.env` (niet aan GitHub):
+
+```ini
+LIBRARY_MANAGER_USERNAMES=peter.hons
+LIBRARY_OPERATOR_USERNAMES=peter.hons
+```
+
+Pas de voorbeeldgebruikersnamen aan aan de Smartschool-gebruikersnamen van bevoegde personeelsleden. Beheerders mogen globale instellingen wijzigen en de Smartschool-verzending aanzetten; operators mogen uitleningen en individuele herinneringen beheren. Beide vereisen een actieve Smartschool-sessie. Na wijzigingen aan `.env`: `php artisan optimize:clear`.
 
 ## Lokaal installeren en veilig testen
 
@@ -58,7 +70,7 @@ Om herinneringen op productie te activeren moet eerst het Smartschool-account `b
 ## Open voor formele livegang
 
 - Lokale syntax-, route-, functionele en integratietests met de werkelijke Laravel/MariaDB-versie
-- Controle welke Smartschool-gebruikers het uitleenbeheer en vooral de instellingen mogen bedienen
+- Controle welke Smartschool-gebruikers operator/beheerder mogen zijn en stel `LIBRARY_OPERATOR_USERNAMES` en `LIBRARY_MANAGER_USERNAMES` in
 - Check of `bib` als afzender op de juiste Smartschool-school geautoriseerd is
 - Controleer of de scheduler dagelijks de nieuwe opdracht uitvoert
 - Privacy-/gegevensbewaarbeleid voor uitleenhistoriek en notificatielogs
