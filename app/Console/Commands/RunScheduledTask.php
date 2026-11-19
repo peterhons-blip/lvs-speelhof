@@ -81,7 +81,7 @@ class RunScheduledTask extends Command
     private function hasWarning(string $key, string $output): bool
     {
         if ($key === 'student_sync') {
-            return preg_match('/\b(failed_classes|empty_classes|scancodes_conflicts)=[1-9][0-9]*/', $output) === 1;
+            return preg_match('/\b(failed_classes|scancodes_conflicts)=[1-9][0-9]*/', $output) === 1;
         }
         if ($key === 'library_reminders' && preg_match('/Klaar:\s*(\d+)\s+van\s+(\d+)\s+herinneringen/', $output, $m)) {
             return (int) $m[1] < (int) $m[2];
