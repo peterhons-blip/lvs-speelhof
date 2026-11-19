@@ -59,6 +59,10 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
 
     });
 
+    Route::get('/beheer/smartschool-test/ontvangers', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'recipients'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:45,1'])
+        ->name('beheer.smartschool-test.recipients');
+
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.
     Route::get('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'create'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
