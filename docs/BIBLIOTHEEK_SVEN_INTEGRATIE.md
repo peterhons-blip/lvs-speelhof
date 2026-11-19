@@ -88,3 +88,29 @@ Om herinneringen op productie te activeren moet eerst het Smartschool-account `b
 - QR-labelprint en verdere administratieve wensen apart testen en toevoegen
 
 De branch is nog niet naar `main` gemerged.
+
+
+## Nieuwe uitleenflow en QR-scancodes
+De uitleenflow begint bij de leerling: kies een actieve leerling of scan de QR-code, voeg meerdere boeken toe en controleer de standaard ingevulde uitleentermijn. Herinneringen blijven globaal ingesteld.
+
+De nieuwe nullable en unieke kolom leerlingen.scannable_code wordt bij de bestaande nachtelijke Smartschool-leerlingensynchronisatie om 03:00 (Europe/Brussels) gesynchroniseerd. De scan in de bibliotheek raadpleegt uitsluitend de lokale database.
+
+De QR-code wordt eerst uit getAllAccountsExtended gehaald als het veld daar aanwezig is. Anders probeert de sync getUserDetails, maar alleen voor leerlingen zonder opgeslagen code of bij expliciete --refresh-scancodes. Of dit werkt hangt af van de respons en de rechten van het Smartschool-webserviceprofiel. Controleer de QR-dekkingsgraad na de sync.
+
+Bij een onvolledige respons (lege of mislukte klassen) deactiveert de sync geen leerlingen. De nachtelijke en handmatige sync delen een lock.
+
+Beheer -> Leerlingensynchronisatie laat ICT-coordinatoren handmatig een leerlingensync aanvragen, de QR-code-dekkingsgraad bekijken en recente runs controleren. Handmatige syncs werken via een aparte databasewachtrij.
+
+Gerichte migraties (alleen op een gecontroleerde testdatabase):
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_150000_add_scannable_code_to_leerlingen.php
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_160000_create_smartschool_sync_runs_table.php
+  C:\xampp\php\php.exe artisan optimize:clear
+
+Klik op Synchronisatie starten, en verwerk de wachtende opdracht op de ontwikkelpc met:
+  C:\xampp\php\php.exe artisan queue:work smartschool_sync --queue=smartschool-sync --stop-when-empty --tries=1 --timeout=1800
+
+Voor continue verwerking op de server: gebruik Windows Taakplanner die dit workercommando iedere minuut start en geen nieuwe instantie toelaat terwijl de vorige actief is. De queue-connection smartschool_sync heeft retry_after 2100. De nachtelijke sync blijft via de bestaande Laravel Scheduler werken.
+
+Na de eerste sync moet Leerlingen met QR-code stijgen. Geen QR-codes? Dan eerst de Smartschool-webservice respons/permissions controleren; de bibliotheekfunctie gebruikt nooit een live SOAP-call tijdens scannen.
+
+Alle wijzigingen staan op de aparte featurebranch, niet op main of productie.
