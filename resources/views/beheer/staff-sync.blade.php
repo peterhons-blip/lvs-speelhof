@@ -8,10 +8,10 @@
 ]])
 @endsection
 @section('content')
-<main class="library-page portal-users-page">
+<main class="library-page portal-users-page portal-staff-sync-page">
     <div class="library-page-head">
         <div>
-            <p class="portal-eyebrow">BEHEER · SMARTSCHOOL</p>
+            <p class="portal-eyebrow">PORTAALBEHEER / SMARTSCHOOL</p>
             <h1>Personeel synchroniseren</h1>
             <p>Haal leerkrachten en administratieve personeelsleden inclusief subgroepen rechtstreeks uit Smartschool op.</p>
         </div>
@@ -57,8 +57,8 @@
                         <td>{{ $run->requested_by }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($run->created_at)->timezone('Europe/Brussels')->format('d/m/Y H:i') }}</td>
                         <td>{{ $run->apply_changes ? 'Wijzigen' : 'Preview' }}</td>
-                        <td>{{ ['waiting' => 'In wachtrij', 'running' => 'Bezig', 'completed' => 'Voltooid', 'failed' => 'Mislukt'][$run->status] ?? $run->status }}</td>
-                        <td>{{ $run->summary ?: 'Nog geen resultaat.' }}</td>
+                        <td><span class="portal-sync-status portal-sync-status-{{ $run->status }}">{{ ['waiting' => 'In wachtrij', 'running' => 'Bezig', 'completed' => 'Voltooid', 'failed' => 'Mislukt'][$run->status] ?? $run->status }}</span></td>
+                        <td class="portal-sync-result">{{ $run->summary ?: 'Nog geen resultaat.' }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="5">Nog geen synchronisaties uitgevoerd.</td></tr>
