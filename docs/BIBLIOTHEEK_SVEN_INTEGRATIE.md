@@ -157,6 +157,20 @@ De gebruiker heeft de huidige bibliotheekfunctionaliteit zelf functioneel getest
 - Een apart scherm voorzien om alle nog niet voorziene exemplaren te selecteren en QR-codes in bulk te genereren en af te drukken als etiketten.
 - Bestaande barcodes en uitleengeschiedenis respecteren: geen nieuwe exemplaaridentiteiten aanmaken bij het genereren van QR-labels.
 
+### Rapportages bibliotheek (nieuwe aparte knop)
+
+- Voeg een duidelijke menuoptie **Bibliotheek → Rapportages** toe, met een overzichtelijk dashboard en afzonderlijke rapportpagina's.
+- **Uitleningen:** aantal uitleningen per dag/week/maand/schooljaar, actieve, afgewerkte en achterstallige uitleningen, gemiddelde uitleenduur en verlengingen.
+- **Leerlingen:** wie leent het meest, wie heeft momenteel boeken, uitleningen per leerling en per klas, openstaande/te late boeken, individuele historiek.
+- **Boeken en exemplaren:** populairste en minst uitgeleende titels, nooit uitgeleende boeken, beschikbaarheid, totale voorraad, uitgeleende exemplaren en eventuele verloren/beschadigde exemplaren indien geregistreerd.
+- **Achterstallige uitleningen:** hoeveel te laat, aantal dagen te laat, per klas/leerling en mogelijkheid om gericht op te volgen.
+- **QR-code- en catalogusstatus:** aantal exemplaren mét en zonder gegenereerde/afgedrukte QR-code, en voortgang van bulkimporten.
+- **Smartschool-berichten:** aantallen geplande/verzonden/mislukte bibliotheekberichten, voor zover correct geregistreerd, zonder onnodige persoonsgegevens.
+- Gebruik filters voor periode, klas, leerling, boek, status en eventueel school; toon kerncijfers, eenvoudige grafieken en sorteerbare tabellen.
+- Voorzie export naar **Excel/CSV** en eventueel **PDF** of afdrukbare rapporten; eerst vastleggen welke exports het nuttigst zijn.
+- Rapportages baseren op bestaande tabellen en uitleenhistoriek, met correcte rechten en aandacht voor privacy. Geen rapportdata verzinnen; expliciet tonen wanneer gegevens ontbreken.
+- Dit is een **toekomstige uitbreiding**, nog niet geïmplementeerd.
+
 ### Werkwijze voor de volgende sessie
 
 Eerst actuele code op `main` nalopen en een nieuwe featurebranch maken. Implementeren en lokaal testen zonder Smartschool-berichten automatisch live te versturen. Pas na expliciete goedkeuring samenvoegen en op productie uitrollen.
