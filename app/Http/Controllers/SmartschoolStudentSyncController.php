@@ -23,10 +23,13 @@ class SmartschoolStudentSyncController extends Controller
                 ->orderByDesc('id')->limit(12)->get()
                 ->map(function ($run) {
                     $run->display_summary = $this->formatStudentSyncSummary($run->summary);
-                    $partial = (bool) preg_match('/Processed=[1-9][0-9]*/', (string) $run->summary)
-                        && (bool) preg_match('/failed_classes=0,\\s*empty_classes=[1-9][0-9]*/', (string) $run->summary);
-                    $run->display_status = $run->status === 'failed' && $partial
-                        ? 'warning' : $run->status;
+                    // Historical runs with only empty classes were incorrectly marked failed.
+                    // Present them as completed without altering their audit records.
+                    $onlyEmptyClasses = (bool) preg_match('/Processed=[1-9][0-9]*/', (string) $run->summary)
+                        && (bool) preg_match('/failed_classes=0,\\s*empty_classes=[1-9][0-9]*/', (string) $run->summary)
+                        && (bool) preg_match('/scancodes_conflicts=0/', (string) $run->summary);
+                    $run->display_status = $run->status === 'failed' && $onlyEmptyClasses
+                        ? 'completed' : $run->status;
                     $run->display_status_text = [
                         'waiting' => 'In wachtrij',
                         'running' => 'Bezig',
