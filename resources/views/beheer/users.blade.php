@@ -1,10 +1,10 @@
 @extends('layouts.app')
-@section('title', 'Gebruikersbeheer')
+@section('title', 'Personeelsbeheer')
 @section('breadcrumbs')
 @include('partials.breadcrumbs', ['items' => [
     ['label' => 'Dashboard', 'url' => route('home')],
     ['label' => 'Beheer'],
-    ['label' => 'Gebruikersbeheer'],
+    ['label' => 'Personeelsbeheer'],
 ]])
 @endsection
 @section('content')
@@ -12,7 +12,7 @@
     <div class="library-page-head">
         <div>
             <p class="portal-eyebrow">PORTAALBEHEER</p>
-            <h1>Gebruikersbeheer</h1>
+            <h1>Personeelsbeheer</h1>
             <p>De medewerkers komen rechtstreeks uit de bestaande LVS-tabellen <strong>users</strong> en <strong>groups</strong>. Er worden geen dubbele gebruikers aangemaakt.</p>
         </div>
         <div class="portal-role-actions"><a class="library-button library-button-secondary" href="{{ route('beheer.staff-sync.index') }}">Personeel synchroniseren</a><a class="library-button library-button-secondary" href="{{ route('beheer.permissions.index') }}">Rollen en rechten</a></div>
