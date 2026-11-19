@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=15">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -61,6 +61,9 @@
                         @if($bibliotheekActive)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
                                 <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
+                                <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+                                <a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
+                                <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.settings') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.settings')) aria-current="page" @endif>Uitleeninstellingen</a>
                                 <a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
                                 <a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
                                 <a href="{{ route('bibliotheek.books.import.history') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show')) aria-current="page" @endif>Importhistoriek</a>
