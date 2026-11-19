@@ -25,8 +25,8 @@
             <a class="library-button library-button-secondary" href="{{ route('beheer.scheduled-tasks.index') }}">Verversen</a>
         </div>
         @if(!$taskMonitoringEnabled)
-            <div class="portal-sync-feedback">De monitoring is nog niet geactiveerd. Voer eerst de nieuwe migratie voor <code>scheduled_task_runs</code> uit.</div>
-        @else
+            <div class="portal-sync-feedback">Nog geen uitvoeringshistoriek beschikbaar: de monitoringtabel ontbreekt. De geplande taken blijven hieronder zichtbaar.</div>
+        @endif
             <div class="library-table-wrap">
                 <table class="library-table portal-night-table">
                     <thead>
@@ -53,7 +53,6 @@
                 </table>
             </div>
             <p class="portal-night-footnote">Alle tijden zijn Belgische tijd. Een taak zonder registratie is niet automatisch mislukt: historische uitvoeringen van vóór deze wijziging zijn niet beschikbaar. ‘Gelukt’ betekent dat de opdracht zonder gemelde uitvoerfout eindigde; afzonderlijke Smartschool-acties kunnen aanvullende controle vereisen.</p>
-        @endif
     </section>
 
     @if($taskMonitoringEnabled && $taskHistory->isNotEmpty())
