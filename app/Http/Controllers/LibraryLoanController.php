@@ -92,12 +92,14 @@ class LibraryLoanController extends Controller
         $data = $request->validate([
             'barcode' => ['required', 'string', 'max:60'],
             'leerling' => ['required', 'string', 'max:200'],
+            'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'remind_on_due_date' => ['nullable', 'in:0,1'],
         ]);
 
         $barcode = trim($data['barcode']);
         $leerlingCode = trim($data['leerling']);
 
-        return DB::transaction(function () use ($barcode, $leerlingCode, $request) {
+        $loanId = DB::transaction(function () use ($barcode, $leerlingCode, $request, $data) {
             $copy = DB::table('library_copies')->where('barcode', $barcode)->lockForUpdate()->first();
             if (! $copy) throw ValidationException::withMessages(['barcode' => 'Exemplaar niet gevonden. Controleer de barcode.']);
             if ($copy->status !== 'beschikbaar') throw ValidationException::withMessages(['barcode' => 'Dit exemplaar is niet beschikbaar.']);
@@ -120,18 +122,28 @@ class LibraryLoanController extends Controller
             }
 
             $today = CarbonImmutable::today('Europe/Brussels');
-            DB::table('library_loans')->insert([
+            $newLoanId = DB::table('library_loans')->insertGetId([
                 'copy_id' => $copy->id, 'leerling_id' => $leerling->id,
                 'registered_by' => $this->username($request),
                 'loan_date' => $today->toDateString(),
                 'due_date' => $today->addDays($this->setting('loan_days', 21))->toDateString(),
-                'extensions' => 0, 'created_at' => now(), 'updated_at' => now(),
+                'extensions' => 0,
+                'reminder_days_before' => ($data['reminder_days_before'] ?? '') === '' ? null : (int) $data['reminder_days_before'],
+                'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === '' ? null : (int) $data['remind_on_due_date'],
+                'created_at' => now(), 'updated_at' => now(),
             ]);
             DB::table('library_copies')->where('id', $copy->id)
                 ->update(['status' => 'uitgeleend', 'updated_at' => now()]);
 
-            return redirect()->route('bibliotheek.loans.index')->with('success', 'Exemplaar '.$barcode.' uitgeleend.');
+            return $newLoanId;
         });
+
+        // Pas NA de commit berichten sturen (geen externe SOAP-oproepen in DB-transactie).
+        $sent = app(\App\Services\LibraryLoanNotifier::class)
+            ->send((int) $loanId, 'confirmation', now('Europe/Brussels')->toDateString());
+
+        return redirect()->route('bibliotheek.loans.index')->with('success',
+            'Exemplaar '.$barcode.' uitgeleend.' . ($sent ? ' Smartschool-bevestiging verstuurd.' : ''));
     }
 
     public function returnLoan(int $loan): RedirectResponse
@@ -181,6 +193,9 @@ class LibraryLoanController extends Controller
             'max_loans' => ['required', 'integer', 'min:1', 'max:30'],
             'max_extensions' => ['required', 'integer', 'min:1', 'max:20'],
             'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
+            'reminder_days_before' => ['required', 'integer', 'min:0', 'max:60'],
+            'remind_on_due_date' => ['required', 'in:0,1'],
+            'smartschool_enabled' => ['required', 'in:0,1'],
         ]);
 
         foreach ($values as $key => $value) {
