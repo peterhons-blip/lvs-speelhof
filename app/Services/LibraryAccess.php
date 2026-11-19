@@ -32,6 +32,22 @@ class LibraryAccess
         'administratie' => 'Administratie',
     ];
 
+    // Personal grants apply only to these management sections, never to rights delegation.
+    public const PERSONAL_MANAGEMENT = [
+        'beheer.staff.manage' => 'Personeelsbeheer',
+        'beheer.students.manage' => 'Leerlingenbeheer',
+        'beheer.smartschool_test.send' => 'Smartschool-testbericht',
+        'beheer.student_sync.manage' => 'Leerlingensynchronisatie',
+        'beheer.staff_sync.manage' => 'Personeelssynchronisatie',
+        'beheer.scheduled_tasks.view' => 'Geplande taken en logs',
+    ];
+
+    public function requireIctManager(Request $request): void
+    {
+        abort_unless($this->role($request) === 'ict_coordinator', 403,
+            'Alleen de ICT-coördinator kan beheerrechten toekennen of wijzigen.');
+    }
+
     public function username(Request $request): string
     {
         // Smartschool OAuth's canonical username; never authorize by supplied groupname.
@@ -70,6 +86,17 @@ class LibraryAccess
 
         // Existing ICT-coordinator group (id=4 in current test DB) always retains admin access.
         if ($role === 'ict_coordinator') return true;
+        // Delegated management rights require an explicit per-user grant, never a school role.
+        if (array_key_exists($permission, self::PERSONAL_MANAGEMENT)) {
+            if (! Schema::hasTable('portal_user_permissions')) return false;
+            $username = $this->username($request);
+            $userId = DB::table('users')->where('smartschool_gebruikersnaam', $username)
+                ->where('allowed_login', 1)
+                ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+                ->value('id');
+            return $userId !== null && DB::table('portal_user_permissions')
+                ->where('user_id', $userId)->where('permission', $permission)->exists();
+        }
         if (! Schema::hasTable('portal_role_permissions')) return false;
 
         return DB::table('portal_role_permissions')
@@ -84,7 +111,11 @@ class LibraryAccess
 
     public function isManager(Request $request): bool
     {
-        return $this->role($request) === 'ict_coordinator';
+        if ($this->role($request) === 'ict_coordinator') return true;
+        foreach (array_keys(self::PERSONAL_MANAGEMENT) as $permission) {
+            if ($this->has($request, $permission)) return true;
+        }
+        return false;
     }
 
     public function isOperator(Request $request): bool
