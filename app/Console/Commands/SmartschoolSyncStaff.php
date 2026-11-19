@@ -111,16 +111,27 @@ class SmartschoolSyncStaff extends Command
             return self::FAILURE;
         }
 
-        $existing = DB::table('users')->where('schoolid', $schoolId)->get()
+        // Legacy LVS-accounts hebben soms geen schoolid. Zoek ook in de bestaande
+        // volledige users-tabel zodat ze niet onterecht als 'nieuw' verschijnen.
+        $allUsers = DB::table('users')->get();
+        $existing = $allUsers->filter(fn ($user) => trim((string) $user->gebruikersnaam) !== '')
             ->keyBy(fn ($user) => mb_strtolower(trim((string) $user->gebruikersnaam)));
+        $localSchool = $allUsers->filter(fn ($user) =>
+            $user->schoolid === null || (int) $user->schoolid === $schoolId);
+        $this->line('Bestaande users: '.$allUsers->count().' | schoolid='.$schoolId
+            .': '.$allUsers->where('schoolid', $schoolId)->count()
+            .' | zonder schoolid: '.$allUsers->whereNull('schoolid')->count().'.');
         $managed = DB::table('smartschool_staff_memberships')->where('schoolid', $schoolId)
             ->pluck('gebruikersnaam')->map(fn ($v) => mb_strtolower($v))->all();
         $changes = ['nieuw' => 0, 'bijwerken' => 0, 'uitschakelen' => 0];
+        $missingUsernames = [];
+        $matchedWithoutSchool = 0;
         $disable = [];
         // Ook bestaande lokale accounts met een standaardrol opnemen in de
         // controle; speciale rollen en serviceaccounts worden niet automatisch verwijderd.
-        foreach ($existing as $username => $user) {
-            if (in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)) {
+        foreach ($localSchool as $user) {
+            $username = mb_strtolower(trim((string) $user->gebruikersnaam));
+            if ($username !== '' && in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)) {
                 $managed[] = $username;
             }
         }
@@ -157,8 +168,12 @@ class SmartschoolSyncStaff extends Command
             $existingUser = $existing[$username] ?? null;
             if (! $existingUser) {
                 $changes['nieuw']++;
-            } elseif ($this->needsUpdate($existingUser, $row, $groupIds)) {
-                $changes['bijwerken']++;
+                $missingUsernames[] = $username;
+            } else {
+                if ($existingUser->schoolid === null) $matchedWithoutSchool++;
+                if ($this->needsUpdate($existingUser, $row, $groupIds)) {
+                    $changes['bijwerken']++;
+                }
             }
         }
         $changes['uitschakelen'] = count($disable);
@@ -166,6 +181,8 @@ class SmartschoolSyncStaff extends Command
             .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
         $this->line('Nieuw: '.$changes['nieuw'].' | Bijwerken: '.$changes['bijwerken']
             .' | Uitschakelen: '.$changes['uitschakelen']);
+        $this->line('Bestaande gebruikers zonder schoolid die werden herkend: '.$matchedWithoutSchool);
+        if ($missingUsernames) $this->line('Nog niet lokaal gevonden: '.implode(', ', $missingUsernames));
         if ($disable) $this->warn('Uitschakelen: '.implode(', ', $disable));
         if (! $apply) {
             $this->comment('Dit was een preview. Gebruik --apply om de veranderingen uit te voeren.');
@@ -204,8 +221,9 @@ class SmartschoolSyncStaff extends Command
                 );
             }
             if ($disable) {
-                DB::table('users')->where('schoolid', $schoolId)
-                    ->whereIn('gebruikersnaam', $disable)->update(['allowed_login' => 0, 'updated_at' => now()]);
+                DB::table('users')->whereIn('id', collect($disable)
+                    ->map(fn ($name) => (int) $existing[$name]->id)->all())
+                    ->update(['allowed_login' => 0, 'updated_at' => now()]);
             }
         });
         $this->info('Personeelssynchronisatie voltooid.');
