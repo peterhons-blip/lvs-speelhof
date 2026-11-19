@@ -18,7 +18,8 @@ class SmartschoolStaffSyncController extends Controller
         $access->requireManager($request);
         $ready = Schema::hasTable('smartschool_staff_memberships')
             && Schema::hasTable('smartschool_staff_sync_runs')
-            && DB::table('groups')->where('groupname', 'administratie')->exists();
+            && DB::table('groups')->where('groupname', 'administratie')->exists()
+            && \App\Support\LegacyDatabaseSchema::hasColumn('users', 'smartschool_active');
         $runs = $ready ? DB::table('smartschool_staff_sync_runs')
             ->where('school_id', 1)->orderByDesc('id')->limit(15)->get() : collect();
         return view('beheer.staff-sync', compact('ready', 'runs'));
@@ -32,7 +33,8 @@ class SmartschoolStaffSyncController extends Controller
             'apply_changes' => ['nullable', 'in:1'],
         ]);
         if (! Schema::hasTable('smartschool_staff_memberships')
-            || ! Schema::hasTable('smartschool_staff_sync_runs')) {
+            || ! Schema::hasTable('smartschool_staff_sync_runs')
+            || ! \App\Support\LegacyDatabaseSchema::hasColumn('users', 'smartschool_active')) {
             return back()->withErrors(['sync' => 'Voer eerst de migratie voor personeelssynchronisatie uit.']);
         }
         if (DB::table('smartschool_staff_sync_runs')->where('school_id', 1)
