@@ -37,3 +37,11 @@ Schedule::command('monitor:scheduled library_reminders')
     ->timezone('Europe/Brussels')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/bibliotheek_herinneringen.log'));
+
+// Personeelssync: voorlopig alleen nachtelijke preview, tot de werking is gevalideerd.
+// --apply pas na expliciete vrijgave activeren, anders worden geen users gewijzigd.
+Schedule::command('smartschool:sync-personeel --schoolid=1')
+    ->dailyAt('03:30')
+    ->timezone('Europe/Brussels')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/smartschool_sync_personeel.log'));
