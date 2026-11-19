@@ -132,3 +132,31 @@ Gerichte extra migratie (uitsluitend gescheiden testdatabase):
 Lege Smartschoolklassen zonder fout bij ophalen leiden tot status 'Deels voltooid', niet volledig 'Mislukt'. De deactivering van leerlingen blijft bij een onvolledige klassensnapshot geblokkeerd. Opgeslagen QR-codes en bijwerkingen blijven behouden.
 
 Let op: de pagina toont enkel uitvoeringen die sinds deze uitbreiding gemonitord werden. Een scheduler die op de server niet loopt, veroorzaakt geen nieuwe registraties. Controleer Laravel Taakplanner/schedule:run en de serverlogs als er na een geplande nacht geen resultaten verschijnen. De bestaande CLI-functies kunnen gedeeltelijke Smartschool-afleverfouten intern opvangen; een succesvolle exitcode bewijst niet altijd een volledige aflevering.
+
+
+## Volgende werksessie: bibliotheek — openstaande uitbreidingen (19-11-2026)
+
+De gebruiker heeft de huidige bibliotheekfunctionaliteit zelf functioneel getest en bevestigd dat ze goed werkt. De onderstaande uitbreidingen zijn **nog niet afgetest of afgerond** en mogen niet als gerealiseerd worden beschouwd.
+
+### Smartschool-berichten bij bibliotheekuitleningen
+
+- Bericht bij het uitlenen van een boek.
+- Herinnering **3 dagen vóór** de uiterste inleverdatum.
+- Herinnering **op de uiterste inleverdatum**.
+- Bericht **bij de effectieve terugbrenging/inlevering** van een boek.
+- Rekening houden met het reeds aanwezige bibliotheek-berichtensysteem, het Smartschool-account `bib`, globale instellingen en notificatielogging; test eerst met een testontvanger, vermijd dubbele berichten.
+- Controleer bestaande implementaties en stem de exacte tekst, ontvanger en timing af vóór activeren op productie. De bestaande berichtenverzending kan standaard uitgeschakeld zijn.
+
+### QR-codes voor fysieke boeken / exemplaren
+
+- QR-codes kunnen genereren voor boeken, bij voorkeur **per fysiek exemplaar** met unieke `library_copies.barcode`.
+- **Bijhouden van welke exemplaren al een QR-code is aangemaakt en welke nog niet** (bijvoorbeeld status, aanmaakmoment en desgewenst printstatus). Eerst datamodel en verschil tussen *gegenereerd* en *geprint* afspreken.
+- Losse QR-codegeneratie mogelijk maken vanuit boekencatalogus/een boekdetail.
+- QR-code automatisch of met een keuze kunnen genereren **tijdens het aanmaken van één boek**.
+- QR-codegeneratie ondersteunen **bij bulktoevoeging/import van meerdere boeken**.
+- Een apart scherm voorzien om alle nog niet voorziene exemplaren te selecteren en QR-codes in bulk te genereren en af te drukken als etiketten.
+- Bestaande barcodes en uitleengeschiedenis respecteren: geen nieuwe exemplaaridentiteiten aanmaken bij het genereren van QR-labels.
+
+### Werkwijze voor de volgende sessie
+
+Eerst actuele code op `main` nalopen en een nieuwe featurebranch maken. Implementeren en lokaal testen zonder Smartschool-berichten automatisch live te versturen. Pas na expliciete goedkeuring samenvoegen en op productie uitrollen.
