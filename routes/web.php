@@ -21,6 +21,17 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index');
 
+    Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index');
+        Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create');
+        Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store');
+        Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students');
+        Route::get('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'settings'])->name('settings');
+        Route::post('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'saveSettings'])->name('settings.save');
+        Route::post('/{loan}/inleveren', [\App\Http\Controllers\LibraryLoanController::class, 'returnLoan'])->whereNumber('loan')->name('return');
+        Route::post('/{loan}/verlengen', [\App\Http\Controllers\LibraryLoanController::class, 'extend'])->whereNumber('loan')->name('extend');
+    });
+
     Route::prefix('bibliotheek/boeken')->name('bibliotheek.books.')->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create');
