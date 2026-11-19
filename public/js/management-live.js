@@ -6,7 +6,6 @@
     const total = root.querySelector('[data-management-total]');
     const form = root.querySelector('[data-bulk-form]');
     const count = root.querySelector('[data-selected-count]');
-    const selectAll = root.querySelector('[data-select-all]');
     const action = root.querySelector('[data-bulk-action]');
     const role = root.querySelector('[data-bulk-role]');
     let controller = null;
@@ -20,13 +19,14 @@
         const boxes = [...results.querySelectorAll('[data-bulk-id]')];
         const n = chosen().length;
         if (count) count.textContent = n + ' geselecteerd (deze pagina)';
+        const selectAll = results.querySelector('[data-select-all]');
         if (selectAll) {
             selectAll.checked = boxes.length > 0 && n === boxes.length;
             selectAll.indeterminate = n > 0 && n < boxes.length;
         }
     }
     function updateAction() {
-        if (role && action) role.hidden = action.value !== 'role';
+        if (role && action) role.style.display = action.value === 'role' ? '' : 'none';
     }
 
     async function load(url) {
@@ -68,6 +68,11 @@
         const qs = params.toString();
         return window.location.pathname + (qs ? '?' + qs : '');
     }
+    if (search) search.closest('form')?.addEventListener('submit', event => {
+        event.preventDefault();
+        clearTimeout(timer);
+        load(searchUrl());
+    });
     if (search) search.addEventListener('input', () => {
         clearTimeout(timer);
         timer = setTimeout(() => load(searchUrl()), 250);
