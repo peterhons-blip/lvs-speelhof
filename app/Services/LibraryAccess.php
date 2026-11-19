@@ -45,7 +45,7 @@ class LibraryAccess
 
         $groupName = DB::table('users')
             ->join('groups', 'groups.id', '=', 'users.groupId')
-            ->where('users.gebruikersnaam', $username)
+            ->where('users.smartschool_gebruikersnaam', $username)
             ->where('users.allowed_login', 1)
             ->where(function ($q) { $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1); })
             ->value('groups.groupname');
