@@ -91,56 +91,13 @@ class LibraryLoanController extends Controller
             ->where('gebruikersnaam', $value)
             ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
 
-        if (! $student && \Illuminate\Support\Facades\Schema::hasTable('library_student_cards')) {
-            $student = DB::table('library_student_cards as cards')
-                ->join('leerlingen as l', 'l.id', '=', 'cards.leerling_id')
-                ->where('cards.scan_code', $value)->where('l.active', 1)
-                ->select('l.id', 'l.voornaam', 'l.naam', 'l.gebruikersnaam')->first();
+        if (! $student && \Illuminate\Support\Facades\Schema::hasColumn('leerlingen', 'scannable_code')) {
+            $student = DB::table('leerlingen')
+                ->where('scannable_code', $value)->where('active', 1)
+                ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
         }
-        if (! $student) return response()->json(['message' => 'Scanwaarde nog niet gekoppeld aan een actieve leerling. Zoek de leerling en koppel de kaart eenmalig.'], 404);
+        if (! $student) return response()->json(['message' => 'Geen actieve leerling gevonden voor deze scanwaarde. Controleer of de Smartschool-scancodes gesynchroniseerd zijn.'], 404);
         return response()->json(['student' => $student]);
-    }
-
-    public function linkStudentCard(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $this->authorizeOperator($request);
-        $data = $request->validate([
-            'code' => ['required', 'string', 'min:8', 'max:128'],
-            'leerling' => ['required', 'string', 'max:200'],
-        ]);
-
-        $code = trim($data['code']);
-        $username = trim($data['leerling']);
-
-        $student = DB::table('leerlingen')
-            ->where('gebruikersnaam', $username)->where('active', 1)
-            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
-
-        if (! $student) return response()->json(['message' => 'Geen actieve leerling gevonden.'], 422);
-        if (! \Illuminate\Support\Facades\Schema::hasTable('library_student_cards')) {
-            return response()->json(['message' => 'Voer eerst de migratie voor leerlingenkaarten uit.'], 422);
-        }
-
-        // Never silently overwrite another pupil's card or change a previous mapping.
-        $existing = DB::table('library_student_cards')
-            ->where('scan_code', $code)->orWhere('leerling_id', $student->id)->first();
-        if ($existing) {
-            if ((int) $existing->leerling_id === (int) $student->id && $existing->scan_code === $code) {
-                return response()->json(['student' => $student, 'message' => 'Kaart is al gekoppeld.']);
-            }
-            return response()->json(['message' => 'Deze kaart of leerling heeft al een koppeling. Controleer deze eerst.'], 409);
-        }
-
-        try {
-            DB::table('library_student_cards')->insert([
-                'scan_code' => $code, 'leerling_id' => $student->id,
-                'linked_by' => $this->username($request),
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json(['message' => 'Er bestaat al een koppeling voor deze kaart of leerling.'], 409);
-        }
-        return response()->json(['student' => $student, 'message' => 'Leerlingenkaart gekoppeld.']);
     }
 
     public function lookupCopy(Request $request): \Illuminate\Http\JsonResponse
