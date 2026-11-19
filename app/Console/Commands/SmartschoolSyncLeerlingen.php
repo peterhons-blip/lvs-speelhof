@@ -44,7 +44,7 @@ class SmartschoolSyncLeerlingen extends Command
         $limit = (int) ($this->option('limit') ?: 0);
         $onlyCode = trim((string) ($this->option('only-class') ?: ''));
         $syncScancodes = ! $this->option('skip-scancodes')
-            && \Illuminate\Support\Facades\Schema::hasColumn('leerlingen', 'scannable_code');
+            && \App\Support\LegacyDatabase\App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code');
         $refreshScancodes = (bool) $this->option('refresh-scancodes');
         $detailsCallsDisabled = false;
         $detailsFailures = 0;
