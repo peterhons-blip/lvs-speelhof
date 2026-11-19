@@ -14,7 +14,7 @@ class SmartschoolStudentSyncController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.student_sync.manage');
         $ready = Schema::hasTable('smartschool_sync_runs')
             && \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code');
 
@@ -51,7 +51,7 @@ class SmartschoolStudentSyncController extends Controller
 
     public function start(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.student_sync.manage');
         $data = $request->validate([
             'confirm_sync' => ['accepted'],
             'refresh_scancodes' => ['nullable', 'in:0,1'],
