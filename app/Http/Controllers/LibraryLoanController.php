@@ -65,92 +65,183 @@ class LibraryLoanController extends Controller
     {
         $barcode = trim((string) $request->query('barcode', ''));
         $username = trim((string) $request->query('leerling', ''));
-        $copies = DB::table('library_copies as copies')
-            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
-            ->where('copies.status', 'beschikbaar')
-            ->select('copies.id', 'copies.barcode', 'books.title')
-            ->orderBy('books.title')->limit(250)->get();
-
-        $leerlingen = DB::table('leerlingen')
-            ->where('active', 1)
-            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')
-            ->orderBy('naam')->limit(250)->get();
+        $loanDays = $this->setting('loan_days', 21);
+        $maxLoans = $this->setting('max_loans', 3);
 
         $copy = $barcode !== '' ? DB::table('library_copies as copies')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id')
-            ->where('copies.barcode', $barcode)->select('copies.id', 'copies.barcode', 'books.title', 'copies.status')->first() : null;
-
+            ->where('copies.barcode', $barcode)
+            ->select('copies.id', 'copies.barcode', 'books.title', 'copies.status')
+            ->first() : null;
         $leerling = $username !== '' ? DB::table('leerlingen')
             ->where('active', 1)->where('gebruikersnaam', $username)
             ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first() : null;
 
-        return view('bibliotheek.loans.create', compact('copies', 'leerlingen', 'barcode', 'username', 'copy', 'leerling'));
+        return view('bibliotheek.loans.create', compact('barcode', 'username', 'copy', 'leerling', 'loanDays', 'maxLoans'));
+    }
+
+    public function lookupStudent(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $value = trim((string) $request->query('code', ''));
+        if ($value === '' || mb_strlen($value) > 200) return response()->json(['message' => 'Ongeldige scanwaarde.'], 422);
+
+        // Directly typed usernames work without pairing.
+        $student = DB::table('leerlingen')->where('active', 1)
+            ->where('gebruikersnaam', $value)
+            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
+
+        if (! $student && \Illuminate\Support\Facades\Schema::hasTable('library_student_cards')) {
+            $student = DB::table('library_student_cards as cards')
+                ->join('leerlingen as l', 'l.id', '=', 'cards.leerling_id')
+                ->where('cards.scan_code', $value)->where('l.active', 1)
+                ->select('l.id', 'l.voornaam', 'l.naam', 'l.gebruikersnaam')->first();
+        }
+        if (! $student) return response()->json(['message' => 'Scanwaarde nog niet gekoppeld aan een actieve leerling. Zoek de leerling en koppel de kaart eenmalig.'], 404);
+        return response()->json(['student' => $student]);
+    }
+
+    public function linkStudentCard(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $data = $request->validate([
+            'code' => ['required', 'string', 'min:8', 'max:128'],
+            'leerling' => ['required', 'string', 'max:200'],
+        ]);
+
+        $code = trim($data['code']);
+        $username = trim($data['leerling']);
+
+        $student = DB::table('leerlingen')
+            ->where('gebruikersnaam', $username)->where('active', 1)
+            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
+
+        if (! $student) return response()->json(['message' => 'Geen actieve leerling gevonden.'], 422);
+        if (! \Illuminate\Support\Facades\Schema::hasTable('library_student_cards')) {
+            return response()->json(['message' => 'Voer eerst de migratie voor leerlingenkaarten uit.'], 422);
+        }
+
+        // Never silently overwrite another pupil's card or change a previous mapping.
+        $existing = DB::table('library_student_cards')
+            ->where('scan_code', $code)->orWhere('leerling_id', $student->id)->first();
+        if ($existing) {
+            if ((int) $existing->leerling_id === (int) $student->id && $existing->scan_code === $code) {
+                return response()->json(['student' => $student, 'message' => 'Kaart is al gekoppeld.']);
+            }
+            return response()->json(['message' => 'Deze kaart of leerling heeft al een koppeling. Controleer deze eerst.'], 409);
+        }
+
+        try {
+            DB::table('library_student_cards')->insert([
+                'scan_code' => $code, 'leerling_id' => $student->id,
+                'linked_by' => $this->username($request),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['message' => 'Er bestaat al een koppeling voor deze kaart of leerling.'], 409);
+        }
+        return response()->json(['student' => $student, 'message' => 'Leerlingenkaart gekoppeld.']);
+    }
+
+    public function lookupCopy(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $barcode = trim((string) $request->query('barcode', ''));
+        if ($barcode === '' || mb_strlen($barcode) > 60) {
+            return response()->json(['message' => 'Scan een geldige boekbarcode.'], 422);
+        }
+
+        $copy = DB::table('library_copies as copies')
+            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
+            ->where('copies.barcode', $barcode)
+            ->select('copies.id', 'copies.barcode', 'copies.status', 'books.title')
+            ->first();
+        if (! $copy) return response()->json(['message' => 'Geen exemplaar met deze barcode gevonden.'], 404);
+        if ($copy->status !== 'beschikbaar'
+            || DB::table('library_loans')->where('copy_id', $copy->id)->whereNull('returned_at')->exists()) {
+            return response()->json(['message' => 'Dit exemplaar is momenteel niet beschikbaar.'], 409);
+        }
+        return response()->json(['copy' => $copy]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeOperator(request());
+        $this->authorizeOperator($request);
         $data = $request->validate([
-            'barcode' => ['required', 'string', 'max:60'],
             'leerling' => ['required', 'string', 'max:200'],
-            'loan_days_override' => ['nullable', 'integer', 'min:1', 'max:365'],
-            'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
-            'remind_on_due_date' => ['nullable', 'in:0,1'],
+            'barcodes' => ['required', 'array', 'min:1', 'max:30'],
+            'barcodes.*' => ['required', 'string', 'max:60'],
+            'loan_days' => ['required', 'integer', 'min:1', 'max:365'],
         ]);
 
-        $barcode = trim($data['barcode']);
-        $leerlingCode = trim($data['leerling']);
+        $barcodes = array_values(array_map('trim', $data['barcodes']));
+        if (count(array_unique($barcodes)) !== count($barcodes)) {
+            throw ValidationException::withMessages(['barcodes' => 'Een boekbarcode komt meerdere keren voor.']);
+        }
+        // Stable lock order reduces contention and deadlock risk when scans are processed concurrently.
+        sort($barcodes, SORT_STRING);
+        $learnerUsername = trim($data['leerling']);
+        $today = CarbonImmutable::today('Europe/Brussels');
 
-        $loanId = DB::transaction(function () use ($barcode, $leerlingCode, $request, $data) {
-            $copy = DB::table('library_copies')->where('barcode', $barcode)->lockForUpdate()->first();
-            if (! $copy) throw ValidationException::withMessages(['barcode' => 'Exemplaar niet gevonden. Controleer de barcode.']);
-            if ($copy->status !== 'beschikbaar') throw ValidationException::withMessages(['barcode' => 'Dit exemplaar is niet beschikbaar.']);
-
-            $leerling = DB::table('leerlingen')
-                ->where('gebruikersnaam', $leerlingCode)->where('active', 1)->first();
-            if (! $leerling) throw ValidationException::withMessages(['leerling' => 'Geen actieve leerling met deze gebruikersnaam gevonden.']);
-
-            if (DB::table('library_loans')->where('copy_id', $copy->id)->whereNull('returned_at')->exists()) {
-                throw ValidationException::withMessages(['barcode' => 'Dit exemplaar staat al uitgeleend.']);
+        $loanIds = DB::transaction(function () use ($barcodes, $learnerUsername, $today, $data, $request) {
+            $student = DB::table('leerlingen')
+                ->where('gebruikersnaam', $learnerUsername)->where('active', 1)
+                ->lockForUpdate()->first();
+            if (! $student) {
+                throw ValidationException::withMessages(['leerling' => 'Selecteer eerst een actieve leerling.']);
             }
 
-            // Lock the selected pupil to serialize concurrent loans for the same borrower.
-            DB::table('leerlingen')->where('id', $leerling->id)->lockForUpdate()->first();
-
-            $open = DB::table('library_loans')->where('leerling_id', $leerling->id)
-                ->whereNull('returned_at')->count();
-            if ($open >= $this->setting('max_loans', 3)) {
-                throw ValidationException::withMessages(['leerling' => 'Deze leerling heeft het maximale aantal openstaande uitleningen bereikt.']);
+            $open = DB::table('library_loans')
+                ->where('leerling_id', $student->id)->whereNull('returned_at')->count();
+            $maxLoans = $this->setting('max_loans', 3);
+            if ($open + count($barcodes) > $maxLoans) {
+                throw ValidationException::withMessages(['barcodes' =>
+                    "Deze leerling heeft al {$open} openstaande uitlening(en). Maximaal {$maxLoans} boeken tegelijk."]);
             }
 
-            $today = CarbonImmutable::today('Europe/Brussels');
-            $newLoanId = DB::table('library_loans')->insertGetId([
-                'copy_id' => $copy->id, 'leerling_id' => $leerling->id,
-                'registered_by' => $this->username($request),
-                'loan_date' => $today->toDateString(),
-                'due_date' => $today->addDays((int) (($data['loan_days_override'] ?? null) ?: $this->setting('loan_days', 21)))->toDateString(),
-                'extensions' => 0,
-                'reminder_days_before' => ($data['reminder_days_before'] ?? '') === '' ? null : (int) $data['reminder_days_before'],
-                'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === '' ? null : (int) $data['remind_on_due_date'],
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-            DB::table('library_copies')->where('id', $copy->id)
-                ->update(['status' => 'uitgeleend', 'updated_at' => now()]);
-            DB::table('library_loan_events')->insert([
-                'loan_id' => $newLoanId, 'action' => 'uitgeleend',
-                'actor' => $this->username($request), 'details' => null,
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
+            $ids = [];
+            foreach ($barcodes as $barcode) {
+                $copy = DB::table('library_copies')->where('barcode', $barcode)
+                    ->lockForUpdate()->first();
+                if (! $copy || $copy->status !== 'beschikbaar'
+                    || DB::table('library_loans')->where('copy_id', $copy->id)->whereNull('returned_at')->exists()) {
+                    throw ValidationException::withMessages(['barcodes' =>
+                        "Exemplaar {$barcode} is niet beschikbaar. Geen van de boeken werd uitgeleend."]);
+                }
 
-            return $newLoanId;
-        });
+                $id = DB::table('library_loans')->insertGetId([
+                    'copy_id' => $copy->id,
+                    'leerling_id' => $student->id,
+                    'registered_by' => $this->username($request),
+                    'loan_date' => $today->toDateString(),
+                    'due_date' => $today->addDays((int) $data['loan_days'])->toDateString(),
+                    'extensions' => 0,
+                    'reminder_days_before' => null,
+                    'remind_on_due_date' => null,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+                DB::table('library_copies')->where('id', $copy->id)
+                    ->update(['status' => 'uitgeleend', 'updated_at' => now()]);
+                DB::table('library_loan_events')->insert([
+                    'loan_id' => $id, 'action' => 'uitgeleend',
+                    'actor' => $this->username($request), 'details' => null,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+                $ids[] = $id;
+            }
+            return $ids;
+        }, 3);
 
-        // Pas NA de commit berichten sturen (geen externe SOAP-oproepen in DB-transactie).
-        $sent = app(\App\Services\LibraryLoanNotifier::class)
-            ->send((int) $loanId, 'confirmation', now('Europe/Brussels')->toDateString());
+        // The SOAP operation is performed only after committing all books atomically.
+        $notifier = app(\App\Services\LibraryLoanNotifier::class);
+        $sent = 0;
+        foreach ($loanIds as $loanId) {
+            if ($notifier->send((int) $loanId, 'confirmation', $today->toDateString())) $sent++;
+        }
 
         return redirect()->route('bibliotheek.loans.index')->with('success',
-            'Exemplaar '.$barcode.' uitgeleend.' . ($sent ? ' Smartschool-bevestiging verstuurd.' : ''));
+            count($loanIds).' boek(en) uitgeleend.'
+            .($sent > 0 ? " Smartschool-bevestiging(en): {$sent} verzonden." : ''));
     }
 
     public function returnByBarcode(Request $request): RedirectResponse
