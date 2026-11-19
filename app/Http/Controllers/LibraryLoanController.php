@@ -127,7 +127,7 @@ class LibraryLoanController extends Controller
                 'copy_id' => $copy->id, 'leerling_id' => $leerling->id,
                 'registered_by' => $this->username($request),
                 'loan_date' => $today->toDateString(),
-                'due_date' => $today->addDays((int) ($data['loan_days_override'] ?: $this->setting('loan_days', 21)))->toDateString(),
+                'due_date' => $today->addDays((int) (($data['loan_days_override'] ?? null) ?: $this->setting('loan_days', 21)))->toDateString(),
                 'extensions' => 0,
                 'reminder_days_before' => ($data['reminder_days_before'] ?? '') === '' ? null : (int) $data['reminder_days_before'],
                 'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === '' ? null : (int) $data['remind_on_due_date'],
