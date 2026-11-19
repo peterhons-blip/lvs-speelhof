@@ -23,6 +23,17 @@ class SmartschoolStudentSyncController extends Controller
                 ->orderByDesc('id')->limit(12)->get()
                 ->map(function ($run) {
                     $run->display_summary = $this->formatStudentSyncSummary($run->summary);
+                    $partial = (bool) preg_match('/Processed=[1-9][0-9]*/', (string) $run->summary)
+                        && (bool) preg_match('/failed_classes=0,\\s*empty_classes=[1-9][0-9]*/', (string) $run->summary);
+                    $run->display_status = $run->status === 'failed' && $partial
+                        ? 'warning' : $run->status;
+                    $run->display_status_text = [
+                        'waiting' => 'In wachtrij',
+                        'running' => 'Bezig',
+                        'completed' => 'Voltooid',
+                        'warning' => 'Deels voltooid',
+                        'failed' => 'Mislukt',
+                    ][$run->display_status] ?? 'Onbekend';
                     return $run;
                 })
             : collect();
