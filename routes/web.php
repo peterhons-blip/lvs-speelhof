@@ -70,6 +70,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
+        Route::get('/gebruikers-zoeken', [\App\Http\Controllers\PortalPermissionsController::class, 'searchUsers'])->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:45,1'])->name('users.search');
         Route::post('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'storeUser'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.store');
         Route::put('/gebruikers/{staff}', [\App\Http\Controllers\PortalPermissionsController::class, 'updateUser'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.update');
         Route::patch('/gebruikers/{staff}/aanmelden', [\App\Http\Controllers\PortalPermissionsController::class, 'updateLogin'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.login');
