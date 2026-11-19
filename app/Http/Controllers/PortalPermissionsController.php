@@ -111,6 +111,39 @@ class PortalPermissionsController extends Controller
         return $this->changeGroup($request, $access, $staff, $data['role']);
     }
 
+    public function updateLogin(Request $request, LibraryAccess $access, int $staff): RedirectResponse
+    {
+        $access->requireManager($request);
+        $data = $request->validate(['allowed_login' => ['required', 'in:0,1']]);
+        $allowed = (int) $data['allowed_login'];
+
+        return DB::transaction(function () use ($request, $access, $staff, $allowed) {
+            $user = DB::table('users')->where('id', $staff)->lockForUpdate()->first();
+            abort_unless($user, 404);
+
+            $self = mb_strtolower((string) $user->gebruikersnaam) === $access->username($request);
+            if ($self && $allowed === 0) {
+                return back()->withErrors(['allowed_login' => 'Je kunt je eigen aanmeldtoegang niet uitschakelen.']);
+            }
+
+            if ($allowed === 0 && (int) $user->allowed_login === 1) {
+                $ictGroupId = $this->groupId('ict_coordinator');
+                if ((int) $user->groupId === $ictGroupId) {
+                    $activeIct = DB::table('users')->where('groupId', $ictGroupId)
+                        ->where('allowed_login', 1)->count();
+                    if ($activeIct <= 1) {
+                        return back()->withErrors(['allowed_login' =>
+                            'De laatste actieve ICT-coördinator kan niet geblokkeerd worden.']);
+                    }
+                }
+            }
+
+            DB::table('users')->where('id', $staff)->update(['allowed_login' => $allowed]);
+            return back()->with('success', 'Aanmeldtoegang voor '.$user->gebruikersnaam
+                .($allowed ? ' toegestaan.' : ' geblokkeerd.'));
+        });
+    }
+
     private function changeGroup(Request $request, LibraryAccess $access, int $userId, string $role): RedirectResponse
     {
         $targetGroupId = $this->groupId($role);
