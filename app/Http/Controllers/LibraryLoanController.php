@@ -168,6 +168,31 @@ class LibraryLoanController extends Controller
         });
     }
 
+    public function settings(): View
+    {
+        $settings = DB::table('library_settings')->pluck('value', 'key');
+        return view('bibliotheek.loans.settings', compact('settings'));
+    }
+
+    public function saveSettings(Request $request): RedirectResponse
+    {
+        $values = $request->validate([
+            'loan_days' => ['required', 'integer', 'min:1', 'max:365'],
+            'max_loans' => ['required', 'integer', 'min:1', 'max:30'],
+            'max_extensions' => ['required', 'integer', 'min:1', 'max:20'],
+            'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        foreach ($values as $key => $value) {
+            DB::table('library_settings')->updateOrInsert(
+                ['key' => $key],
+                ['value' => (string) $value, 'updated_at' => now()]
+            );
+        }
+
+        return redirect()->route('bibliotheek.loans.settings')->with('success', 'Bibliotheekinstellingen opgeslagen.');
+    }
+
     public function students(Request $request): \Illuminate\Http\JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
