@@ -114,3 +114,21 @@ Voor continue verwerking op de server: gebruik Windows Taakplanner die dit worke
 Na de eerste sync moet Leerlingen met QR-code stijgen. Geen QR-codes? Dan eerst de Smartschool-webservice respons/permissions controleren; de bibliotheekfunctie gebruikt nooit een live SOAP-call tijdens scannen.
 
 Alle wijzigingen staan op de aparte featurebranch, niet op main of productie.
+
+## Monitoring van nachtelijke taken (featurebranch)
+
+Het beheerscherm Leerlingensynchronisatie toont voortaan ook het werkelijk geregistreerde resultaat van deze vier geplande taken:
+- 01.00: 18-jarigen, co-accounts en waarschuwingen
+- 02.00: verjaardagsberichten leerlingen en personeel
+- 03.00: Smartschool-leerlingensync met QR-codes
+- 08.00: bibliotheekherinneringen (geen berichten zolang uitgeschakeld).
+
+De bestaande Laravel scheduler blijft deze taken dagelijks uitvoeren. De commandowrapper monitor:scheduled registreert status, starttijd, eindtijd en een privacyveilige samenvatting in scheduled_task_runs. De oude console-logbestanden blijven behouden. Bij ontbrekende monitortabel loopt de onderliggende taak veilig door, zonder monitoring. Oude uitvoeringen worden NIET als succesvol ingevuld.
+
+Gerichte extra migratie (uitsluitend gescheiden testdatabase):
+  C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_170000_create_scheduled_task_runs_table.php
+  C:\xampp\php\php.exe artisan optimize:clear
+
+Lege Smartschoolklassen zonder fout bij ophalen leiden tot status 'Deels voltooid', niet volledig 'Mislukt'. De deactivering van leerlingen blijft bij een onvolledige klassensnapshot geblokkeerd. Opgeslagen QR-codes en bijwerkingen blijven behouden.
+
+Let op: de pagina toont enkel uitvoeringen die sinds deze uitbreiding gemonitord werden. Een scheduler die op de server niet loopt, veroorzaakt geen nieuwe registraties. Controleer Laravel Taakplanner/schedule:run en de serverlogs als er na een geplande nacht geen resultaten verschijnen. De bestaande CLI-functies kunnen gedeeltelijke Smartschool-afleverfouten intern opvangen; een succesvolle exitcode bewijst niet altijd een volledige aflevering.
