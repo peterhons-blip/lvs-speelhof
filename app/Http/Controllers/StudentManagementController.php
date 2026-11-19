@@ -36,6 +36,29 @@ class StudentManagementController extends Controller
         return view('beheer.students.index', compact('students', 'search', 'showInactive'));
     }
 
+    public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requireManager($request);
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
+            'active' => ['required', 'in:0,1'],
+        ]);
+        $ids = array_map('intval', $data['ids']);
+        DB::transaction(function () use ($ids, $data) {
+            $rows = DB::table('leerlingen')->whereIn('id', $ids)
+                ->where('schoolid', 1)->lockForUpdate()->get(['id']);
+            if ($rows->count() !== count($ids)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'ids' => 'Een of meer leerlingen werden niet gevonden binnen deze school.',
+                ]);
+            }
+            DB::table('leerlingen')->where('schoolid', 1)->whereIn('id', $ids)
+                ->update(['active' => (int) $data['active'], 'updated_at' => now()]);
+        });
+        return back()->with('success', count($ids).' leerlingen bijgewerkt. Let op: de volgende Smartschool-sync kan de actieve status opnieuw instellen.');
+    }
+
     public function show(Request $request, LibraryAccess $access, int $student): View
     {
         $access->requireManager($request);
