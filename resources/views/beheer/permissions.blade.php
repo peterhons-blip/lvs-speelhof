@@ -16,11 +16,43 @@
             <h1>Rollen en rechten</h1>
             <p>Beheer per schoolrol welke modules zichtbaar zijn en welke acties of instellingen aangepast mogen worden.</p>
         </div>
-        <a class="library-button library-button-secondary" href="{{ route('beheer.users.index') }}">Gebruikersbeheer</a>
+        <a class="library-button library-button-secondary" href="{{ route('beheer.users.index') }}">Personeelsbeheer</a>
     </div>
 
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+
+    <section class="library-form-card" style="margin-bottom:1.5rem;">
+        <h2>Persoonlijke beheerrechten</h2>
+        <p class="portal-users-card-intro">Geef een individuele medewerker toegang tot specifieke onderdelen van <strong>Beheer</strong>, zonder de schoolrol van die medewerker te veranderen. Alleen ICT-coördinatoren kunnen deze rechten toekennen. Rechtenbeheer zelf kan niet worden gedelegeerd.</p>
+        @if(!$personalReady)
+            <div class="library-errors" role="alert">De tabel voor persoonlijke beheerrechten is nog niet geïnstalleerd. Voer de gerichte migratie uit voordat je individuele rechten kunt opslaan.</div>
+        @else
+            <form method="post" action="{{ route('beheer.permissions.personal.update') }}" id="personal-permissions-form">
+                @csrf
+                <div class="library-field">
+                    <label for="personal-permissions-user">1. Kies een personeelslid</label>
+                    <select id="personal-permissions-user" name="user_id" required style="width:100%;">
+                        <option value="">Selecteer medewerker...</option>
+                        @foreach($personnel as $member)
+                            <option value="{{ $member->id }}">{{ trim(($member->voornaam ?? '').' '.($member->name ?? '')) }} ({{ $member->smartschool_gebruikersnaam }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <p style="font-weight:700;margin:1.25rem 0 .75rem;">2. Welke beheersonderdelen mag deze persoon gebruiken?</p>
+                <div class="portal-permission-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem;">
+                    @foreach($personalPermissions as $permission => $label)
+                        <label class="portal-permission-option">
+                            <input type="checkbox" name="permissions[]" value="{{ $permission }}" data-personal-permission disabled>
+                            <span>{{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p id="personal-permissions-summary" role="status" style="margin:1rem 0;color:#64748b;">Kies eerst een medewerker. De huidige persoonlijke rechten worden dan ingevuld.</p>
+                <button id="personal-permissions-submit" class="library-button library-button-primary" type="submit" disabled>Persoonlijke beheerrechten opslaan</button>
+            </form>
+        @endif
+    </section>
 
     <div class="portal-roles-intro">
         <span aria-hidden="true" class="portal-roles-intro-icon">✓</span>
@@ -50,7 +82,7 @@
                 $assigned = $stored[$role] ?? [];
                 $available = collect($modules)->flatMap(fn ($module) =>
                     collect($module['permissions'] ?? [])->keys()->reject(
-                        fn ($key) => in_array($key, ['beheer.users.manage', 'beheer.permissions.manage'], true)
+                        fn ($key) => in_array($key, array_merge(['beheer.users.manage', 'beheer.permissions.manage'], array_keys(\App\Services\LibraryAccess::PERSONAL_MANAGEMENT)), true)
                     )
                 )->values()->all();
                 $enabledCount = count(array_intersect($assigned, $available));
@@ -78,7 +110,7 @@
                     <div class="portal-permission-modules">
                         @foreach($modules as $module)
                             @php
-                                $rights = collect($module['permissions'] ?? [])->except(['beheer.users.manage', 'beheer.permissions.manage']);
+                                $rights = collect($module['permissions'] ?? [])->except(array_merge(['beheer.users.manage', 'beheer.permissions.manage'], array_keys(\App\Services\LibraryAccess::PERSONAL_MANAGEMENT)));
                                 $moduleActive = count(array_intersect($assigned, $rights->keys()->all()));
                             @endphp
                             @if($rights->isNotEmpty())
@@ -119,6 +151,27 @@
 @push('scripts')
 <script>
 (() => {
+    const personSelect = document.getElementById('personal-permissions-user');
+    if (personSelect) {
+        const grants = @json($personalGrants);
+        const checkboxes = [...document.querySelectorAll('[data-personal-permission]')];
+        const submit = document.getElementById('personal-permissions-submit');
+        const summary = document.getElementById('personal-permissions-summary');
+        const refresh = () => {
+            const selected = personSelect.value;
+            const assigned = grants[selected] || [];
+            for (const box of checkboxes) {
+                box.disabled = !selected;
+                box.checked = selected !== '' && assigned.includes(box.value);
+            }
+            submit.disabled = !selected;
+            summary.textContent = selected
+                ? 'De aangevinkte onderdelen zijn de huidige persoonlijke beheerrechten. Wijzig de selectie en klik op Opslaan.'
+                : 'Kies eerst een medewerker. De huidige persoonlijke rechten worden dan ingevuld.';
+        };
+        personSelect.addEventListener('change', refresh);
+        refresh();
+    }
     document.querySelectorAll('.portal-role-form').forEach(form => {
         const panel = form.closest('[data-role-panel]');
         const checkboxes = [...form.querySelectorAll('input[name="permissions[]"]')];
