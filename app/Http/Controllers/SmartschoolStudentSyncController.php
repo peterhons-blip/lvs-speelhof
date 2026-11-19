@@ -100,7 +100,7 @@ class SmartschoolStudentSyncController extends Controller
     private function formatStudentSyncSummary(?string $summary): string
     {
         if (! $summary) return 'Nog geen resultaat beschikbaar.';
-        if (preg_match('/Processed=(\\d+).*?created=(\\d+).*?updated=(\\d+).*?scancodes_updated=(\\d+).*?scancodes_missing=(\\d+).*?scancodes_conflicts=(\\d+).*?failed_classes=(\\d+).*?empty_classes=(\\d+)/', $summary, $m)) {
+        if (preg_match('/Processed=(\d+).*?created=(\d+).*?updated=(\d+).*?scancodes_updated=(\d+).*?scancodes_missing=(\d+).*?scancodes_conflicts=(\d+).*?failed_classes=(\d+).*?empty_classes=(\d+)/', $summary, $m)) {
             $parts = [
                 "{$m[1]} leerlingen verwerkt", "{$m[2]} nieuw", "{$m[3]} bijgewerkt",
                 "{$m[4]} QR-codes bijgewerkt"
