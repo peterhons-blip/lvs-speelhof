@@ -25,6 +25,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store');
+        Route::post('/inleveren-met-barcode', [\App\Http\Controllers\LibraryLoanController::class, 'returnByBarcode'])->name('return-barcode');
         Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students');
         Route::get('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'settings'])->name('settings');
         Route::post('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'saveSettings'])->name('settings.save');
