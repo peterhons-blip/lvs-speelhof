@@ -89,6 +89,7 @@ class LibraryLoanController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorizeOperator(request());
         $data = $request->validate([
             'barcode' => ['required', 'string', 'max:60'],
             'leerling' => ['required', 'string', 'max:200'],
@@ -154,6 +155,7 @@ class LibraryLoanController extends Controller
 
     public function returnByBarcode(Request $request): RedirectResponse
     {
+        $this->authorizeOperator(request());
         $data = $request->validate(['barcode' => ['required', 'string', 'max:60']]);
 
         $loan = DB::table('library_loans as loans')
@@ -170,6 +172,7 @@ class LibraryLoanController extends Controller
 
     public function returnLoan(int $loan): RedirectResponse
     {
+        $this->authorizeOperator(request());
         return DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
@@ -190,6 +193,7 @@ class LibraryLoanController extends Controller
 
     public function extend(int $loan): RedirectResponse
     {
+        $this->authorizeOperator(request());
         return DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
@@ -216,6 +220,7 @@ class LibraryLoanController extends Controller
 
     public function editReminders(int $loan): View
     {
+        $this->authorizeOperator(request());
         $item = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id')
@@ -227,6 +232,7 @@ class LibraryLoanController extends Controller
 
     public function updateReminders(Request $request, int $loan): RedirectResponse
     {
+        $this->authorizeOperator(request());
         $data = $request->validate([
             'due_date' => ['required', 'date', 'after_or_equal:today'],
             'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
@@ -254,6 +260,15 @@ class LibraryLoanController extends Controller
         ]);
         return redirect()->route('bibliotheek.loans.index')
             ->with('success', 'Herinneringsinstellingen voor deze uitlening aangepast.');
+    }
+
+    private function authorizeOperator(Request $request): void
+    {
+        $username = strtolower(trim($this->username($request)));
+        $raw = strtolower((string) config('library.operator_usernames', '') . ',' . (string) config('library.manager_usernames', ''));
+        $allowed = array_filter(array_map('trim', preg_split('/[;,\s]+/', $raw) ?: []));
+        abort_unless($username !== '' && in_array($username, $allowed, true), 403,
+            'Je bent niet gemachtigd om uitleningen te wijzigen.');
     }
 
     private function authorizeSettings(Request $request): void
