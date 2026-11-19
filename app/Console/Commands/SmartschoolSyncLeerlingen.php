@@ -24,6 +24,22 @@ class SmartschoolSyncLeerlingen extends Command
     public function handle(): int
     {
         $schoolId = (int) ($this->option('schoolid') ?: 1);
+        $lock = \Illuminate\Support\Facades\Cache::lock('smartschool:sync-leerlingen:school:'.$schoolId, 3600);
+        if (! $lock->get()) {
+            $this->error('Sync reeds actief voor deze school. Probeer later opnieuw.');
+            return self::FAILURE;
+        }
+
+        try {
+            return $this->runSync();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function runSync(): int
+    {
+        $schoolId = (int) ($this->option('schoolid') ?: 1);
         $dryRun = $this->option('dry-run') === true;
         $limit = (int) ($this->option('limit') ?: 0);
         $onlyCode = trim((string) ($this->option('only-class') ?: ''));
