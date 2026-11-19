@@ -71,7 +71,7 @@ class PortalPermissionsController extends Controller
                 $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1);
             }))
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
-                'users.groupId', 'users.allowed_login', 'users.smartschool_active', 'groups.groupname')
+                'users.groupId', 'users.allowed_login', 'users.smartschool_active', 'users.smartschool_gebruikersnaam', 'groups.groupname')
             ->orderByRaw("CASE groups.groupname
                 WHEN 'ICT-coördinator' THEN 0
                 WHEN 'directeur' THEN 1
