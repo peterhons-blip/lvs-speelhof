@@ -15,6 +15,10 @@ class SmartschoolSyncStaff extends Command
     protected $signature = 'smartschool:sync-personeel {--schoolid=1} {--apply : Wijzig de databank; standaard enkel preview}';
     protected $description = 'Personeelsaccounts uit Smartschool ophalen; standaard veilige preview zonder wijzigingen.';
 
+    // Smartschool bevat ook technische afzenderaccounts in personeelsgroepen.
+    // Deze zijn geen menselijke personeelsleden; niet als Google-portaaluser aanmaken.
+    private const SERVICE_ACCOUNTS = ['ict', 'lvs', 'bib', 'beleid'];
+
     private const GROUPS = [
         'Leerkrachten Atheneum Sint-Truiden' => 'leerkracht',
         'Administratie Campus Speelhof' => 'administratie',
@@ -39,8 +43,9 @@ class SmartschoolSyncStaff extends Command
 
     private function synchronize(int $schoolId, bool $apply): int
     {
-        if (! DB::getSchemaBuilder()->hasTable('smartschool_staff_memberships')) {
-            $this->error('Voer eerst de migratie voor smartschool_staff_memberships uit.');
+        if (! DB::getSchemaBuilder()->hasTable('smartschool_staff_memberships')
+            || ! \App\Support\LegacyDatabaseSchema::hasColumn('users', 'smartschool_active')) {
+            $this->error('Voer eerst beide migraties voor personeelssynchronisatie uit.');
             return self::FAILURE;
         }
 
@@ -126,17 +131,18 @@ class SmartschoolSyncStaff extends Command
         $managed = DB::table('smartschool_staff_memberships')->where('schoolid', $schoolId)
             ->pluck('gebruikersnaam')->map(fn ($v) => mb_strtolower($v))->all();
         $changes = ['nieuw' => 0, 'bijwerken' => 0, 'uitschakelen' => 0];
+        $skippedService = 0;
         $missingUsernames = [];
         $matchedWithoutSchool = 0;
         $disable = [];
         $unmatchedLocal = $localSchool->filter(fn ($user) =>
             trim((string) $user->smartschool_gebruikersnaam) !== ''
             && ! isset($accounts[mb_strtolower(trim((string) $user->smartschool_gebruikersnaam))]));
-        // Ook bestaande lokale accounts met een standaardrol opnemen in de
-        // controle; speciale rollen en serviceaccounts worden niet automatisch verwijderd.
+        // Alle lokale personeelsaccounts met een Smartschool-koppeling vergelijken,
+        // ook wanneer ze een handmatig toegekende bijzondere schoolrol hebben.
         foreach ($localSchool as $user) {
             $username = mb_strtolower(trim((string) $user->smartschool_gebruikersnaam));
-            if ($username !== '' && in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)) {
+            if ($username !== '' && ! in_array($username, self::SERVICE_ACCOUNTS, true)) {
                 $managed[] = $username;
             }
         }
@@ -144,7 +150,8 @@ class SmartschoolSyncStaff extends Command
         foreach ($managed as $username) {
             if (! isset($accounts[$username]) && isset($existing[$username])
                 && ($existing[$username]->schoolid === null || (int) $existing[$username]->schoolid === $schoolId)
-                && (int) $existing[$username]->allowed_login === 1) {
+                && ! in_array($username, self::SERVICE_ACCOUNTS, true)
+                && $existing[$username]->smartschool_active !== 0) {
                 $disable[] = $username;
             }
         }
@@ -152,7 +159,9 @@ class SmartschoolSyncStaff extends Command
         if ($disable) {
             $ictId = DB::table('groups')->where('groupname', 'ICT-coördinator')->value('id');
             if ($ictId !== null) {
-                $activeIct = DB::table('users')->where('schoolid', $schoolId)
+                $activeIct = DB::table('users')->where(function ($q) use ($schoolId) {
+                        $q->where('schoolid', $schoolId)->orWhereNull('schoolid');
+                    })
                     ->where('groupId', $ictId)->where('allowed_login', 1)->count();
                 $affectedIct = collect($disable)->filter(fn ($name) =>
                     isset($existing[$name]) && (int) $existing[$name]->groupId === (int) $ictId
@@ -165,12 +174,17 @@ class SmartschoolSyncStaff extends Command
         }
 
         // Nooit een grote groep gebruikers door een onvolledige respons blokkeren.
-        if (count($disable) > 10 || (count($managed) >= 100 && count($accounts) < count($managed) * 0.85)) {
+        if (count($disable) > max(25, (int) floor($localSchool->count() * 0.25))
+            || (count($managed) >= 100 && count($accounts) < count($managed) * 0.85)) {
             $this->error('Onverwacht veel verdwenen accounts. Niets gewijzigd; controleer Smartschool.');
             return self::FAILURE;
         }
 
         foreach ($accounts as $username => $row) {
+            if (in_array($username, self::SERVICE_ACCOUNTS, true)) {
+                $skippedService++;
+                continue;
+            }
             $existingUser = $existing[$username] ?? null;
             if ($existingUser && $existingUser->schoolid !== null
                 && (int) $existingUser->schoolid !== $schoolId) {
@@ -189,11 +203,12 @@ class SmartschoolSyncStaff extends Command
         }
         $changes['uitschakelen'] = count($disable);
         $this->line('Lokale gebruikers niet teruggevonden in Smartschool: '.$unmatchedLocal->count()
-            .' (hiervan '.count($disable).' automatisch uit te schakelen; overige speciale/onbekende rollen worden beschermd).');
+            .' (hiervan '.count($disable).' als niet actief te markeren; reeds inactieve/technische accounts niet opnieuw verwerkt).');
         $this->line('Niet teruggevonden lokaal: '.implode(', ', $unmatchedLocal
             ->pluck('smartschool_gebruikersnaam')->take(25)->all()).($unmatchedLocal->count() > 25 ? ', ...' : ''));
         $this->info(($apply ? 'UITVOEREN' : 'PREVIEW').': leerkrachtgroep '.$totals['leerkracht']
             .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
+        $this->line('Technische Smartschool-accounts overgeslagen: '.$skippedService);
         $this->line('Nieuw: '.$changes['nieuw'].' (nieuwe accounts voorlopig geblokkeerd zonder Google-koppeling) | Bijwerken: '.$changes['bijwerken']
             .' | Uitschakelen: '.$changes['uitschakelen']);
         $this->line('Bestaande Smartschool-accounts zonder schoolid die werden herkend: '.$matchedWithoutSchool);
@@ -206,10 +221,13 @@ class SmartschoolSyncStaff extends Command
 
         DB::transaction(function () use ($schoolId, $accounts, $existing, $groupIds, $disable) {
             foreach ($accounts as $username => $row) {
+                if (in_array($username, self::SERVICE_ACCOUNTS, true)) continue;
                 $current = $existing[$username] ?? null;
                 if ($current) {
                     $fields = $this->updatedFields($current, $row, $groupIds);
-                    if ($fields) DB::table('users')->where('id', $current->id)->update($fields);
+                    $fields['smartschool_active'] = 1;
+                    // Handmatige loginblokkeringen blijven behouden.
+                    DB::table('users')->where('id', $current->id)->update($fields);
                 } else {
                     $email = filter_var($row['email'], FILTER_VALIDATE_EMAIL)
                         ? $row['email'] : $username.'@staff.invalid';
@@ -230,6 +248,7 @@ class SmartschoolSyncStaff extends Command
                         'password' => Hash::make(Str::random(64)),
                         'groupId' => (int) $groupIds[$row['role']],
                         'allowed_login' => 0,
+                        'smartschool_active' => 1,
                         'created_at' => now(), 'updated_at' => now(),
                     ]);
                 }
@@ -241,7 +260,7 @@ class SmartschoolSyncStaff extends Command
             if ($disable) {
                 DB::table('users')->whereIn('id', collect($disable)
                     ->map(fn ($name) => (int) $existing[$name]->id)->all())
-                    ->update(['allowed_login' => 0, 'updated_at' => now()]);
+                    ->update(['allowed_login' => 0, 'smartschool_active' => 0, 'updated_at' => now()]);
             }
         });
         $this->info('Personeelssynchronisatie voltooid.');
