@@ -13,8 +13,8 @@ class BootstrapLibraryManager extends Command
 
     public function handle(): int
     {
-        if (! Schema::hasTable('library_staff')) {
-            $this->error('Tabel library_staff ontbreekt. Voer eerst de gebruikersmigratie uit.');
+        if (! Schema::hasTable('portal_staff')) {
+            $this->error('Tabel portal_staff ontbreekt. Voer eerst de gebruikersmigratie uit.');
             return self::FAILURE;
         }
 
@@ -29,12 +29,12 @@ class BootstrapLibraryManager extends Command
             return self::FAILURE;
         }
 
-        if (DB::table('library_staff')->exists()) {
+        if (DB::table('portal_staff')->exists()) {
             $this->error('Gebruikersbeheer is al geïnitialiseerd. Beheer rollen via de website.');
             return self::FAILURE;
         }
 
-        DB::table('library_staff')->insert([
+        DB::table('portal_staff')->insert([
             'smartschool_username' => $username,
             'display_name' => null,
             'role' => 'ict_coordinator', 'is_active' => 1,
