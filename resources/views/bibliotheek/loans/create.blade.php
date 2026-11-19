@@ -1,118 +1,378 @@
 @extends('layouts.app')
-@section('title', 'Boek uitlenen')
+@section('title', 'Boeken uitlenen')
 @section('breadcrumbs')
-    @include('partials.breadcrumbs', ['items' => [
-        ['label' => 'Dashboard', 'url' => route('home')],
-        ['label' => 'Bibliotheek', 'url' => route('bibliotheek.index')],
-        ['label' => 'Uitleningen', 'url' => route('bibliotheek.loans.index')],
-        ['label' => 'Boek uitlenen'],
-    ]])
+@include('partials.breadcrumbs', ['items' => [
+    ['label' => 'Dashboard', 'url' => route('home')],
+    ['label' => 'Bibliotheek', 'url' => route('bibliotheek.index')],
+    ['label' => 'Uitleningen', 'url' => route('bibliotheek.loans.index')],
+    ['label' => 'Boeken uitlenen'],
+]])
 @endsection
+
 @section('content')
-<main class="library-page library-form-page">
+<main class="library-page library-form-page library-checkout-page">
     <div class="library-page-head">
-        <div><p class="portal-eyebrow">BIBLIOTHEEK / UITLEENBEHEER</p><h1>Boek uitlenen</h1>
-            <p>Scan of typ de unieke barcode van het exemplaar en zoek de actieve leerling op gebruikersnaam.</p>
+        <div>
+            <p class="portal-eyebrow">BIBLIOTHEEK / UITLEENBEHEER</p>
+            <h1>Boeken uitlenen</h1>
+            <p>Identificeer de leerling, scan één of meer boeken en bevestig de uitlening.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.index') }}">Terug naar uitleningen</a>
     </div>
-    @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <form action="{{ route('bibliotheek.loans.store') }}" method="post" class="library-form-card" autocomplete="off">
+    @if($errors->any())
+        <div class="library-errors" role="alert">
+            <strong>Uitlenen is niet gelukt. Er is niets geregistreerd.</strong>
+            <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+        </div>
+    @endif
+
+    <form id="library-checkout-form" action="{{ route('bibliotheek.loans.store') }}" method="post" autocomplete="off">
         @csrf
-        <div class="library-field">
-            <label for="loan-barcode">Barcode exemplaar *</label>
-            <input id="loan-barcode" name="barcode" value="{{ old('barcode', $barcode) }}" maxlength="60" list="available-copies" placeholder="BIB-..." required autofocus>
-            <datalist id="available-copies">
-                @foreach($copies as $availableCopy)
-                    <option value="{{ $availableCopy->barcode }}">{{ $availableCopy->title }}</option>
-                @endforeach
-            </datalist>
-            @if($copy)
-                <p class="library-help">Geselecteerd: {{ $copy->title }} ({{ $copy->status }})</p>
-            @endif
-            <p class="library-help">Je kunt een USB-barcodelezer gebruiken. De lijst toont maximaal 250 beschikbare exemplaren; andere barcodes kun je rechtstreeks scannen.</p>
+
+        <section class="library-checkout-card">
+            <div class="library-checkout-section-head">
+                <span class="library-checkout-step">1</span>
+                <div><h2>Leerling identificeren</h2><p>Scan de Smartschool-kaart of zoek een leerling op naam of gebruikersnaam.</p></div>
+            </div>
+            <div class="library-checkout-section-body">
+                <div class="library-checkout-grid">
+                    <div class="library-field">
+                        <label for="student-card-scan">Smartschool-kaart / scanwaarde</label>
+                        <div class="library-checkout-inline">
+                            <input id="student-card-scan" type="text" maxlength="200" placeholder="Scan de kaart of typ de gebruikersnaam">
+                            <button id="student-scan-button" class="library-button library-button-secondary" type="button">Herkennen</button>
+                        </div>
+                        <p class="library-help">Een Smartschool-kaart met unieke scanwaarde koppel je één keer aan een leerling.</p>
+                    </div>
+                    <div class="library-field">
+                        <label for="student-name-search">Leerling zoeken</label>
+                        <input id="student-name-search" type="search" placeholder="Naam of Smartschool-gebruikersnaam" autocomplete="off">
+                        <div id="student-search-results" class="library-checkout-results" role="status"></div>
+                    </div>
+                </div>
+
+                <div id="student-feedback" class="library-checkout-feedback" aria-live="polite" hidden></div>
+                <div id="student-selected" class="library-checkout-selected" hidden>
+                    <span class="library-checkout-avatar" aria-hidden="true">✓</span>
+                    <div><strong id="student-selected-name"></strong><small id="student-selected-username"></small></div>
+                    <button type="button" id="student-clear" class="library-button library-button-secondary">Wijzigen</button>
+                </div>
+
+                <div id="student-card-pairing" class="library-checkout-pairing" hidden>
+                    <p><strong>Kaart nog niet gekoppeld.</strong> Zoek de juiste leerling hierboven en klik daarna op ‘Kaart koppelen’. Zo herkennen we deze Smartschool-kaart bij volgende uitleningen.</p>
+                    <button type="button" id="student-card-link" class="library-button library-button-secondary">Kaart aan geselecteerde leerling koppelen</button>
+                </div>
+                <input type="hidden" id="selected-student-username" name="leerling" value="{{ old('leerling', $username) }}">
+            </div>
+        </section>
+
+        <section class="library-checkout-card">
+            <div class="library-checkout-section-head">
+                <span class="library-checkout-step">2</span>
+                <div><h2>Boeken toevoegen</h2><p>Scan de exemplaren na elkaar. Elk boek verschijnt in de lijst hieronder.</p></div>
+                <span class="library-checkout-counter"><strong id="checkout-book-count">0</strong> boek(en)</span>
+            </div>
+            <div class="library-checkout-section-body">
+                <div class="library-field">
+                    <label for="checkout-barcode">Barcode van het boek</label>
+                    <div class="library-checkout-inline">
+                        <input id="checkout-barcode" type="text" maxlength="60" placeholder="Scan of typ een exemplaarbarcode" value="{{ old('barcode', $barcode) }}">
+                        <button type="button" id="checkout-add-book" class="library-button library-button-secondary">+ Boek toevoegen</button>
+                    </div>
+                    <p class="library-help">Druk na het scannen op Enter of klik op ‘Boek toevoegen’. Dubbele exemplaren worden geweigerd.</p>
+                </div>
+                <div id="book-feedback" class="library-checkout-feedback" aria-live="polite" hidden></div>
+                <div id="checkout-book-fields"></div>
+                <div class="library-checkout-table-wrap">
+                    <table class="library-checkout-table">
+                        <thead><tr><th>Boek</th><th>Exemplaarbarcode</th><th></th></tr></thead>
+                        <tbody id="checkout-books">
+                            <tr id="checkout-books-empty"><td colspan="3">Er zijn nog geen boeken toegevoegd.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p id="checkout-limit" class="library-checkout-caption">Maximaal {{ $maxLoans }} openstaande uitleningen per leerling, inclusief eerder uitgeleende boeken.</p>
+            </div>
+        </section>
+
+        <section class="library-checkout-card">
+            <div class="library-checkout-section-head">
+                <span class="library-checkout-step">3</span>
+                <div><h2>Uitleentermijn</h2><p>Dezelfde termijn wordt toegepast op alle boeken in deze uitleenactie.</p></div>
+            </div>
+            <div class="library-checkout-section-body">
+                <div class="library-checkout-term-row">
+                    <div class="library-field">
+                        <label for="loan-days">Aantal uitleendagen</label>
+                        <input id="loan-days" name="loan_days" type="number" min="1" max="365" required value="{{ old('loan_days', $loanDays) }}">
+                    </div>
+                    <div class="library-checkout-due">
+                        <span>Uiterste inleverdatum</span>
+                        <strong id="checkout-due-date">—</strong>
+                    </div>
+                </div>
+                <p class="library-help">Standaard ingesteld op {{ $loanDays }} dagen. Je kunt de termijn voor deze uitlening aanpassen. Smartschool-herinneringen volgen de globale bibliotheekinstellingen.</p>
+            </div>
+        </section>
+
+        <div class="library-checkout-actions">
+            <span>Controleer de leerling en de gekozen exemplaren voor je registreert.</span>
+            <button type="submit" id="checkout-submit" class="library-button library-button-primary" disabled>Uitlening registreren</button>
         </div>
-        <div class="library-field">
-            <label for="loan-student-search">Leerling zoeken</label>
-            <input id="loan-student-search" type="search" placeholder="Typ minstens 2 letters van een naam of gebruikersnaam" aria-label="Leerling zoeken">
-            <div id="loan-student-results" class="library-loan-results" role="status"></div>
-        </div>
-        <div class="library-field">
-            <label for="loan-student">Smartschool-gebruikersnaam leerling *</label>
-            <input id="loan-student" name="leerling" value="{{ old('leerling', $username) }}" required maxlength="200" list="active-students" placeholder="Gebruikersnaam">
-            <datalist id="active-students">
-                @foreach($leerlingen as $student)
-                    <option value="{{ $student->gebruikersnaam }}">{{ $student->voornaam }} {{ $student->naam }}</option>
-                @endforeach
-            </datalist>
-            @if($leerling)
-                <p class="library-help">Geselecteerd: {{ $leerling->voornaam }} {{ $leerling->naam }}</p>
-            @endif
-            <p class="library-help">Alleen actieve leerlingen kunnen uitlenen. Zoek hierboven om hun gebruikersnaam in te vullen.</p>
-        </div>
-        <div class="library-field">
-            <label for="loan_days_override">Uitleentermijn (optioneel)</label>
-            <input id="loan_days_override" name="loan_days_override" type="number" min="1" max="365" value="{{ old('loan_days_override') }}" placeholder="Leeg = globale instelling">
-            <p class="library-help">Laat leeg om de standaard uitleentermijn te gebruiken. Vul eventueel een afwijkend aantal dagen in voor deze uitlening.</p>
-        </div>
-        <div class="library-field">
-            <label for="reminder_days_before">Herinnering vooraf (optioneel)</label>
-            <select name="reminder_days_before" id="reminder_days_before">
-                <option value="">Globale instelling gebruiken</option>
-                @foreach([0, 1, 2, 3, 5, 7, 10, 14] as $days)
-                    <option value="{{ $days }}" @selected(old('reminder_days_before') !== null && (string) old('reminder_days_before') === (string) $days)>{{ $days === 0 ? 'Geen herinnering vooraf' : $days.' dagen voor de inleverdatum' }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="library-field">
-            <label for="remind_on_due_date">Bericht op uiterste inleverdatum</label>
-            <select name="remind_on_due_date" id="remind_on_due_date">
-                <option value="">Globale instelling gebruiken</option>
-                <option value="1" @selected(old('remind_on_due_date') === '1')>Ja</option>
-                <option value="0" @selected(old('remind_on_due_date') === '0')>Neen</option>
-            </select>
-        </div>
-        <p class="library-help">Smartschool-berichten worden verzonden vanuit het account <strong>bib</strong>, zodra verzending in de globale instellingen is ingeschakeld.</p>
-        <button type="submit" class="library-button library-button-primary">Uitlening registreren</button>
     </form>
 </main>
 @endsection
+
 @push('scripts')
 <script>
 (() => {
-    const input = document.getElementById('loan-student-search');
-    const results = document.getElementById('loan-student-results');
-    const username = document.getElementById('loan-student');
-    const endpoint = @json(route('bibliotheek.loans.students'));
-    let requestNo = 0;
-    input.addEventListener('input', async () => {
-        const q = input.value.trim();
-        const current = ++requestNo;
-        results.replaceChildren();
-        if (q.length < 2) return;
+    const studentSearch = document.getElementById('student-name-search');
+    const studentList = document.getElementById('student-search-results');
+    const studentUsername = document.getElementById('selected-student-username');
+    const studentSelected = document.getElementById('student-selected');
+    const studentName = document.getElementById('student-selected-name');
+    const studentLabel = document.getElementById('student-selected-username');
+    const studentScan = document.getElementById('student-card-scan');
+    const cardPairing = document.getElementById('student-card-pairing');
+    const cardLink = document.getElementById('student-card-link');
+    const studentFeedback = document.getElementById('student-feedback');
+    const bookInput = document.getElementById('checkout-barcode');
+    const bookFeedback = document.getElementById('book-feedback');
+    const bookTable = document.getElementById('checkout-books');
+    const bookFields = document.getElementById('checkout-book-fields');
+    const bookCount = document.getElementById('checkout-book-count');
+    const submit = document.getElementById('checkout-submit');
+    const term = document.getElementById('loan-days');
+    const due = document.getElementById('checkout-due-date');
+    const maxLoans = @json($maxLoans);
+    const token = @json(csrf_token());
+    const endpoints = {
+        students: @json(route('bibliotheek.loans.students')),
+        scan: @json(route('bibliotheek.loans.student-scan')),
+        link: @json(route('bibliotheek.loans.student-card.link')),
+        copy: @json(route('bibliotheek.loans.copy-scan'))
+    };
+    const initialStudent = @json($leerling);
+    const initialCopy = @json($copy);
+    const oldBarcodes = @json(old('barcodes', []));
+    let books = [];
+    let learner = null;
+    let unlinkedScan = '';
+    let studentLookupSeq = 0;
+    let bookBusy = false;
+
+    function feedback(element, message, isError = false) {
+        element.hidden = !message;
+        element.textContent = message || '';
+        element.classList.toggle('is-error', isError);
+    }
+    function updateSubmit() {
+        submit.disabled = !(studentUsername.value && books.length && Number(term.value) >= 1 && Number(term.value) <= 365);
+    }
+    function selectStudent(person) {
+        learner = person;
+        studentUsername.value = person.gebruikersnaam;
+        studentName.textContent = [person.voornaam, person.naam].filter(Boolean).join(' ');
+        studentLabel.textContent = person.gebruikersnaam;
+        studentSelected.hidden = false;
+        studentList.replaceChildren();
+        studentSearch.value = '';
+        feedback(studentFeedback, '');
+        cardPairing.hidden = !unlinkedScan;
+        updateSubmit();
+    }
+    function clearStudent() {
+        learner = null;
+        unlinkedScan = '';
+        studentUsername.value = '';
+        studentSelected.hidden = true;
+        cardPairing.hidden = true;
+        studentScan.value = '';
+        updateSubmit();
+        studentSearch.focus();
+    }
+    async function lookupStudent() {
+        const code = studentScan.value.trim();
+        if (!code) return;
+        feedback(studentFeedback, 'Kaart controleren...');
+        cardPairing.hidden = true;
+        unlinkedScan = '';
         try {
-            const response = await fetch(endpoint + '?q=' + encodeURIComponent(q), {headers: {Accept: 'application/json'}});
-            if (!response.ok) return;
-            const students = await response.json();
-            if (current !== requestNo) return;
-            if (!students.length) {
-                results.textContent = 'Geen actieve leerlingen gevonden.';
+            const response = await fetch(endpoints.scan + '?code=' + encodeURIComponent(code), {
+                headers: {Accept: 'application/json'}
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                unlinkedScan = code;
+                feedback(studentFeedback, data.message || 'Leerling niet gevonden.', true);
+                if (learner) cardPairing.hidden = false;
+                studentSearch.focus();
                 return;
             }
-            students.forEach(student => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'library-loan-result';
-                button.textContent = student.voornaam + ' ' + student.naam + ' (' + student.gebruikersnaam + ')';
-                button.addEventListener('click', () => {
-                    username.value = student.gebruikersnaam;
-                    input.value = student.voornaam + ' ' + student.naam;
-                    results.replaceChildren();
-                });
-                results.appendChild(button);
+            selectStudent(data.student);
+            studentScan.value = '';
+            bookInput.focus();
+        } catch {
+            feedback(studentFeedback, 'De kaart kan momenteel niet gecontroleerd worden.', true);
+        }
+    }
+
+    studentSearch.addEventListener('input', async () => {
+        const q = studentSearch.value.trim();
+        const seq = ++studentLookupSeq;
+        studentList.replaceChildren();
+        if (q.length < 2) return;
+        try {
+            const r = await fetch(endpoints.students + '?q=' + encodeURIComponent(q), {
+                headers: {Accept: 'application/json'}
             });
-        } catch { results.textContent = 'Zoeken is tijdelijk niet beschikbaar. Vul de gebruikersnaam rechtstreeks in.'; }
+            if (!r.ok) return;
+            const people = await r.json();
+            if (seq !== studentLookupSeq) return;
+            if (!people.length) {
+                const empty = document.createElement('p');
+                empty.className = 'library-help';
+                empty.textContent = 'Geen actieve leerlingen gevonden.';
+                studentList.appendChild(empty);
+            }
+            for (const person of people) {
+                const btn = document.createElement('button');
+                btn.className = 'library-checkout-result';
+                btn.type = 'button';
+                btn.textContent = [person.voornaam, person.naam].filter(Boolean).join(' ') + ' · ' + person.gebruikersnaam;
+                btn.addEventListener('click', () => {
+                    selectStudent(person);
+                    if (!unlinkedScan) bookInput.focus();
+                });
+                studentList.appendChild(btn);
+            }
+        } catch { feedback(studentFeedback, 'Leerlingen zoeken is momenteel niet beschikbaar.', true); }
     });
+    studentScan.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); lookupStudent(); }
+    });
+    document.getElementById('student-scan-button').addEventListener('click', lookupStudent);
+    document.getElementById('student-clear').addEventListener('click', clearStudent);
+    cardLink.addEventListener('click', async () => {
+        if (!learner || !unlinkedScan) return;
+        cardLink.disabled = true;
+        try {
+            const response = await fetch(endpoints.link, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token},
+                body: JSON.stringify({code: unlinkedScan, leerling: learner.gebruikersnaam}),
+            });
+            const data = await response.json();
+            feedback(studentFeedback, data.message || 'Kaartkoppeling verwerkt.', !response.ok);
+            if (response.ok) {
+                unlinkedScan = '';
+                studentScan.value = '';
+                cardPairing.hidden = true;
+                bookInput.focus();
+            }
+        } catch { feedback(studentFeedback, 'Kaart koppelen is mislukt.', true); }
+        finally { cardLink.disabled = false; }
+    });
+
+    function renderBooks() {
+        bookFields.replaceChildren();
+        bookTable.replaceChildren();
+        if (!books.length) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 3;
+            td.textContent = 'Er zijn nog geen boeken toegevoegd.';
+            tr.appendChild(td);
+            bookTable.appendChild(tr);
+        }
+        books.forEach((copy, index) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'barcodes[]';
+            input.value = copy.barcode;
+            bookFields.appendChild(input);
+            const row = document.createElement('tr');
+            const title = document.createElement('td');
+            title.textContent = copy.title;
+            const barcode = document.createElement('td');
+            barcode.textContent = copy.barcode;
+            const action = document.createElement('td');
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'library-checkout-remove';
+            remove.textContent = 'Verwijderen';
+            remove.setAttribute('aria-label', 'Verwijder '+copy.title+' uit selectie');
+            remove.addEventListener('click', () => { books.splice(index, 1); renderBooks(); });
+            action.appendChild(remove);
+            row.append(title, barcode, action);
+            bookTable.appendChild(row);
+        });
+        bookCount.textContent = books.length;
+        updateSubmit();
+    }
+    async function addBook(code, quiet = false) {
+        const barcode = String(code || '').trim();
+        if (!barcode || bookBusy) return;
+        if (books.some(item => item.barcode === barcode)) {
+            feedback(bookFeedback, 'Dit exemplaar staat al in de lijst.', true);
+            return;
+        }
+        if (books.length >= maxLoans) {
+            feedback(bookFeedback, 'Je kunt in één keer maximaal '+maxLoans+' exemplaren toevoegen.', true);
+            return;
+        }
+        bookBusy = true;
+        feedback(bookFeedback, quiet ? '' : 'Exemplaar controleren...');
+        try {
+            const response = await fetch(endpoints.copy + '?barcode=' + encodeURIComponent(barcode), {
+                headers: {Accept: 'application/json'}
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                feedback(bookFeedback, data.message || 'Exemplaar niet gevonden.', true);
+                return;
+            }
+            books.push(data.copy);
+            renderBooks();
+            bookInput.value = '';
+            feedback(bookFeedback, '');
+            bookInput.focus();
+        } catch {
+            feedback(bookFeedback, 'Kan deze barcode momenteel niet controleren.', true);
+        } finally { bookBusy = false; }
+    }
+    document.getElementById('checkout-add-book').addEventListener('click', () => addBook(bookInput.value));
+    bookInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addBook(bookInput.value); }
+    });
+
+    function updateDate() {
+        const days = Number(term.value);
+        if (!Number.isInteger(days) || days < 1 || days > 365) {
+            due.textContent = '—';
+        } else {
+            const now = new Date();
+            const ymd = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(now);
+            const parts = ymd.split('-').map(Number);
+            const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + days));
+            due.textContent = new Intl.DateTimeFormat('nl-BE', {
+                timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'
+            }).format(date);
+        }
+        updateSubmit();
+    }
+    term.addEventListener('input', updateDate);
+    document.getElementById('library-checkout-form').addEventListener('submit', e => {
+        if (!studentUsername.value || !books.length) e.preventDefault();
+        else submit.disabled = true;
+    });
+    if (initialStudent) selectStudent(initialStudent);
+    if (initialCopy && initialCopy.status === 'beschikbaar') addBook(initialCopy.barcode, true);
+    else if (Array.isArray(oldBarcodes)) oldBarcodes.forEach(code => addBook(code, true));
+    renderBooks();
+    updateDate();
 })();
 </script>
 @endpush
