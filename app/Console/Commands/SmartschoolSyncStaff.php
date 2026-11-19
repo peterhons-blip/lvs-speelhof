@@ -127,6 +127,9 @@ class SmartschoolSyncStaff extends Command
         $missingUsernames = [];
         $matchedWithoutSchool = 0;
         $disable = [];
+        $unmatchedLocal = $localSchool->filter(fn ($user) =>
+            trim((string) $user->gebruikersnaam) !== ''
+            && ! isset($accounts[mb_strtolower(trim((string) $user->gebruikersnaam))]));
         // Ook bestaande lokale accounts met een standaardrol opnemen in de
         // controle; speciale rollen en serviceaccounts worden niet automatisch verwijderd.
         foreach ($localSchool as $user) {
@@ -138,6 +141,7 @@ class SmartschoolSyncStaff extends Command
         $managed = array_values(array_unique($managed));
         foreach ($managed as $username) {
             if (! isset($accounts[$username]) && isset($existing[$username])
+                && ($existing[$username]->schoolid === null || (int) $existing[$username]->schoolid === $schoolId)
                 && (int) $existing[$username]->allowed_login === 1) {
                 $disable[] = $username;
             }
@@ -166,6 +170,11 @@ class SmartschoolSyncStaff extends Command
 
         foreach ($accounts as $username => $row) {
             $existingUser = $existing[$username] ?? null;
+            if ($existingUser && $existingUser->schoolid !== null
+                && (int) $existingUser->schoolid !== $schoolId) {
+                $this->error('Gebruikersnaam komt voor bij een andere school: '.$username.'. Niets gewijzigd.');
+                return self::FAILURE;
+            }
             if (! $existingUser) {
                 $changes['nieuw']++;
                 $missingUsernames[] = $username;
@@ -177,6 +186,10 @@ class SmartschoolSyncStaff extends Command
             }
         }
         $changes['uitschakelen'] = count($disable);
+        $this->line('Lokale gebruikers niet teruggevonden in Smartschool: '.$unmatchedLocal->count()
+            .' (hiervan '.count($disable).' automatisch uit te schakelen; overige speciale/onbekende rollen worden beschermd).');
+        $this->line('Niet teruggevonden lokaal: '.implode(', ', $unmatchedLocal
+            ->pluck('gebruikersnaam')->take(25)->all()).($unmatchedLocal->count() > 25 ? ', ...' : ''));
         $this->info(($apply ? 'UITVOEREN' : 'PREVIEW').': leerkrachtgroep '.$totals['leerkracht']
             .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
         $this->line('Nieuw: '.$changes['nieuw'].' | Bijwerken: '.$changes['bijwerken']
