@@ -6,20 +6,28 @@ use App\Services\LibraryAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PortalPermissionsController extends Controller
 {
+    private function groupId(string $role): int
+    {
+        $name = LibraryAccess::ROLES[$role] ?? null;
+        abort_unless($name, 422);
+
+        $id = DB::table('groups')->where('groupname', $name)->value('id');
+        abort_unless($id, 422, "Schoolgroep {$name} bestaat niet. Voer de groepsmigratie uit.");
+        return (int) $id;
+    }
+
     public function index(Request $request, LibraryAccess $access): View
     {
         $access->requireManager($request);
         $modules = config('portal_permissions', []);
-        $roles = LibraryAccess::ROLES;
+        $roles = LibraryAccess::LABELS;
         $stored = DB::table('portal_role_permissions')->get()->groupBy('role')
             ->map(fn ($rows) => $rows->pluck('permission')->all())->all();
-
         return view('beheer.permissions', compact('modules', 'roles', 'stored'));
     }
 
@@ -37,10 +45,9 @@ class PortalPermissionsController extends Controller
         $valid = collect(config('portal_permissions', []))
             ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))->all();
         $requested = array_values(array_unique($data['permissions'] ?? []));
-        // Portal-wide rights administration remains exclusively with ICT.
         abort_if(in_array('beheer.users.manage', $requested, true)
             || in_array('beheer.permissions.manage', $requested, true), 422,
-            'Portaalbeheer kan alleen aan ICT-coördinatoren worden toegekend.');
+            'Gebruikers- en rechtenbeheer is uitsluitend voor ICT-coördinatoren.');
         abort_unless(count(array_diff($requested, $valid)) === 0, 422, 'Onbekend recht.');
 
         DB::transaction(function () use ($role, $requested) {
@@ -52,72 +59,71 @@ class PortalPermissionsController extends Controller
                 ]);
             }
         });
-
-        return back()->with('success', 'Rechten voor '.LibraryAccess::ROLES[$role].' opgeslagen.');
+        return back()->with('success', 'Rechten voor '.LibraryAccess::LABELS[$role].' opgeslagen.');
     }
 
     public function users(Request $request, LibraryAccess $access): View
     {
         $access->requireManager($request);
-        $users = DB::table('portal_staff')->orderBy('role')->orderBy('smartschool_username')->get();
-        $roles = LibraryAccess::ROLES;
-        return view('beheer.users', compact('users', 'roles'));
+        // Always read from the existing LVS tables; no second personnel database.
+        $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
+            ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
+                'users.groupId', 'users.allowed_login', 'groups.groupname')
+            ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40);
+        $roles = LibraryAccess::LABELS;
+        $groups = DB::table('groups')->pluck('id', 'groupname');
+        return view('beheer.users', compact('users', 'roles', 'groups'));
     }
 
     public function storeUser(Request $request, LibraryAccess $access): RedirectResponse
     {
         $access->requireManager($request);
         $data = $request->validate([
-            'smartschool_username' => ['required', 'string', 'max:120', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/'],
-            'display_name' => ['nullable', 'string', 'max:160'],
+            'smartschool_username' => ['required', 'string', 'max:120'],
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
         ]);
-        $username = mb_strtolower(trim($data['smartschool_username']));
+        // Only assign a role to an existing user, registered by Smartschool sync.
+        $username = trim($data['smartschool_username']);
+        $user = DB::table('users')->where('gebruikersnaam', $username)->first();
+        if (! $user) {
+            return back()->withErrors(['smartschool_username' =>
+                'Gebruiker niet gevonden in de bestaande users-tabel. Synchroniseer de medewerker eerst.'])->withInput();
+        }
 
-        $exists = DB::table('portal_staff')->where('smartschool_username', $username)->exists();
-        if ($exists) return back()->withErrors(['smartschool_username' => 'Deze gebruiker bestaat al. Gebruik Bewerken.'])->withInput();
-
-        DB::table('portal_staff')->insert([
-            'smartschool_username' => $username,
-            'display_name' => trim($data['display_name'] ?? '') ?: null,
-            'role' => $data['role'],
-            'is_active' => 1,
-            'changed_by' => $access->username($request),
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
-        return back()->with('success', 'Medewerker toegevoegd.');
+        return $this->changeGroup($request, $access, (int) $user->id, $data['role']);
     }
 
     public function updateUser(Request $request, LibraryAccess $access, int $staff): RedirectResponse
     {
         $access->requireManager($request);
         $data = $request->validate([
-            'display_name' => ['nullable', 'string', 'max:160'],
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
-            'is_active' => ['required', 'in:0,1'],
         ]);
-        $person = DB::table('portal_staff')->where('id', $staff)->first();
-        abort_unless($person, 404);
+        return $this->changeGroup($request, $access, $staff, $data['role']);
+    }
 
-        return DB::transaction(function () use ($request, $access, $staff, $person, $data) {
-            // Keep at least one active ICT coordinator; prevent own privilege removal.
-            $self = $person->smartschool_username === $access->username($request);
-            if ($self && ($data['role'] !== 'ict_coordinator' || $data['is_active'] !== '1')) {
-                return back()->withErrors(['role' => 'Je kunt je eigen ICT-beheerrechten niet intrekken.']);
+    private function changeGroup(Request $request, LibraryAccess $access, int $userId, string $role): RedirectResponse
+    {
+        $targetGroupId = $this->groupId($role);
+
+        return DB::transaction(function () use ($request, $access, $userId, $role, $targetGroupId) {
+            $user = DB::table('users')->where('id', $userId)->lockForUpdate()->first();
+            abort_unless($user, 404);
+            $self = mb_strtolower((string) $user->gebruikersnaam) === $access->username($request);
+            if ($self && $role !== 'ict_coordinator') {
+                return back()->withErrors(['role' => 'Je kunt je eigen ICT-beheerrol niet intrekken.']);
             }
-            if ($person->role === 'ict_coordinator' && (int) $person->is_active === 1
-                && ($data['role'] !== 'ict_coordinator' || $data['is_active'] !== '1')
-                && DB::table('portal_staff')->where('role', 'ict_coordinator')->where('is_active', 1)->count() <= 1) {
-                return back()->withErrors(['role' => 'Er moet minstens één actieve ICT-coördinator blijven.']);
+
+            $ictGroupId = $this->groupId('ict_coordinator');
+            if ((int) $user->groupId === $ictGroupId && $role !== 'ict_coordinator') {
+                $count = DB::table('users')->where('groupId', $ictGroupId)->where('allowed_login', 1)->count();
+                if ((int) $user->allowed_login === 1 && $count <= 1) {
+                    return back()->withErrors(['role' => 'Er moet minstens één actieve ICT-coördinator blijven.']);
+                }
             }
-            DB::table('portal_staff')->where('id', $staff)->update([
-                'display_name' => trim($data['display_name'] ?? '') ?: null,
-                'role' => $data['role'],
-                'is_active' => (int) $data['is_active'],
-                'changed_by' => $access->username($request),
-                'updated_at' => now(),
-            ]);
-            return back()->with('success', 'Gebruiker aangepast.');
+
+            DB::table('users')->where('id', $userId)->update(['groupId' => $targetGroupId]);
+            return back()->with('success', 'Schoolrol van '.($user->gebruikersnaam ?: 'gebruiker'). ' aangepast.');
         });
     }
 }
