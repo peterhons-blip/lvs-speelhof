@@ -80,7 +80,7 @@ class PortalPermissionsController extends Controller
                 WHEN 'administratie' THEN 6
                 WHEN 'leerkracht' THEN 7
                 ELSE 7 END")
-            ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40);
+            ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40)->withQueryString();
         $roles = LibraryAccess::LABELS;
         $groups = DB::table('groups')->pluck('id', 'groupname');
         return view('beheer.users', compact('users', 'roles', 'groups'));
