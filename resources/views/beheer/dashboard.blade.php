@@ -48,7 +48,7 @@
         </div>
     </section>
 
-    @if(AppServicesLibraryAccess::class && app(AppServicesLibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
+    @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
     <section class="library-form-card">
         <div class="portal-users-table-heading">
             <div>
