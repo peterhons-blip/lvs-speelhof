@@ -67,9 +67,11 @@ class PortalPermissionsController extends Controller
         $access->requireManager($request);
         // Always read from the existing LVS tables; no second personnel database.
         $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
-            ->when(! $request->boolean('toon_geblokkeerd'), fn ($query) => $query->where('users.allowed_login', 1))
+            ->when(! $request->boolean('toon_geblokkeerd'), fn ($query) => $query->where('users.allowed_login', 1)->where(function ($q) {
+                $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1);
+            }))
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
-                'users.groupId', 'users.allowed_login', 'groups.groupname')
+                'users.groupId', 'users.allowed_login', 'users.smartschool_active', 'groups.groupname')
             ->orderByRaw("CASE groups.groupname
                 WHEN 'ICT-coördinator' THEN 0
                 WHEN 'directeur' THEN 1
@@ -97,12 +99,14 @@ class PortalPermissionsController extends Controller
         $users = DB::table('users')
             ->leftJoin('groups', 'groups.id', '=', 'users.groupId')
             ->where('users.allowed_login', 1)
+            ->where(function ($q) { $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1); })
             ->where(function ($query) use ($term) {
                 $query->where('users.gebruikersnaam', 'like', '%'.$term.'%')
+                    ->orWhere('users.smartschool_gebruikersnaam', 'like', '%'.$term.'%')
                     ->orWhere('users.voornaam', 'like', '%'.$term.'%')
                     ->orWhere('users.name', 'like', '%'.$term.'%');
             })
-            ->select('users.gebruikersnaam', 'users.voornaam', 'users.name',
+            ->select('users.gebruikersnaam', 'users.smartschool_gebruikersnaam', 'users.voornaam', 'users.name',
                 'groups.groupname')
             ->orderBy('users.name')->orderBy('users.voornaam')
             ->limit(12)->get();
@@ -119,7 +123,7 @@ class PortalPermissionsController extends Controller
         ]);
         // Only assign a role to an existing user, registered by Smartschool sync.
         $username = trim($data['smartschool_username']);
-        $user = DB::table('users')->where('gebruikersnaam', $username)->first();
+        $user = DB::table('users')->where('smartschool_gebruikersnaam', $username)->first();
         if (! $user) {
             return back()->withErrors(['smartschool_username' =>
                 'Gebruiker niet gevonden in de bestaande users-tabel. Synchroniseer de medewerker eerst.'])->withInput();
@@ -164,6 +168,9 @@ class PortalPermissionsController extends Controller
                 }
             }
 
+            if ($allowed === 1 && $user->smartschool_active !== null && (int) $user->smartschool_active === 0) {
+                return back()->withErrors(['allowed_login' => 'Dit account staat als niet actief in Smartschool. Activeer het eerst via de Smartschool-sync.']);
+            }
             DB::table('users')->where('id', $staff)->update(['allowed_login' => $allowed]);
             return back()->with('success', 'Aanmeldtoegang voor '.$user->gebruikersnaam
                 .($allowed ? ' toegestaan.' : ' geblokkeerd.'));
