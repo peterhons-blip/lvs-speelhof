@@ -135,6 +135,11 @@ class LibraryLoanController extends Controller
             ]);
             DB::table('library_copies')->where('id', $copy->id)
                 ->update(['status' => 'uitgeleend', 'updated_at' => now()]);
+            DB::table('library_loan_events')->insert([
+                'loan_id' => $newLoanId, 'action' => 'uitgeleend',
+                'actor' => $this->username($request), 'details' => null,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
 
             return $newLoanId;
         });
@@ -174,6 +179,11 @@ class LibraryLoanController extends Controller
                 ->update(['returned_at' => now(), 'updated_at' => now()]);
             DB::table('library_copies')->where('id', $item->copy_id)
                 ->update(['status' => 'beschikbaar', 'updated_at' => now()]);
+            DB::table('library_loan_events')->insert([
+                'loan_id' => $loan, 'action' => 'ingeleverd',
+                'actor' => $this->username(request()), 'details' => null,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
             return back()->with('success', 'Exemplaar succesvol ingeleverd.');
         });
     }
@@ -189,9 +199,16 @@ class LibraryLoanController extends Controller
             }
             $old = CarbonImmutable::parse($item->due_date, 'Europe/Brussels');
             $base = $old->isAfter(CarbonImmutable::today('Europe/Brussels')) ? $old : CarbonImmutable::today('Europe/Brussels');
+            $newDue = $base->addDays($this->setting('extension_days', 21))->toDateString();
             DB::table('library_loans')->where('id', $loan)->update([
-                'due_date' => $base->addDays($this->setting('extension_days', 21))->toDateString(),
+                'due_date' => $newDue,
                 'extensions' => (int) $item->extensions + 1, 'updated_at' => now(),
+            ]);
+            DB::table('library_loan_events')->insert([
+                'loan_id' => $loan, 'action' => 'verlengd',
+                'actor' => $this->username(request()),
+                'details' => json_encode(['old_due' => $item->due_date, 'new_due' => $newDue]),
+                'created_at' => now(), 'updated_at' => now(),
             ]);
             return back()->with('success', 'Uitleentermijn verlengd.');
         });
