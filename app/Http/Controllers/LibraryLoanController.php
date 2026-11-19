@@ -264,20 +264,14 @@ class LibraryLoanController extends Controller
 
     private function authorizeOperator(Request $request): void
     {
-        $username = strtolower(trim($this->username($request)));
-        $raw = strtolower((string) config('library.operator_usernames', '') . ',' . (string) config('library.manager_usernames', ''));
-        $allowed = array_filter(array_map('trim', preg_split('/[;,\s]+/', $raw) ?: []));
-        abort_unless($username !== '' && in_array($username, $allowed, true), 403,
-            'Je bent niet gemachtigd om uitleningen te wijzigen.');
+        app(\App\Services\LibraryAccess::class)
+            ->requirePermission($request, 'bibliotheek.loans.manage');
     }
 
     private function authorizeSettings(Request $request): void
     {
-        $username = strtolower(trim($this->username($request)));
-        $configured = preg_split('/[;,\s]+/', strtolower((string) config('library.manager_usernames', ''))) ?: [];
-        $allowed = array_filter(array_map('trim', $configured));
-        abort_unless($username !== '' && in_array($username, $allowed, true), 403,
-            'Alleen aangestelde bibliotheekbeheerders kunnen deze instellingen wijzigen.');
+        app(\App\Services\LibraryAccess::class)
+            ->requirePermission($request, 'bibliotheek.settings.manage');
     }
 
     public function settings(): View
@@ -299,6 +293,13 @@ class LibraryLoanController extends Controller
             'remind_on_due_date' => ['required', 'in:0,1'],
             'smartschool_enabled' => ['required', 'in:0,1'],
         ]);
+
+        // Changing outbound messages requires a stronger permission than ordinary settings.
+        $oldEnabled = DB::table('library_settings')->where('key', 'smartschool_enabled')->value('value') ?? '0';
+        if ($values['smartschool_enabled'] !== $oldEnabled) {
+            app(\App\Services\LibraryAccess::class)
+                ->requirePermission($request, 'bibliotheek.messages.manage');
+        }
 
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(
