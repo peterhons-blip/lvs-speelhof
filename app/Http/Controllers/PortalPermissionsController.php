@@ -69,6 +69,15 @@ class PortalPermissionsController extends Controller
         $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
                 'users.groupId', 'users.allowed_login', 'groups.groupname')
+            ->orderByRaw("CASE groups.groupname
+                WHEN 'ICT-coördinator' THEN 0
+                WHEN 'directeur' THEN 1
+                WHEN 'secretariaat' THEN 2
+                WHEN 'leerlingbegeleider' THEN 3
+                WHEN 'boekhouding' THEN 4
+                WHEN 'TAC' THEN 5
+                WHEN 'leerkracht' THEN 6
+                ELSE 7 END")
             ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40);
         $roles = LibraryAccess::LABELS;
         $groups = DB::table('groups')->pluck('id', 'groupname');
