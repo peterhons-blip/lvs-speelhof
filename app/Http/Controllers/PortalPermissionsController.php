@@ -66,10 +66,22 @@ class PortalPermissionsController extends Controller
     {
         $access->requireManager($request);
         // Always read from the existing LVS tables; no second personnel database.
+        $search = trim((string) $request->query('zoek', ''));
         $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
-            ->when(! $request->boolean('toon_geblokkeerd'), fn ($query) => $query->where('users.allowed_login', 1)->where(function ($q) {
+            // Smartschool-inactieve medewerkers blijven altijd buiten de beheerlijst.
+            ->where(function ($q) {
                 $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1);
-            }))
+            })
+            ->when(! $request->boolean('toon_geblokkeerd'), fn ($q) => $q->where('users.allowed_login', 1))
+            ->when($search !== '', function ($query) use ($search) {
+                $term = '%'.addcslashes(mb_substr($search, 0, 100), '%_\\').'%';
+                $query->where(function ($q) use ($term) {
+                    $q->where('users.voornaam', 'like', $term)
+                        ->orWhere('users.name', 'like', $term)
+                        ->orWhere('users.smartschool_gebruikersnaam', 'like', $term)
+                        ->orWhere('groups.groupname', 'like', $term);
+                });
+            })
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
                 'users.groupId', 'users.allowed_login', 'users.smartschool_active', 'users.smartschool_gebruikersnaam', 'groups.groupname')
             ->orderByRaw("CASE groups.groupname
