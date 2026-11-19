@@ -81,6 +81,14 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
         ->name('beheer.smartschool-sync.start');
 
+    // Personeelssynchronisatie: uitsluitend ICT-beheer, preview als standaard.
+    Route::get('/beheer/personeelssync', [\App\Http\Controllers\SmartschoolStaffSyncController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.staff-sync.index');
+    Route::post('/beheer/personeelssync', [\App\Http\Controllers\SmartschoolStaffSyncController::class, 'start'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
+        ->name('beheer.staff-sync.start');
+
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');

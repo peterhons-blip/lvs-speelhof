@@ -1,0 +1,312 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\School;
+use App\Services\SmartschoolSoap;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class SmartschoolSyncStaff extends Command
+{
+    protected $signature = 'smartschool:sync-personeel {--schoolid=1} {--apply : Wijzig de databank; standaard enkel preview}';
+    protected $description = 'Personeelsaccounts uit Smartschool ophalen; standaard veilige preview zonder wijzigingen.';
+
+    // Smartschool bevat ook technische afzenderaccounts in personeelsgroepen.
+    // Deze zijn geen menselijke personeelsleden; niet als Google-portaaluser aanmaken.
+    private const SERVICE_ACCOUNTS = ['ict', 'lvs', 'bib', 'beleid'];
+
+    private const GROUPS = [
+        'Leerkrachten Atheneum Sint-Truiden' => 'leerkracht',
+        'Administratie Campus Speelhof' => 'administratie',
+    ];
+
+    public function handle(): int
+    {
+        $schoolId = (int) $this->option('schoolid');
+        $apply = (bool) $this->option('apply');
+        $lock = Cache::lock('smartschool:sync-personeel:'.$schoolId, 1200);
+        if (! $lock->get()) {
+            $this->error('Er loopt al een personeelssynchronisatie voor deze school.');
+            return self::FAILURE;
+        }
+
+        try {
+            return $this->synchronize($schoolId, $apply);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function synchronize(int $schoolId, bool $apply): int
+    {
+        if (! DB::getSchemaBuilder()->hasTable('smartschool_staff_memberships')
+            || ! \App\Support\LegacyDatabaseSchema::hasColumn('users', 'smartschool_active')) {
+            $this->error('Voer eerst beide migraties voor personeelssynchronisatie uit.');
+            return self::FAILURE;
+        }
+
+        $school = School::find($schoolId);
+        if (! $school || ! trim((string) $school->smartschool_wsdl)
+            || ! trim((string) $school->smartschool_accesscode)) {
+            $this->error('De Smartschool-configuratie voor deze school ontbreekt.');
+            return self::FAILURE;
+        }
+
+        $soap = new SmartschoolSoap($school->smartschool_wsdl, $school->smartschool_accesscode);
+        $accounts = [];
+        $totals = [];
+        foreach (self::GROUPS as $group => $role) {
+            try {
+                $rows = $soap->getAllAccountsExtended($group, true);
+            } catch (\Throwable $e) {
+                $this->error('Smartschool-groep kon niet worden opgehaald: '.$group);
+                return self::FAILURE;
+            }
+            if (! array_is_list($rows) || count($rows) < 5) {
+                $this->error('Onverwacht lege/onvolledige Smartschool-groep: '.$group.'. Niets gewijzigd.');
+                return self::FAILURE;
+            }
+            $totals[$role] = count($rows);
+            foreach ($rows as $row) {
+                if (! is_array($row)) {
+                    $this->error('Ongeldig accountrecord ontvangen. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
+                $basisrol = mb_strtolower(trim((string) ($row['basisrol'] ?? '')));
+                if (in_array($basisrol, ['1', 'leerling', 'student'], true)) {
+                    $this->error('Leerlingenaccount aangetroffen in personeelsgroep. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
+                $username = mb_strtolower(trim((string) ($row['gebruikersnaam'] ?? '')));
+                if ($username === '') {
+                    $this->error('Een personeelsaccount mist een gebruikersnaam. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
+                if (! isset($accounts[$username])) {
+                    $accounts[$username] = [
+                        'username' => $username,
+                        'first' => trim((string) ($row['voornaam'] ?? '')),
+                        'last' => trim((string) ($row['naam'] ?? '')),
+                        'email' => trim((string) ($row['emailadres'] ?? '')),
+                        'birthdate' => $this->normalizeDate($row['geboortedatum'] ?? null),
+                        'role' => $role,
+                    ];
+                }
+                if ($role === 'administratie') {
+                    $accounts[$username]['role'] = 'administratie';
+                }
+            }
+        }
+
+        // De test in Smartschool gaf ca. 135 unieke accounts terug. Een sterk afwijkende
+        // respons kan betekenen dat de groepsboom of de webservice tijdelijk onvolledig is.
+        if (count($accounts) < 100 || ($totals['leerkracht'] ?? 0) < 80
+            || ($totals['administratie'] ?? 0) < 10) {
+            $this->error('Onverwacht weinig personeelsaccounts. Niets gewijzigd.');
+            return self::FAILURE;
+        }
+
+        $groupIds = DB::table('groups')->whereIn('groupname', ['leerkracht', 'administratie'])
+            ->pluck('id', 'groupname')->all();
+        if (! isset($groupIds['leerkracht'], $groupIds['administratie'])) {
+            $this->error('Groep leerkracht of administratie ontbreekt. Voer eerst de rollenmigratie uit.');
+            return self::FAILURE;
+        }
+
+        // Smartschool-gebruikersnaam is de matchsleutel. users.gebruikersnaam
+        // bevat de Google-naam en mag NIET voor matching gebruikt of overschreven worden.
+        // Legacy LVS-accounts kunnen schoolid=null hebben.
+        $allUsers = DB::table('users')->get();
+        $existing = $allUsers->filter(fn ($user) => trim((string) $user->smartschool_gebruikersnaam) !== '')
+            ->keyBy(fn ($user) => mb_strtolower(trim((string) $user->smartschool_gebruikersnaam)));
+        $localSchool = $allUsers->filter(fn ($user) =>
+            $user->schoolid === null || (int) $user->schoolid === $schoolId);
+        $this->line('Bestaande users: '.$allUsers->count().' | schoolid='.$schoolId
+            .': '.$allUsers->where('schoolid', $schoolId)->count()
+            .' | zonder schoolid: '.$allUsers->whereNull('schoolid')->count().'.');
+        $managed = DB::table('smartschool_staff_memberships')->where('schoolid', $schoolId)
+            ->pluck('gebruikersnaam')->map(fn ($v) => mb_strtolower($v))->all();
+        $changes = ['nieuw' => 0, 'bijwerken' => 0, 'uitschakelen' => 0];
+        $skippedService = 0;
+        $missingUsernames = [];
+        $matchedWithoutSchool = 0;
+        $disable = [];
+        $unmatchedLocal = $localSchool->filter(fn ($user) =>
+            trim((string) $user->smartschool_gebruikersnaam) !== ''
+            && ! isset($accounts[mb_strtolower(trim((string) $user->smartschool_gebruikersnaam))]));
+        // Alle lokale personeelsaccounts met een Smartschool-koppeling vergelijken,
+        // ook wanneer ze een handmatig toegekende bijzondere schoolrol hebben.
+        foreach ($localSchool as $user) {
+            $username = mb_strtolower(trim((string) $user->smartschool_gebruikersnaam));
+            if ($username !== '' && ! in_array($username, self::SERVICE_ACCOUNTS, true)) {
+                $managed[] = $username;
+            }
+        }
+        $managed = array_values(array_unique($managed));
+        foreach ($managed as $username) {
+            if (! isset($accounts[$username]) && isset($existing[$username])
+                && ($existing[$username]->schoolid === null || (int) $existing[$username]->schoolid === $schoolId)
+                && ! in_array($username, self::SERVICE_ACCOUNTS, true)
+                && ($existing[$username]->smartschool_active === null
+                    || (int) $existing[$username]->smartschool_active !== 0)) {
+                $disable[] = $username;
+            }
+        }
+        // Bescherm de laatste actieve ICT-coordinator tegen automatische uitschakeling.
+        if ($disable) {
+            $ictId = DB::table('groups')->where('groupname', 'ICT-coördinator')->value('id');
+            if ($ictId !== null) {
+                $activeIct = DB::table('users')->where(function ($q) use ($schoolId) {
+                        $q->where('schoolid', $schoolId)->orWhereNull('schoolid');
+                    })
+                    ->where('groupId', $ictId)->where('allowed_login', 1)->count();
+                $affectedIct = collect($disable)->filter(fn ($name) =>
+                    isset($existing[$name]) && (int) $existing[$name]->groupId === (int) $ictId
+                )->count();
+                if ($activeIct - $affectedIct < 1) {
+                    $this->error('De laatste actieve ICT-coordinator zou worden geblokkeerd. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
+            }
+        }
+
+        // Nooit een grote groep gebruikers door een onvolledige respons blokkeren.
+        if (count($disable) > max(25, (int) floor($localSchool->count() * 0.25))
+            || (count($managed) >= 100 && count($accounts) < count($managed) * 0.85)) {
+            $this->error('Onverwacht veel verdwenen accounts. Niets gewijzigd; controleer Smartschool.');
+            return self::FAILURE;
+        }
+
+        foreach ($accounts as $username => $row) {
+            if (in_array($username, self::SERVICE_ACCOUNTS, true)) {
+                $skippedService++;
+                continue;
+            }
+            $existingUser = $existing[$username] ?? null;
+            if ($existingUser && $existingUser->schoolid !== null
+                && (int) $existingUser->schoolid !== $schoolId) {
+                $this->error('Smartschool-gebruikersnaam komt voor bij een andere school: '.$username.'. Niets gewijzigd.');
+                return self::FAILURE;
+            }
+            if (! $existingUser) {
+                $changes['nieuw']++;
+                $missingUsernames[] = $username;
+            } else {
+                if ($existingUser->schoolid === null) $matchedWithoutSchool++;
+                if ($this->needsUpdate($existingUser, $row, $groupIds)) {
+                    $changes['bijwerken']++;
+                }
+            }
+        }
+        $changes['uitschakelen'] = count($disable);
+        $this->line('Lokale gebruikers niet teruggevonden in Smartschool: '.$unmatchedLocal->count()
+            .' (hiervan '.count($disable).' als niet actief te markeren; reeds inactieve/technische accounts niet opnieuw verwerkt).');
+        $this->line('Niet teruggevonden lokaal: '.implode(', ', $unmatchedLocal
+            ->pluck('smartschool_gebruikersnaam')->take(25)->all()).($unmatchedLocal->count() > 25 ? ', ...' : ''));
+        $this->info(($apply ? 'UITVOEREN' : 'PREVIEW').': leerkrachtgroep '.$totals['leerkracht']
+            .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
+        $this->line('Technische Smartschool-accounts overgeslagen: '.$skippedService);
+        $this->line('Nieuw: '.$changes['nieuw'].' (nieuwe accounts voorlopig geblokkeerd zonder Google-koppeling) | Bijwerken: '.$changes['bijwerken']
+            .' | Uitschakelen: '.$changes['uitschakelen']);
+        $this->line('Bestaande Smartschool-accounts zonder schoolid die werden herkend: '.$matchedWithoutSchool);
+        if ($missingUsernames) $this->line('Nog niet lokaal gevonden: '.implode(', ', $missingUsernames));
+        if ($disable) $this->warn('Uitschakelen: '.implode(', ', $disable));
+        if (! $apply) {
+            $this->comment('Dit was een preview. Gebruik --apply om de veranderingen uit te voeren.');
+            return self::SUCCESS;
+        }
+
+        DB::transaction(function () use ($schoolId, $accounts, $existing, $groupIds, $disable) {
+            foreach ($accounts as $username => $row) {
+                if (in_array($username, self::SERVICE_ACCOUNTS, true)) continue;
+                $current = $existing[$username] ?? null;
+                if ($current) {
+                    $fields = $this->updatedFields($current, $row, $groupIds);
+                    $fields['smartschool_active'] = 1;
+                    // Handmatige loginblokkeringen blijven behouden.
+                    DB::table('users')->where('id', $current->id)->update($fields);
+                } else {
+                    $email = filter_var($row['email'], FILTER_VALIDATE_EMAIL)
+                        ? $row['email'] : $username.'@staff.invalid';
+                    // Een bestaande e-mail kan al bij een ander account horen: nooit accounts samenvoegen op e-mail.
+                    if (DB::table('users')->where('email', $email)->exists()) {
+                        $email = 'staff-'.$schoolId.'-'.hash('sha256', $username).'@staff.invalid';
+                    }
+                    DB::table('users')->insert([
+                        'schoolid' => $schoolId,
+                        // Google-gebruikersnaam mag niet met een Smartschool-naam gevuld worden.
+                        // Tijdelijke unieke identificatie: blijft geblokkeerd tot Google-login gekoppeld is.
+                        'gebruikersnaam' => 'ss-pending-'.substr(hash('sha256', $schoolId.':'.$username), 0, 32),
+                        'smartschool_gebruikersnaam' => $username,
+                        'voornaam' => $row['first'],
+                        'name' => $row['last'] !== '' ? $row['last'] : $username,
+                        'email' => $email,
+                        'geboortedatum' => $row['birthdate'],
+                        'password' => Hash::make(Str::random(64)),
+                        'groupId' => (int) $groupIds[$row['role']],
+                        'allowed_login' => 0,
+                        'smartschool_active' => 1,
+                        'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                }
+                DB::table('smartschool_staff_memberships')->updateOrInsert(
+                    ['schoolid' => $schoolId, 'gebruikersnaam' => $username],
+                    ['last_seen_at' => now(), 'updated_at' => now()]
+                );
+            }
+            if ($disable) {
+                DB::table('users')->whereIn('id', collect($disable)
+                    ->map(fn ($name) => (int) $existing[$name]->id)->all())
+                    ->update(['allowed_login' => 0, 'smartschool_active' => 0, 'updated_at' => now()]);
+            }
+        });
+        $this->info('Personeelssynchronisatie voltooid.');
+        return self::SUCCESS;
+    }
+
+    private function normalizeDate($value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') return null;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            $date = $value;
+        } elseif (preg_match('/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/', $value, $m)) {
+            $date = $m[3].'-'.$m[2].'-'.$m[1];
+        } else {
+            return null;
+        }
+        [$year, $month, $day] = array_map('intval', explode('-', $date));
+        return checkdate($month, $day, $year) ? $date : null;
+    }
+
+    private function needsUpdate(object $user, array $row, array $groupIds): bool
+    {
+        return $this->updatedFields($user, $row, $groupIds) !== [];
+    }
+
+    private function updatedFields(object $user, array $row, array $groupIds): array
+    {
+        $fields = [];
+        foreach (['voornaam' => 'first', 'name' => 'last'] as $column => $key) {
+            if ($row[$key] !== '' && (string) $user->{$column} !== $row[$key]) {
+                $fields[$column] = $row[$key];
+            }
+        }
+        // Een lege/ongeldige Smartschool-geboortedatum wist geen bestaande datum.
+        if ($row['birthdate'] !== null
+            && substr((string) ($user->geboortedatum ?? ''), 0, 10) !== $row['birthdate']) {
+            $fields['geboortedatum'] = $row['birthdate'];
+        }
+        // Enkel twee door de sync beheerde standaardrollen mogen van groep veranderen.
+        if (in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)
+            && (int) $user->groupId !== (int) $groupIds[$row['role']]) {
+            $fields['groupId'] = (int) $groupIds[$row['role']];
+        }
+        if ($fields) $fields['updated_at'] = now();
+        return $fields;
+    }
+}

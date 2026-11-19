@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=23">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=24">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -80,6 +80,7 @@
                             <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
                             <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
                             <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
+                                <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeel synchroniseren</a>
                         </nav>
                         @endif
                     </div>

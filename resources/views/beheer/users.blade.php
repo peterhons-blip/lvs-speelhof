@@ -15,7 +15,7 @@
             <h1>Gebruikersbeheer</h1>
             <p>De medewerkers komen rechtstreeks uit de bestaande LVS-tabellen <strong>users</strong> en <strong>groups</strong>. Er worden geen dubbele gebruikers aangemaakt.</p>
         </div>
-        <a class="library-button library-button-secondary" href="{{ route('beheer.permissions.index') }}">Rollen en rechten</a>
+        <div class="portal-role-actions"><a class="library-button library-button-secondary" href="{{ route('beheer.staff-sync.index') }}">Personeel synchroniseren</a><a class="library-button library-button-secondary" href="{{ route('beheer.permissions.index') }}">Rollen en rechten</a></div>
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -47,6 +47,7 @@
 
     <section class="library-form-card">
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
+        <p><a href="{{ route('beheer.users.index', request('toon_geblokkeerd') ? [] : ['toon_geblokkeerd' => 1]) }}">{{ request('toon_geblokkeerd') ? 'Alleen actieve accounts tonen' : 'Ook geblokkeerde accounts tonen' }}</a></p>
         <div class="library-table-wrap">
             <table class="library-table">
                 <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
@@ -55,9 +56,9 @@
                     @php($current = array_search($user->groupname, \App\Services\LibraryAccess::ROLES, true))
                     <tr>
                         <td><strong>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}</strong>
-                            @if(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
+                            @if($user->smartschool_active !== null && !(int) $user->smartschool_active)<div class="library-help">Niet meer actief in Smartschool</div>@elseif(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
                         </td>
-                        <td><strong>{{ $user->gebruikersnaam }}</strong></td>
+                        <td><strong>{{ $user->smartschool_gebruikersnaam ?: $user->gebruikersnaam }}</strong></td>
                         <td>{{ $user->groupname ?: 'Geen groep' }}</td>
                         <td>
                             <form action="{{ route('beheer.users.update', $user->id) }}" method="post" class="portal-user-row portal-user-role-form">
@@ -76,7 +77,7 @@
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="allowed_login" value="{{ (int) $user->allowed_login ? '0' : '1' }}">
-                                <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ (int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd' }}</span>
+                                <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ $user->smartschool_active !== null && !(int) $user->smartschool_active ? 'Smartschool inactief' : ((int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd') }}</span>
                                 <button type="submit" class="library-button library-button-secondary">{{ (int) $user->allowed_login ? 'Blokkeren' : 'Toestaan' }}</button>
                             </form>
                         </td>
@@ -170,10 +171,10 @@
                 name.className = 'portal-user-suggestion-name';
                 name.textContent = [person.voornaam, person.name].filter(Boolean).join(' ') || person.gebruikersnaam;
                 const meta = document.createElement('small');
-                meta.textContent = person.gebruikersnaam + (person.groupname ? ' · ' + person.groupname : '');
+                meta.textContent = (person.smartschool_gebruikersnaam || person.gebruikersnaam) + (person.groupname ? ' · ' + person.groupname : '');
                 button.append(name, meta);
                 button.addEventListener('click', () => {
-                    input.value = person.gebruikersnaam;
+                    input.value = person.smartschool_gebruikersnaam || person.gebruikersnaam;
                     input.focus();
                     ++sequence;
                     if (controller) controller.abort();
