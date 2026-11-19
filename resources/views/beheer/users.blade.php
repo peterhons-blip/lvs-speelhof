@@ -46,13 +46,13 @@
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th></tr></thead>
+                <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
                 <tbody>
                 @forelse($users as $user)
                     @php($current = array_search($user->groupname, \App\Services\LibraryAccess::ROLES, true))
                     <tr>
                         <td><strong>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}</strong>
-                            @if(!(int) $user->allowed_login)<div class="library-help">Login niet toegestaan</div>@endif
+                            @if(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
                         </td>
                         <td><strong>{{ $user->gebruikersnaam }}</strong></td>
                         <td>{{ $user->groupname ?: 'Geen groep' }}</td>
@@ -68,9 +68,18 @@
                                 <button type="submit" class="library-button library-button-secondary">Opslaan</button>
                             </form>
                         </td>
+                        <td>
+                            <form action="{{ route('beheer.users.login', $user->id) }}" method="post" class="portal-login-toggle-form" @if((int) $user->allowed_login) onsubmit="return confirm('Aanmelding blokkeren voor {{ $user->gebruikersnaam }}?');" @endif>
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="allowed_login" value="{{ (int) $user->allowed_login ? '0' : '1' }}">
+                                <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ (int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd' }}</span>
+                                <button type="submit" class="library-button library-button-secondary">{{ (int) $user->allowed_login ? 'Blokkeren' : 'Toestaan' }}</button>
+                            </form>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4">Geen personeelsaccounts gevonden.</td></tr>
+                    <tr><td colspan="5">Geen personeelsaccounts gevonden.</td></tr>
                 @endforelse
                 </tbody>
             </table>
