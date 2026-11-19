@@ -47,7 +47,10 @@
 
     <section class="library-form-card">
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
-        <p><a href="{{ route('beheer.users.index', request('toon_geblokkeerd') ? [] : ['toon_geblokkeerd' => 1]) }}">{{ request('toon_geblokkeerd') ? 'Alleen actieve accounts tonen' : 'Ook geblokkeerde accounts tonen' }}</a></p>
+        <nav class="portal-users-account-filters" aria-label="Accounts filteren" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin:1rem 0 1.25rem;">
+            <a href="{{ route('beheer.users.index') }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-secondary' : 'library-button-primary' }}" @if(!request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Actieve accounts</a>
+            <a href="{{ route('beheer.users.index', ['toon_geblokkeerd' => 1]) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-primary' : 'library-button-secondary' }}" @if(request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Alle accounts</a>
+        </nav>
         <div class="library-table-wrap">
             <table class="library-table">
                 <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
