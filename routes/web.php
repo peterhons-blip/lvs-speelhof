@@ -95,7 +95,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('beheer.scheduled-tasks.index');
     Route::get('/beheer/geplande-taken/{task}/log', [\App\Http\Controllers\ScheduledTasksController::class, 'log'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
-        ->where('task', '[a-z_]+')
+        ->where('task', '[a-z0-9_]+')
         ->name('beheer.scheduled-tasks.log');
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
