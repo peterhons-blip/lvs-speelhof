@@ -107,7 +107,7 @@ class PortalPermissionsController extends Controller
 
     public function users(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
         // Always read from the existing LVS tables; no second personnel database.
         $search = trim((string) $request->query('zoek', ''));
         $sortColumns = [
@@ -153,7 +153,7 @@ class PortalPermissionsController extends Controller
 
     public function searchUsers(Request $request, LibraryAccess $access): \Illuminate\Http\JsonResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
 
         $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:80']]);
         $term = trim($data['q']);
@@ -179,7 +179,7 @@ class PortalPermissionsController extends Controller
 
     public function storeUser(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
         $data = $request->validate([
             'smartschool_username' => ['required', 'string', 'max:120'],
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
@@ -197,7 +197,7 @@ class PortalPermissionsController extends Controller
 
     public function updateUser(Request $request, LibraryAccess $access, int $staff): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
         $data = $request->validate([
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
         ]);
@@ -206,7 +206,7 @@ class PortalPermissionsController extends Controller
 
     public function updateLogin(Request $request, LibraryAccess $access, int $staff): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
         $data = $request->validate(['allowed_login' => ['required', 'in:0,1']]);
         $allowed = (int) $data['allowed_login'];
 
@@ -242,7 +242,7 @@ class PortalPermissionsController extends Controller
 
     public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff.manage');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'distinct', 'min:1'],
