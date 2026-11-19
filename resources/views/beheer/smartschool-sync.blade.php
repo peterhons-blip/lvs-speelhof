@@ -74,7 +74,7 @@
                         // Existing runs with actual imports but empty official classes
                         // were previously marked failed. Preserve raw state, clarify display.
                         $imported = preg_match('/Processed=([1-9][0-9]*)/', $run->summary ?? '');
-                        $emptyOnly = preg_match('/failed_classes=0,\\s*empty_classes=[1-9][0-9]*/', $run->summary ?? '');
+                        $emptyOnly = preg_match('/failed_classes=0,\s*empty_classes=[1-9][0-9]*/', $run->summary ?? '');
                         $displayStatus = $run->status === 'failed' && $imported && $emptyOnly ? 'warning' : $run->status;
                         $displayText = $displayStatus === 'warning' ? 'Deels voltooid' : $statusText;
                     @endphp
