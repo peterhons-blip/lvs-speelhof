@@ -23,17 +23,29 @@ class PortalPermissionsController extends Controller
 
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requireIctManager($request);
         $modules = config('portal_permissions', []);
         $roles = LibraryAccess::LABELS;
         $stored = DB::table('portal_role_permissions')->get()->groupBy('role')
             ->map(fn ($rows) => $rows->pluck('permission')->all())->all();
-        return view('beheer.permissions', compact('modules', 'roles', 'stored'));
+        $personalPermissions = LibraryAccess::PERSONAL_MANAGEMENT;
+        $personnel = DB::table('users')
+            ->where('schoolid', 1)
+            ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+            ->orderBy('name')->orderBy('voornaam')
+            ->get(['id', 'voornaam', 'name', 'smartschool_gebruikersnaam']);
+        $personalGrants = \Illuminate\Support\Facades\Schema::hasTable('portal_user_permissions')
+            ? DB::table('portal_user_permissions')->whereIn('permission', array_keys($personalPermissions))
+                ->get()->groupBy('user_id')->map(fn ($rows) => $rows->pluck('permission')->all())->all()
+            : [];
+        $personalReady = \Illuminate\Support\Facades\Schema::hasTable('portal_user_permissions');
+        return view('beheer.permissions', compact('modules', 'roles', 'stored',
+            'personnel', 'personalPermissions', 'personalGrants', 'personalReady'));
     }
 
     public function update(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requireIctManager($request);
         $data = $request->validate([
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
             'permissions' => ['sometimes', 'array'],
@@ -46,7 +58,8 @@ class PortalPermissionsController extends Controller
             ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))->all();
         $requested = array_values(array_unique($data['permissions'] ?? []));
         abort_if(in_array('beheer.users.manage', $requested, true)
-            || in_array('beheer.permissions.manage', $requested, true), 422,
+            || in_array('beheer.permissions.manage', $requested, true)
+            || count(array_intersect($requested, array_keys(LibraryAccess::PERSONAL_MANAGEMENT))) > 0, 422,
             'Gebruikers- en rechtenbeheer is uitsluitend voor ICT-coördinatoren.');
         abort_unless(count(array_diff($requested, $valid)) === 0, 422, 'Onbekend recht.');
 
@@ -60,6 +73,36 @@ class PortalPermissionsController extends Controller
             }
         });
         return back()->with('success', 'Rechten voor '.LibraryAccess::LABELS[$role].' opgeslagen.');
+    }
+
+    public function updatePersonalPermissions(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requireIctManager($request);
+        abort_unless(\Illuminate\Support\Facades\Schema::hasTable('portal_user_permissions'), 422,
+            'Voer eerst de nieuwe migratie voor persoonlijke beheerrechten uit.');
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', 'min:1'],
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['string', Rule::in(array_keys(LibraryAccess::PERSONAL_MANAGEMENT))],
+        ]);
+        $id = (int) $data['user_id'];
+        $permissions = array_values(array_unique($data['permissions'] ?? []));
+        $staff = DB::table('users')->where('id', $id)->where('schoolid', 1)
+            ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+            ->first();
+        if (! $staff) return back()->withErrors(['user_id' => 'Personeelsaccount niet gevonden of inactief.']);
+
+        DB::transaction(function () use ($id, $permissions) {
+            DB::table('portal_user_permissions')->where('user_id', $id)
+                ->whereIn('permission', array_keys(LibraryAccess::PERSONAL_MANAGEMENT))->delete();
+            foreach ($permissions as $permission) {
+                DB::table('portal_user_permissions')->insert([
+                    'user_id' => $id, 'permission' => $permission,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        });
+        return back()->with('success', 'Persoonlijke beheerrechten van '.trim($staff->voornaam.' '.$staff->name).' opgeslagen.');
     }
 
     public function users(Request $request, LibraryAccess $access): View
