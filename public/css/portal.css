@@ -332,3 +332,16 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .portal-module .portal-module-alert-warning{color:#91601B;background:#FFF7E7;border:1px solid #F1D9A6}
 .portal-module .portal-module-hint{font-size:.72rem;color:#77889A;line-height:1.4}
 @media(max-width:640px){.portal-module-stats{gap:7px}.portal-module .portal-module-stat{padding:9px}}
+
+/* Uitleenmodule: overzicht, uitzonderingen en leerlingzoekresultaten. */
+.library-loan-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.library-loan-stat{display:flex;flex-direction:column;gap:7px;padding:17px;border:1px solid #DCE8EB;border-radius:14px;background:#F8FBFC;text-decoration:none;color:#2A4059}
+.library-loan-stat>span{font-size:.83rem}.library-loan-stat strong{font-size:1.65rem;color:#143A54;font-variant-numeric:tabular-nums}
+.library-loan-stat-alert{background:#FFF1F2;border-color:#F1B8BE}.library-loan-stat-alert strong{color:#B4232F}
+.library-loan-overdue{display:inline-flex;background:#FFE8EA;color:#A71F2F;border:1px solid #F4B8BC;padding:5px 9px;border-radius:8px;font-size:.78rem;font-weight:800}
+.library-loan-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:13px;margin-bottom:18px}
+.library-loan-filters .library-field{flex:1 1 190px}
+.library-loan-results{display:grid;gap:5px;max-height:240px;overflow-y:auto}
+.library-loan-result{background:#F6FAFB;border:1px solid #D5E9EC;text-align:left;border-radius:8px;padding:10px 12px;cursor:pointer;color:#163A53}
+.library-loan-result:hover,.library-loan-result:focus-visible{background:#DDF4F4}
+@media(max-width:640px){.library-loan-stats{grid-template-columns:1fr}.library-loan-filters{display:grid}}
