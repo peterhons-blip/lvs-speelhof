@@ -69,6 +69,14 @@ class ScheduledTasksController extends Controller
         } finally {
             fclose($handle);
         }
+        // An existing but empty log should never result in an unexplained blank page.
+        if ($content === false || trim((string) $content) === '') {
+            $content = 'Dit logbestand bestaat, maar bevat nog geen uitvoer. '
+                .'Een taak kan succesvol lopen zonder tekst naar het log te schrijven. '
+                .'Bekijk de uitvoeringsstatus onder Beheer > Geplande taken. '
+                .'Let op: lokale logs op localhost zijn niet dezelfde bestanden als op de productieserver.';
+        }
+
         return response((string) $content, 200)
             ->header('Content-Type', 'text/plain; charset=UTF-8')
             ->header('Cache-Control', 'no-store')
