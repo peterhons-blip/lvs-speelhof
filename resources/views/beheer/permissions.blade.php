@@ -49,9 +49,7 @@
             @php
                 $assigned = $stored[$role] ?? [];
                 $available = collect($modules)->flatMap(fn ($module) =>
-                    collect($module['permissions'] ?? [])->keys()->reject(
-                        fn ($key) => in_array($key, [], true)
-                    )
+                    array_keys($module['permissions'] ?? [])
                 )->values()->all();
                 $enabledCount = count(array_intersect($assigned, $available));
             @endphp
