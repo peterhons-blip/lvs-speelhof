@@ -15,7 +15,9 @@ class SmartschoolSyncLeerlingen extends Command
                             {--schoolid= : School ID (default: 1)}
                             {--dry-run : Niets schrijven in DB, enkel loggen}
                             {--limit=0 : Maximum # leerlingen verwerken (0 = geen limiet)}
-                            {--only-class= : Alleen deze smartschool_code syncen}';
+                            {--only-class= : Alleen deze smartschool_code syncen}
+                            {--skip-scancodes : QR-codes niet synchroniseren}
+                            {--refresh-scancodes : Bestaande QR-codes opnieuw ophalen via getUserDetails}';
 
     protected $description = 'Synct leerlingen uit Smartschool naar DB: leerlingen, klassen, active vlag.';
 
@@ -25,6 +27,18 @@ class SmartschoolSyncLeerlingen extends Command
         $dryRun = $this->option('dry-run') === true;
         $limit = (int) ($this->option('limit') ?: 0);
         $onlyCode = trim((string) ($this->option('only-class') ?: ''));
+        $syncScancodes = ! $this->option('skip-scancodes')
+            && \Illuminate\Support\Facades\Schema::hasColumn('leerlingen', 'scannable_code');
+        $refreshScancodes = (bool) $this->option('refresh-scancodes');
+        $detailsCallsDisabled = false;
+        $detailsFailures = 0;
+        $codesUpdated = 0;
+        $codesMissing = 0;
+        $codeConflicts = 0;
+        if (! $syncScancodes && ! $this->option('skip-scancodes')) {
+            $this->warn('Scannable codes overgeslagen: voer eerst de leerlingen.scannable_code migratie uit.');
+        }
+
 
         $this->info("Smartschool sync leerlingen gestart (schoolid={$schoolId})" . ($dryRun ? ' [DRY-RUN]' : ''));
 
@@ -151,6 +165,31 @@ class SmartschoolSyncLeerlingen extends Command
                     $row['geboortedatum'] ?? $row['birthday'] ?? null
                 );
 
+                // Prefer the QR identifier already supplied by the bulk class response.
+                // If absent, query getUserDetails during sync only, never during loans.
+                $scannableCode = $syncScancodes ? $this->scannableCodeFrom($row) : null;
+                if ($syncScancodes && ! $dryRun && $scannableCode === null && ! $detailsCallsDisabled) {
+                    $cachedCode = Leerling::query()->where('schoolid', $schoolId)
+                        ->where('gebruikersnaam', $username)->value('scannable_code');
+
+                    if ($cachedCode === null || $refreshScancodes) {
+                        try {
+                            $details = $ss->getUserDetails($username);
+                            $scannableCode = $this->scannableCodeFrom($details);
+                            $detailsFailures = 0;
+                        } catch (\Throwable $e) {
+                            $detailsFailures++;
+                            if ($detailsFailures === 1) {
+                                $this->warn('Smartschool QR-opvraging mislukt. Bestaande leerlingensync gaat verder: '.$e->getMessage());
+                            }
+                            if ($detailsFailures >= 3) {
+                                $detailsCallsDisabled = true;
+                                $this->warn('QR-opvraging voor overige leerlingen overgeslagen na drie fouten.');
+                            }
+                        }
+                    }
+                }
+
                 $email = strtolower($username) . '@atheneumsinttruiden.be';
 
                 $seenUsernames[] = $username;
@@ -173,6 +212,20 @@ class SmartschoolSyncLeerlingen extends Command
                     ->where('gebruikersnaam', $username)
                     ->first();
 
+                // Never assign one QR code to multiple student records (also across schools).
+                if ($scannableCode !== null) {
+                    $conflict = Leerling::query()->where('scannable_code', $scannableCode)
+                        ->where(function ($q) use ($schoolId, $username) {
+                            $q->where('schoolid', '!=', $schoolId)
+                                ->orWhere('gebruikersnaam', '!=', $username);
+                        })->exists();
+                    if ($conflict) {
+                        $codeConflicts++;
+                        $this->warn("QR-codeconflict bij {$username}; scanwaarde niet bijgewerkt.");
+                        $scannableCode = null;
+                    }
+                }
+
                 if (!$existing) {
                     $leerling = new Leerling();
                     $leerling->schoolid = $schoolId;
@@ -183,6 +236,12 @@ class SmartschoolSyncLeerlingen extends Command
                     $leerling->geboortedatum = $geboortedatum;
                     $leerling->{'e-mailadres'} = $email;
                     $leerling->active = 1;
+                    if ($scannableCode !== null) {
+                        $leerling->scannable_code = $scannableCode;
+                        $codesUpdated++;
+                    } else if ($syncScancodes) {
+                        $codesMissing++;
+                    }
                     $leerling->save();
 
                     $created++;
@@ -221,6 +280,15 @@ class SmartschoolSyncLeerlingen extends Command
                     $dirty = true;
                 }
 
+                if ($syncScancodes) {
+                    if ($scannableCode !== null && $existing->scannable_code !== $scannableCode) {
+                        $existing->scannable_code = $scannableCode;
+                        $codesUpdated++;
+                        $dirty = true;
+                    } else if ($scannableCode === null && empty($existing->scannable_code)) {
+                        $codesMissing++;
+                    }
+                }
                 if ($dirty) {
                     $existing->save();
                     $updated++;
@@ -266,12 +334,45 @@ class SmartschoolSyncLeerlingen extends Command
             }
         }
 
-        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}" . ($dryRun ? ' [DRY-RUN]' : '');
+        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}" . ($dryRun ? ' [DRY-RUN]' : '');
 
         $this->info($msg);
         Log::info('Smartschool sync leerlingen: ' . $msg);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Smartschool QR identifiers are UUIDs. Extract only their identifier field,
+     * never persist other profile fields or log QR values.
+     */
+    private function scannableCodeFrom(mixed $payload): ?string
+    {
+        if (is_string($payload)) {
+            $decoded = json_decode($payload, true);
+            if (json_last_error() !== JSON_ERROR_NONE) return null;
+            $payload = $decoded;
+        }
+        if (is_object($payload)) $payload = (array) $payload;
+        if (! is_array($payload)) return null;
+
+        foreach (['scannableCode', 'scannablecode', 'scannable_code'] as $field) {
+            if (isset($payload[$field]) && is_string($payload[$field])) {
+                $value = strtoupper(trim($payload[$field]));
+                if (preg_match('/^[A-F0-9]{8}(-[A-F0-9]{4}){3}-[A-F0-9]{12}$/D', $value)) {
+                    return $value;
+                }
+            }
+        }
+
+        // Some SOAP responses wrap the profile in a top-level object or array.
+        foreach (['data', 'user', 'account', 'result'] as $key) {
+            if (isset($payload[$key])) {
+                $nested = $this->scannableCodeFrom($payload[$key]);
+                if ($nested !== null) return $nested;
+            }
+        }
+        return null;
     }
 
     private function findOrCreateKlas(int $schoolId, string $classCode, string $className, bool $dryRun, int &$createdClasses): ?Klas
