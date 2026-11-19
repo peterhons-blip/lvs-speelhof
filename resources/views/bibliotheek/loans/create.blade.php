@@ -183,8 +183,6 @@
         const code = studentScan.value.trim();
         if (!code) return;
         feedback(studentFeedback, 'Kaart controleren...');
-        cardPairing.hidden = true;
-        unlinkedScan = '';
         try {
             const response = await fetch(endpoints.scan + '?code=' + encodeURIComponent(code), {
                 headers: {Accept: 'application/json'}
