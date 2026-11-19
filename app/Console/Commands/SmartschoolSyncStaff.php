@@ -71,6 +71,11 @@ class SmartschoolSyncStaff extends Command
                     $this->error('Ongeldig accountrecord ontvangen. Niets gewijzigd.');
                     return self::FAILURE;
                 }
+                $basisrol = mb_strtolower(trim((string) ($row['basisrol'] ?? '')));
+                if (in_array($basisrol, ['1', 'leerling', 'student'], true)) {
+                    $this->error('Leerlingenaccount aangetroffen in personeelsgroep. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
                 $username = mb_strtolower(trim((string) ($row['gebruikersnaam'] ?? '')));
                 if ($username === '') {
                     $this->error('Een personeelsaccount mist een gebruikersnaam. Niets gewijzigd.');
@@ -112,6 +117,14 @@ class SmartschoolSyncStaff extends Command
             ->pluck('gebruikersnaam')->map(fn ($v) => mb_strtolower($v))->all();
         $changes = ['nieuw' => 0, 'bijwerken' => 0, 'uitschakelen' => 0];
         $disable = [];
+        // Ook bestaande lokale accounts met een standaardrol opnemen in de
+        // controle; speciale rollen en serviceaccounts worden niet automatisch verwijderd.
+        foreach ($existing as $username => $user) {
+            if (in_array((int) $user->groupId, array_map('intval', array_values($groupIds)), true)) {
+                $managed[] = $username;
+            }
+        }
+        $managed = array_values(array_unique($managed));
         foreach ($managed as $username) {
             if (! isset($accounts[$username]) && isset($existing[$username])
                 && (int) $existing[$username]->allowed_login === 1) {
