@@ -8,7 +8,7 @@
 ]])
 @endsection
 @section('content')
-<main class="library-page">
+<main class="library-page portal-users-page">
     <div class="library-page-head">
         <div>
             <p class="portal-eyebrow">PORTAALBEHEER</p>
@@ -21,8 +21,9 @@
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
     <section class="library-form-card">
-        <h2>Schoolrol toekennen aan bestaande gebruiker</h2>
-        <form action="{{ route('beheer.users.store') }}" method="post" class="library-form-grid">
+        <h2>Schoolrol toekennen</h2>
+        <p class="portal-users-card-intro">Zoek een bestaand personeelsaccount via de Smartschool-gebruikersnaam en kies de gewenste schoolrol.</p>
+        <form action="{{ route('beheer.users.store') }}" method="post" class="portal-users-assign-form">
             @csrf
             <div class="library-field">
                 <label for="smartschool_username">Bestaande Smartschool-gebruikersnaam</label>
@@ -36,13 +37,13 @@
                     @endforeach
                 </select>
             </div>
-            <div class="library-wide"><button class="library-button library-button-primary" type="submit">Rol toekennen</button></div>
+            <div class="portal-users-assign-action"><button class="library-button library-button-primary" type="submit">Rol toekennen</button></div>
         </form>
-        <p class="library-help">Alleen bestaande personeelsaccounts kunnen een rol krijgen. Gebruikersnamen en loginrechten blijven ongewijzigd.</p>
+        <div class="portal-users-note"><span aria-hidden="true">i</span><p>Je kent enkel een rol toe aan een <strong>bestaand personeelsaccount</strong>. De gebruikersnaam en de huidige aanmeldrechten blijven behouden.</p></div>
     </section>
 
     <section class="library-form-card">
-        <h2>Personeelsaccounts</h2>
+        <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
         <div class="library-table-wrap">
             <table class="library-table">
                 <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th></tr></thead>
@@ -50,13 +51,13 @@
                 @forelse($users as $user)
                     @php($current = array_search($user->groupname, \App\Services\LibraryAccess::ROLES, true))
                     <tr>
-                        <td>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}
+                        <td><strong>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}</strong>
                             @if(!(int) $user->allowed_login)<div class="library-help">Login niet toegestaan</div>@endif
                         </td>
                         <td><strong>{{ $user->gebruikersnaam }}</strong></td>
                         <td>{{ $user->groupname ?: 'Geen groep' }}</td>
                         <td>
-                            <form action="{{ route('beheer.users.update', $user->id) }}" method="post" class="portal-user-row">
+                            <form action="{{ route('beheer.users.update', $user->id) }}" method="post" class="portal-user-row portal-user-role-form">
                                 @csrf
                                 @method('PUT')
                                 <select name="role" aria-label="Rol voor {{ $user->gebruikersnaam }}" required>
@@ -74,7 +75,7 @@
                 </tbody>
             </table>
         </div>
-        {{ $users->links() }}
+        <div class="portal-users-pagination">{{ $users->links() }}</div>
     </section>
 </main>
 @endsection
