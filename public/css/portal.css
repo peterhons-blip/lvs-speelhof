@@ -345,3 +345,13 @@ a.portal-library-feature-active:focus-visible{outline:3px solid var(--portal-mag
 .library-loan-result{background:#F6FAFB;border:1px solid #D5E9EC;text-align:left;border-radius:8px;padding:10px 12px;cursor:pointer;color:#163A53}
 .library-loan-result:hover,.library-loan-result:focus-visible{background:#DDF4F4}
 @media(max-width:640px){.library-loan-stats{grid-template-columns:1fr}.library-loan-filters{display:grid}}
+
+/* Centraal rollen- en rechtenbeheer */
+.portal-permission-group{margin:18px 0;padding:15px 17px;border:1px solid #dce6eb;border-radius:12px}
+.portal-permission-group legend{padding:0 8px;font-weight:750;color:#19394d}
+.portal-permission-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portal-permission-option{display:flex;align-items:start;gap:9px;cursor:pointer;font-size:.94rem}
+.portal-permission-option input{accent-color:#176f8b;margin-top:3px;width:17px;height:17px;flex-shrink:0}
+.portal-user-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(150px,1.2fr) minmax(115px,.75fr) auto;gap:8px;align-items:center}
+.portal-user-row input,.portal-user-row select{width:100%;min-width:0;border-radius:8px;border:1px solid #ccdce5;padding:9px}
+@media(max-width:750px){.portal-permission-list{grid-template-columns:1fr}.portal-user-row{grid-template-columns:1fr}}
