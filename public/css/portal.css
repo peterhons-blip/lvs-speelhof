@@ -606,3 +606,19 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-student-sync-page .portal-sync-option strong{font-weight:700;color:#193b54}
 .portal-student-sync-page .portal-sync-form>.portal-role-actions{margin-top:22px;padding-top:16px;border-top:1px solid #edf1f4;align-items:center}
 .portal-student-sync-page .portal-sync-form>.portal-role-actions .library-button{min-height:44px}
+
+/* Nachtelijke taakmonitor: compacte tabellen zonder afgebroken of overlopende statusinformatie. */
+.portal-night-jobs{margin-top:24px}
+.portal-night-jobs .portal-users-table-heading h2{margin:0 0 5px}
+.portal-night-table,.portal-night-history{min-width:850px}
+.portal-night-table th,.portal-night-table td,.portal-night-history th,.portal-night-history td{vertical-align:top;line-height:1.5}
+.portal-night-table td:first-child{min-width:190px}
+.portal-night-description{margin-top:5px;color:#71899b;font-size:.8rem;line-height:1.5;max-width:290px}
+.portal-night-nowrap{white-space:nowrap;font-variant-numeric:tabular-nums}
+.portal-sync-result{min-width:190px;color:#37556b;font-size:.82rem;line-height:1.55;overflow-wrap:anywhere;word-break:normal}
+.portal-night-footnote{font-size:.81rem;color:#718598;line-height:1.6;margin:15px 0 0}
+.portal-sync-feedback{padding:13px 17px;background:#f6f9fb;border:1px solid #dfeaf0;border-radius:9px;font-size:.85rem;color:#45667c}
+.portal-sync-status-warning{background:#fff3db;color:#865d12}
+.portal-sync-status-unknown{background:#f1f4f6;color:#708396}
+.portal-student-sync-page .portal-sync-stat strong{overflow-wrap:anywhere}
+@media(max-width:850px){.portal-night-jobs{margin-top:18px}}
