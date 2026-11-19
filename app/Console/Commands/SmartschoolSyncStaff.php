@@ -131,6 +131,22 @@ class SmartschoolSyncStaff extends Command
                 $disable[] = $username;
             }
         }
+        // Bescherm de laatste actieve ICT-coordinator tegen automatische uitschakeling.
+        if ($disable) {
+            $ictId = DB::table('groups')->where('groupname', 'ICT-coördinator')->value('id');
+            if ($ictId !== null) {
+                $activeIct = DB::table('users')->where('schoolid', $schoolId)
+                    ->where('groupId', $ictId)->where('allowed_login', 1)->count();
+                $affectedIct = collect($disable)->filter(fn ($name) =>
+                    isset($existing[$name]) && (int) $existing[$name]->groupId === (int) $ictId
+                )->count();
+                if ($activeIct - $affectedIct < 1) {
+                    $this->error('De laatste actieve ICT-coordinator zou worden geblokkeerd. Niets gewijzigd.');
+                    return self::FAILURE;
+                }
+            }
+        }
+
         // Nooit een grote groep gebruikers door een onvolledige respons blokkeren.
         if (count($disable) > 10 || (count($managed) >= 100 && count($accounts) < count($managed) * 0.85)) {
             $this->error('Onverwacht veel verdwenen accounts. Niets gewijzigd; controleer Smartschool.');
