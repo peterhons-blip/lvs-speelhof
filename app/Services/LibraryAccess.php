@@ -8,50 +8,75 @@ use Illuminate\Support\Facades\Schema;
 
 class LibraryAccess
 {
+    // Slugs are only permission keys; groups.id remains the existing source of school roles.
+    // Do not rename the four legacy groups or change their IDs.
     public const ROLES = [
+        'leerkracht' => 'leerkracht',
+        'directie' => 'directeur',
+        'leerlingbegeleiding' => 'leerlingbegeleider',
         'ict_coordinator' => 'ICT-coördinator',
+        'boekhouding' => 'boekhouding',
+        'secretariaat' => 'secretariaat',
+        'tac' => 'TAC',
+    ];
+
+    public const LABELS = [
+        'leerkracht' => 'Leerkracht',
         'directie' => 'Directie',
+        'leerlingbegeleiding' => 'Leerlingbegeleiding',
+        'ict_coordinator' => 'ICT-coördinator',
         'boekhouding' => 'Boekhouding',
         'secretariaat' => 'Secretariaat',
-        'leerlingbegeleiding' => 'Leerlingbegeleiding',
         'tac' => 'TAC',
     ];
 
     public function username(Request $request): string
     {
-        // Only exact Smartschool usernames are trusted, never the local session's display name.
+        // Smartschool OAuth's canonical username; never authorize by supplied groupname.
         return mb_strtolower(trim((string) data_get($request->session()->get('ss_user'), 'gebruikersnaam', '')));
     }
 
     public function role(Request $request): ?string
     {
         $username = $this->username($request);
-        if ($username === '' || ! Schema::hasTable('portal_staff')) return null;
-        return DB::table('portal_staff')
-            ->where('smartschool_username', $username)->where('is_active', 1)->value('role');
+        if ($username === '' || ! Schema::hasTable('users') || ! Schema::hasTable('groups')) return null;
+
+        $groupName = DB::table('users')
+            ->join('groups', 'groups.id', '=', 'users.groupId')
+            ->where('users.gebruikersnaam', $username)
+            ->where('users.allowed_login', 1)
+            ->value('groups.groupname');
+
+        if ($groupName === null) return null;
+
+        foreach (self::ROLES as $slug => $name) {
+            if (mb_strtolower($groupName) === mb_strtolower($name)) return $slug;
+        }
+        return null;
     }
 
     public function has(Request $request, string $permission): bool
     {
         $role = $this->role($request);
-        if (! $role) return false;
-        // Only registered permissions may be granted.
+        if ($role === null) return false;
+
         $known = collect(config('portal_permissions', []))
-            ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))->contains($permission);
+            ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))
+            ->contains($permission);
         if (! $known) return false;
 
-        // ICT coordinator is the portal owner and cannot lose administrative access
-        // through an accidental permissions edit.
+        // Existing ICT-coordinator group (id=4 in current test DB) always retains admin access.
         if ($role === 'ict_coordinator') return true;
         if (! Schema::hasTable('portal_role_permissions')) return false;
-        return DB::table('portal_role_permissions')->where('role', $role)
-            ->where('permission', $permission)->exists();
+
+        return DB::table('portal_role_permissions')
+            ->where('role', $role)->where('permission', $permission)->exists();
     }
 
     public function requirePermission(Request $request, string $permission): void
     {
         abort_unless($this->has($request, $permission), 403,
-            'Je hebt geen toegang tot deze functie. Vraag je ICT-coördinator om de rechten aan te passen.');
+            'Je hebt geen toegang tot deze functie. Vraag de ICT-coördinator om rechten.');
     }
 
     public function isManager(Request $request): bool
