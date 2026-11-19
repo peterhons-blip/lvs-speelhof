@@ -15,7 +15,7 @@ class SmartschoolStaffSyncController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff_sync.manage');
         $ready = Schema::hasTable('smartschool_staff_memberships')
             && Schema::hasTable('smartschool_staff_sync_runs')
             && DB::table('groups')->where('groupname', 'administratie')->exists()
@@ -27,7 +27,7 @@ class SmartschoolStaffSyncController extends Controller
 
     public function start(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.staff_sync.manage');
         $data = $request->validate([
             'confirm_sync' => ['accepted'],
             'apply_changes' => ['nullable', 'in:1'],
