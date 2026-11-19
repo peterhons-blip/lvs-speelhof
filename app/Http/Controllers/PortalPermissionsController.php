@@ -151,7 +151,7 @@ class PortalPermissionsController extends Controller
             $user = DB::table('users')->where('id', $staff)->lockForUpdate()->first();
             abort_unless($user, 404);
 
-            $self = mb_strtolower((string) $user->gebruikersnaam) === $access->username($request);
+            $self = mb_strtolower((string) $user->smartschool_gebruikersnaam) === $access->username($request);
             if ($self && $allowed === 0) {
                 return back()->withErrors(['allowed_login' => 'Je kunt je eigen aanmeldtoegang niet uitschakelen.']);
             }
@@ -184,7 +184,7 @@ class PortalPermissionsController extends Controller
         return DB::transaction(function () use ($request, $access, $userId, $role, $targetGroupId) {
             $user = DB::table('users')->where('id', $userId)->lockForUpdate()->first();
             abort_unless($user, 404);
-            $self = mb_strtolower((string) $user->gebruikersnaam) === $access->username($request);
+            $self = mb_strtolower((string) $user->smartschool_gebruikersnaam) === $access->username($request);
             if ($self && $role !== 'ict_coordinator') {
                 return back()->withErrors(['role' => 'Je kunt je eigen ICT-beheerrol niet intrekken.']);
             }
