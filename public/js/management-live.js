@@ -111,6 +111,10 @@
     root.addEventListener('click', e => {
         const link = e.target.closest('[data-management-results] a[href]');
         if (!link || link.origin !== window.location.origin) return;
+        // Only update table navigation asynchronously; detail/edit links navigate normally.
+        const currentPath = window.location.pathname.replace(/\/$/, '');
+        const targetPath = link.pathname.replace(/\/$/, '');
+        if (currentPath !== targetPath) return;
         e.preventDefault();
         load(link.href);
     });
