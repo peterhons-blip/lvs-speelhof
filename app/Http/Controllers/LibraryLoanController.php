@@ -92,6 +92,7 @@ class LibraryLoanController extends Controller
         $data = $request->validate([
             'barcode' => ['required', 'string', 'max:60'],
             'leerling' => ['required', 'string', 'max:200'],
+            'loan_days_override' => ['nullable', 'integer', 'min:1', 'max:365'],
             'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['nullable', 'in:0,1'],
         ]);
@@ -126,7 +127,7 @@ class LibraryLoanController extends Controller
                 'copy_id' => $copy->id, 'leerling_id' => $leerling->id,
                 'registered_by' => $this->username($request),
                 'loan_date' => $today->toDateString(),
-                'due_date' => $today->addDays($this->setting('loan_days', 21))->toDateString(),
+                'due_date' => $today->addDays((int) ($data['loan_days_override'] ?: $this->setting('loan_days', 21)))->toDateString(),
                 'extensions' => 0,
                 'reminder_days_before' => ($data['reminder_days_before'] ?? '') === '' ? null : (int) $data['reminder_days_before'],
                 'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === '' ? null : (int) $data['remind_on_due_date'],
@@ -210,12 +211,14 @@ class LibraryLoanController extends Controller
     public function updateReminders(Request $request, int $loan): RedirectResponse
     {
         $data = $request->validate([
+            'due_date' => ['required', 'date', 'after_or_equal:today'],
             'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['nullable', 'in:0,1'],
         ]);
         $item = DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->first();
         abort_unless($item, 404);
         DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->update([
+            'due_date' => $data['due_date'],
             'reminder_days_before' => ($data['reminder_days_before'] ?? '') === ''
                 ? null : (int) $data['reminder_days_before'],
             'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === ''
