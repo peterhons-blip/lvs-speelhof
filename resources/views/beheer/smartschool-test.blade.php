@@ -30,14 +30,24 @@
             @csrf
             <div class="portal-test-message-two-col">
                 <div class="library-field">
-                    <label for="sender">Van (Smartschool-gebruikersnaam) *</label>
-                    <input id="sender" name="sender" value="{{ old('sender', $sender) }}" maxlength="120" required placeholder="bijvoorbeeld bib">
-                    <p class="library-help">Afzender in Smartschool, bijvoorbeeld <strong>bib</strong>.</p>
+                    <label for="sender">Van (Smartschool-account) *</label>
+                    <select id="sender" name="sender" required>
+                        <option value="bib" @selected(old('sender', $sender) === 'bib')>BIB — Schoolbibliotheek</option>
+                        <option value="lvs" @selected(old('sender', $sender) === 'lvs')>LVS — Atheneum Portaal</option>
+                    </select>
+                    <p class="library-help">Enkel de vaste afzenders <strong>bib</strong> en <strong>lvs</strong> zijn toegelaten.</p>
                 </div>
                 <div class="library-field">
-                    <label for="recipient">Aan (Smartschool-gebruikersnaam) *</label>
-                    <input id="recipient" name="recipient" value="{{ old('recipient', $recipient) }}" maxlength="120" required placeholder="bijvoorbeeld jouw.gebruikersnaam">
-                    <p class="library-help">Ontvanger van het echte testbericht, bij voorkeur eerst jezelf.</p>
+                    <label for="recipient">Aan (leerling of personeelslid) *</label>
+                    <div class="portal-user-autocomplete portal-message-recipient-search">
+                        <input id="recipient-search" type="search" value="" placeholder="Zoek op naam of Smartschool-gebruikersnaam..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="portal-message-recipient-results" aria-label="Zoek ontvanger">
+                        <div id="portal-message-recipient-results" class="portal-user-suggestions" role="listbox" hidden></div>
+                    </div>
+                    <div class="portal-message-recipient-selection">
+                        <span>Gekozen ontvanger</span>
+                        <input id="recipient" name="recipient" value="{{ old('recipient', $recipient) }}" maxlength="120" required readonly aria-label="Smartschool-gebruikersnaam ontvanger">
+                    </div>
+                    <p class="library-help">Zoek een actieve leerling of medewerker en selecteer deze. Test eerst bij voorkeur met jezelf.</p>
                 </div>
             </div>
             <div class="library-field">
@@ -49,10 +59,12 @@
                 <textarea id="message" name="message" rows="8" maxlength="5000" required placeholder="Typ hier de tekst die je in Smartschool wilt versturen.">{{ old('message', "Beste,\n\nDit is een testbericht vanuit het Atheneum Portaal.\n\nMet vriendelijke groeten\nBibliotheek") }}</textarea>
                 <p class="library-help">Regelafbrekingen worden behouden. Er worden geen bijlagen of co-accountberichten verstuurd.</p>
             </div>
-            <label class="portal-test-message-consent">
-                <input type="checkbox" name="confirm_send" value="1" required @checked(old('confirm_send') == '1')>
-                <span>Ik bevestig dat ik een <strong>echt Smartschool-bericht</strong> wil versturen naar deze ontvanger.</span>
-            </label>
+            <div class="portal-test-message-consent-row">
+                <label class="portal-test-message-consent" for="confirm_send">
+                    <input id="confirm_send" type="checkbox" name="confirm_send" value="1" required @checked(old('confirm_send') == '1')>
+                    <span>Ik bevestig dat ik een <strong>echt Smartschool-bericht</strong> naar deze ontvanger wil versturen.</span>
+                </label>
+            </div>
             <div class="portal-role-actions">
                 <span class="portal-role-help">Alleen voor ICT-coördinatoren. Geen automatische verzending.</span>
                 <button type="submit" class="library-button library-button-primary">Testbericht verzenden</button>
@@ -61,3 +73,98 @@
     </section>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const search = document.getElementById('recipient-search');
+    const results = document.getElementById('portal-message-recipient-results');
+    const recipient = document.getElementById('recipient');
+    const endpoint = @json(route('beheer.smartschool-test.recipients'));
+    if (!search || !results || !recipient) return;
+    let requestId = 0;
+    let pending = null;
+
+    const close = () => {
+        results.replaceChildren();
+        results.hidden = true;
+        search.setAttribute('aria-expanded', 'false');
+    };
+
+    const lookup = async () => {
+        const term = search.value.trim();
+        const id = ++requestId;
+        if (pending) pending.abort();
+        pending = null;
+        close();
+        if (term.length < 2) return;
+        pending = new AbortController();
+        try {
+            const response = await fetch(endpoint + '?q=' + encodeURIComponent(term), {
+                headers: {Accept: 'application/json'},
+                signal: pending.signal,
+            });
+            if (!response.ok) throw Error('Zoeken mislukt');
+            const list = await response.json();
+            if (id !== requestId || term !== search.value.trim()) return;
+            if (!list.length) {
+                const empty = document.createElement('div');
+                empty.className = 'portal-user-suggestion-empty';
+                empty.textContent = 'Geen actieve leerlingen of personeelsleden gevonden.';
+                results.appendChild(empty);
+            }
+            for (const person of list) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'portal-user-suggestion';
+                item.setAttribute('role', 'option');
+                const name = document.createElement('span');
+                name.className = 'portal-user-suggestion-name';
+                name.textContent = person.name || person.username;
+                const meta = document.createElement('small');
+                meta.textContent = person.type + ' · ' + person.username;
+                item.append(name, meta);
+                item.addEventListener('click', () => {
+                    recipient.value = person.username;
+                    search.value = (person.name || person.username) + ' (' + person.type + ')';
+                    ++requestId;
+                    if (pending) pending.abort();
+                    close();
+                });
+                results.appendChild(item);
+            }
+            results.hidden = false;
+            search.setAttribute('aria-expanded', 'true');
+        } catch (error) {
+            if (error.name !== 'AbortError' && id === requestId) close();
+        }
+    };
+
+    search.addEventListener('input', () => {
+        // Prevent accidentally sending to a previously selected recipient
+        // after a new name was entered.
+        recipient.value = '';
+        lookup();
+    });
+    search.addEventListener('focus', () => { if (search.value.trim().length >= 2) lookup(); });
+    search.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') close();
+        if (event.key === 'ArrowDown' && !results.hidden) {
+            const first = results.querySelector('button');
+            if (first) { event.preventDefault(); first.focus(); }
+        }
+    });
+    results.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { close(); search.focus(); }
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+        const buttons = [...results.querySelectorAll('button')];
+        const index = buttons.indexOf(document.activeElement);
+        const next = buttons[index + (event.key === 'ArrowDown' ? 1 : -1)];
+        if (next) { event.preventDefault(); next.focus(); }
+    });
+    document.addEventListener('click', event => {
+        if (!search.contains(event.target) && !results.contains(event.target)) close();
+    });
+})();
+</script>
+@endpush
