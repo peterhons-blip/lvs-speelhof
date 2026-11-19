@@ -62,69 +62,72 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     });
 
     Route::get('/beheer/smartschool-test/ontvangers', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'recipients'])
-        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:45,1'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.smartschool_test.send', 'throttle:45,1'])
         ->name('beheer.smartschool-test.recipients');
 
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.
     Route::get('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'create'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.smartschool_test.send')
         ->name('beheer.smartschool-test.create');
     Route::post('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'send'])
-        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:5,1'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.smartschool_test.send', 'throttle:5,1'])
         ->name('beheer.smartschool-test.send');
 
     // Leerlingensynchronisatie handmatig starten via de wachtrij (alleen ICT-beheer).
     Route::get('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'index'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.student_sync.manage')
         ->name('beheer.smartschool-sync.index');
     Route::post('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'start'])
-        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.student_sync.manage', 'throttle:3,1'])
         ->name('beheer.smartschool-sync.start');
 
     // Personeelssynchronisatie: uitsluitend ICT-beheer, preview als standaard.
     Route::get('/beheer/personeelssync', [\App\Http\Controllers\SmartschoolStaffSyncController::class, 'index'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff_sync.manage')
         ->name('beheer.staff-sync.index');
     Route::post('/beheer/personeelssync', [\App\Http\Controllers\SmartschoolStaffSyncController::class, 'start'])
-        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff_sync.manage', 'throttle:3,1'])
         ->name('beheer.staff-sync.start');
 
     // Alle geregistreerde nachtelijke taken en hun loghistoriek, uitsluitend voor ICT-beheer.
     Route::get('/beheer/geplande-taken', [\App\Http\Controllers\ScheduledTasksController::class, 'index'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.scheduled_tasks.view')
         ->name('beheer.scheduled-tasks.index');
     Route::get('/beheer/geplande-taken/{task}/log', [\App\Http\Controllers\ScheduledTasksController::class, 'log'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.scheduled_tasks.view')
         ->where('task', '[a-z0-9_]+')
         ->name('beheer.scheduled-tasks.log');
 
     // Leerlingenbeheer: bestaande leerlingen bekijken en beperkte gegevens corrigeren, uitsluitend ICT.
     Route::get('/beheer/leerlingen', [\App\Http\Controllers\StudentManagementController::class, 'index'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.index');
     Route::post('/beheer/leerlingen/bulk', [\App\Http\Controllers\StudentManagementController::class, 'bulkUpdate'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.bulk');
     Route::get('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'show'])
         ->whereNumber('student')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.show');
     Route::put('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'update'])
         ->whereNumber('student')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.update');
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
         Route::post('/gebruikers/bulk', [\App\Http\Controllers\PortalPermissionsController::class, 'bulkUpdate'])
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')
             ->name('users.bulk');
-        Route::get('/gebruikers-zoeken', [\App\Http\Controllers\PortalPermissionsController::class, 'searchUsers'])->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:45,1'])->name('users.search');
-        Route::post('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'storeUser'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.store');
-        Route::put('/gebruikers/{staff}', [\App\Http\Controllers\PortalPermissionsController::class, 'updateUser'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.update');
-        Route::patch('/gebruikers/{staff}/aanmelden', [\App\Http\Controllers\PortalPermissionsController::class, 'updateLogin'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.login');
+        Route::get('/gebruikers-zoeken', [\App\Http\Controllers\PortalPermissionsController::class, 'searchUsers'])->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage', 'throttle:45,1'])->name('users.search');
+        Route::post('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'storeUser'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.store');
+        Route::put('/gebruikers/{staff}', [\App\Http\Controllers\PortalPermissionsController::class, 'updateUser'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.update');
+        Route::patch('/gebruikers/{staff}/aanmelden', [\App\Http\Controllers\PortalPermissionsController::class, 'updateLogin'])->whereNumber('staff')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.login');
         Route::get('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'index'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.index');
+        Route::post('/rechten/persoonlijk', [\App\Http\Controllers\PortalPermissionsController::class, 'updatePersonalPermissions'])
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')
+            ->name('permissions.personal.update');
         Route::post('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'update'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.update');
     });
 
