@@ -17,7 +17,7 @@ class RunSmartschoolStudentSync implements ShouldQueue
 
     public function __construct(public int $runId)
     {
-        $this->onConnection('database');
+        $this->onConnection('smartschool_sync');
         $this->onQueue('smartschool-sync');
     }
 
