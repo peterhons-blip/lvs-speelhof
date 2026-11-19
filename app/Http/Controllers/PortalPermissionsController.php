@@ -67,6 +67,7 @@ class PortalPermissionsController extends Controller
         $access->requireManager($request);
         // Always read from the existing LVS tables; no second personnel database.
         $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
+            ->when(! $request->boolean('toon_geblokkeerd'), fn ($query) => $query->where('users.allowed_login', 1))
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
                 'users.groupId', 'users.allowed_login', 'groups.groupname')
             ->orderByRaw("CASE groups.groupname
@@ -76,7 +77,8 @@ class PortalPermissionsController extends Controller
                 WHEN 'leerlingbegeleider' THEN 3
                 WHEN 'boekhouding' THEN 4
                 WHEN 'TAC' THEN 5
-                WHEN 'leerkracht' THEN 6
+                WHEN 'administratie' THEN 6
+                WHEN 'leerkracht' THEN 7
                 ELSE 7 END")
             ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40);
         $roles = LibraryAccess::LABELS;
@@ -94,6 +96,7 @@ class PortalPermissionsController extends Controller
 
         $users = DB::table('users')
             ->leftJoin('groups', 'groups.id', '=', 'users.groupId')
+            ->where('users.allowed_login', 1)
             ->where(function ($query) use ($term) {
                 $query->where('users.gebruikersnaam', 'like', '%'.$term.'%')
                     ->orWhere('users.voornaam', 'like', '%'.$term.'%')
