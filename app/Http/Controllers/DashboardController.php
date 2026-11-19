@@ -63,9 +63,14 @@ class DashboardController extends Controller
                 ->where('status', 'wachten')->count();
         }
 
-        // De uitleenmodule bestaat nog niet; laat de uitleencijfers leeg
-        // in plaats van kolominspectie te gebruiken (legacy MariaDB ondersteunt
-        // 'generation_expression' niet in information_schema.columns).
+        // Uitleenstatistieken uit de nieuwe exemplaargebonden uitleentabel.
+        // Geen Schema::hasColumn() op de oudere MariaDB-productieserver.
+        if (Schema::hasTable('library_loans')) {
+            $bibliotheek['uitleningen'] = DB::table('library_loans')->whereNull('returned_at')->count();
+            $bibliotheek['te_laat'] = DB::table('library_loans')
+                ->whereNull('returned_at')->where('due_date', '<', now('Europe/Brussels')->toDateString())
+                ->count();
+        }
 
         return view('home', compact('lvs', 'bibliotheek'));
     }

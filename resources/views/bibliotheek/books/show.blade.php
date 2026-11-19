@@ -56,6 +56,9 @@
                     @foreach($book->copies as $copy)
                         <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td><td>
                             <div class="library-copy-actions">
+                                @if($copy->status === 'beschikbaar')
+                                    <a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
+                                @endif
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
                                 @if($copy->status === 'beschikbaar')
                                     <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">

@@ -183,13 +183,11 @@ class LibraryBookController extends Controller
                 return back()->withErrors(['delete' => 'Verwijderen is niet mogelijk: minstens één exemplaar is niet beschikbaar of uitgeleend.']);
             }
 
-            // The loan module is still in development. Protect active loans if its table exists.
+            // Historiek behouden: ook een teruggebracht exemplaar houdt zijn uitleenregistraties.
             if (\Illuminate\Support\Facades\Schema::hasTable('library_loans')
-                && \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'copy_id')
-                && \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'returned_at')
-                && DB::table('library_loans')->whereIn('copy_id', $copies->pluck('id'))
-                    ->whereNull('returned_at')->exists()) {
-                return back()->withErrors(['delete' => 'Verwijderen is niet mogelijk: er staat nog een actieve uitlening open.']);
+                && $copies->isNotEmpty()
+                && DB::table('library_loans')->whereIn('copy_id', $copies->pluck('id'))->exists()) {
+                return back()->withErrors(['delete' => 'Verwijderen niet mogelijk: het boek heeft een uitleenhistoriek.']);
             }
 
             $book->delete();
@@ -254,15 +252,8 @@ class LibraryBookController extends Controller
                 ]);
             }
 
-            // Also check loan records, even if the copy status is accidentally still 'beschikbaar'.
+            // Bewaar uitleenhistoriek, zonder incompatibele Schema::hasColumn()-aanroepen.
             if (\Illuminate\Support\Facades\Schema::hasTable('library_loans')) {
-                if (! \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'copy_id')
-                    || ! \Illuminate\Support\Facades\Schema::hasColumn('library_loans', 'returned_at')) {
-                    return back()->withErrors([
-                        'delete' => 'Verwijderen is geblokkeerd: de uitleenregistraties kunnen niet veilig gecontroleerd worden.',
-                    ]);
-                }
-
                 if (DB::table('library_loans')->where('copy_id', $copy->id)
                     ->whereNull('returned_at')->exists()) {
                     return back()->withErrors([
