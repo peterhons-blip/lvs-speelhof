@@ -41,8 +41,10 @@ class RunSmartschoolStudentSync implements ShouldQueue
             $summary = collect($lines)->filter(fn ($line) =>
                 str_contains($line, 'Klaar.') || str_contains($line, 'Sync reeds actief')
             )->last();
+            $hasSummary = (bool) $summary && str_contains($summary, 'Klaar.');
+            $hasPartial = $hasSummary && preg_match('/\\b(?:empty_classes|failed_classes|scancodes_conflicts)=[1-9][0-9]*/', $summary);
             DB::table('smartschool_sync_runs')->where('id', $this->runId)->update([
-                'status' => $code === 0 ? 'completed' : 'failed',
+                'status' => $code === 0 ? ($hasPartial ? 'warning' : 'completed') : ($hasPartial ? 'warning' : 'failed'),
                 'summary' => mb_substr((string) ($summary ?: ($code === 0
                     ? 'Synchronisatie voltooid.' : 'Synchronisatie niet geslaagd; zie Laravel-log.')), 0, 1000),
                 'finished_at' => now(), 'updated_at' => now(),
