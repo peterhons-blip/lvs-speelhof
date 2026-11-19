@@ -16,7 +16,7 @@ class SmartschoolStudentSyncController extends Controller
     {
         $access->requireManager($request);
         $ready = Schema::hasTable('smartschool_sync_runs')
-            && Schema::hasColumn('leerlingen', 'scannable_code');
+            && \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code');
 
         $runs = $ready
             ? DB::table('smartschool_sync_runs')->where('school_id', 1)
@@ -24,7 +24,7 @@ class SmartschoolStudentSyncController extends Controller
             : collect();
 
         $pupils = DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)->count();
-        $codes = Schema::hasColumn('leerlingen', 'scannable_code')
+        $codes = \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code')
             ? DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)
                 ->whereNotNull('scannable_code')->count() : 0;
 
@@ -39,7 +39,7 @@ class SmartschoolStudentSyncController extends Controller
             'refresh_scancodes' => ['nullable', 'in:0,1'],
         ]);
         if (! Schema::hasTable('smartschool_sync_runs')
-            || ! Schema::hasColumn('leerlingen', 'scannable_code')) {
+            || ! \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code')) {
             return back()->withErrors(['sync' => 'De migraties voor QR-codes en sync-status zijn nog niet uitgevoerd.']);
         }
 
