@@ -89,6 +89,11 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
         ->name('beheer.staff-sync.start');
 
+    // Alle geregistreerde nachtelijke taken en hun loghistoriek, uitsluitend voor ICT-beheer.
+    Route::get('/beheer/geplande-taken', [\App\Http\Controllers\ScheduledTasksController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.scheduled-tasks.index');
+
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
