@@ -32,8 +32,9 @@ class LibraryAccess
         'administratie' => 'Administratie',
     ];
 
-    // Personal grants apply only to these management sections, never to rights delegation.
+    // Explicit individual grants. Full administration also includes rights delegation.
     public const PERSONAL_MANAGEMENT = [
+        'beheer.full' => 'Volledig beheer (alle modules, gebruikers en rechten)',
         'beheer.staff.manage' => 'Personeelsbeheer',
         'beheer.students.manage' => 'Leerlingenbeheer',
         'beheer.smartschool_test.send' => 'Smartschool-testbericht',
@@ -44,8 +45,8 @@ class LibraryAccess
 
     public function requireIctManager(Request $request): void
     {
-        abort_unless($this->role($request) === 'ict_coordinator', 403,
-            'Alleen de ICT-coördinator kan beheerrechten toekennen of wijzigen.');
+        abort_unless($this->has($request, 'beheer.permissions.manage'), 403,
+            'Je hebt geen toestemming om beheerrechten toe te kennen of te wijzigen.');
     }
 
     public function username(Request $request): string
@@ -84,20 +85,27 @@ class LibraryAccess
             ->contains($permission);
         if (! $known) return false;
 
-        // Existing ICT-coordinator group (id=4 in current test DB) always retains admin access.
+        // ICT role always retains full access, regardless of personal permission settings.
         if ($role === 'ict_coordinator') return true;
-        if (in_array($permission, ['beheer.users.manage', 'beheer.permissions.manage'], true)) return false;
-        // Delegated management rights require an explicit per-user grant, never a school role.
-        if (array_key_exists($permission, self::PERSONAL_MANAGEMENT)) {
-            if (! Schema::hasTable('portal_user_permissions')) return false;
-            $username = $this->username($request);
-            $userId = DB::table('users')->where('smartschool_gebruikersnaam', $username)
+
+        // A grant for 'beheer.full' is personal: the school role Directie alone gives no admin access.
+        $granted = [];
+        if (Schema::hasTable('portal_user_permissions')) {
+            $userId = DB::table('users')->where('smartschool_gebruikersnaam', $this->username($request))
                 ->where('allowed_login', 1)
                 ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
                 ->value('id');
-            return $userId !== null && DB::table('portal_user_permissions')
-                ->where('user_id', $userId)->where('permission', $permission)->exists();
+            if ($userId !== null) {
+                $granted = DB::table('portal_user_permissions')->where('user_id', $userId)
+                    ->pluck('permission')->all();
+            }
         }
+        if (in_array('beheer.full', $granted, true)) return true;
+        if (array_key_exists($permission, self::PERSONAL_MANAGEMENT)) {
+            return in_array($permission, $granted, true);
+        }
+        // Sensitive legacy administration permissions cannot be granted by an entire school role.
+        if (in_array($permission, ['beheer.users.manage', 'beheer.permissions.manage'], true)) return false;
         if (! Schema::hasTable('portal_role_permissions')) return false;
 
         return DB::table('portal_role_permissions')
