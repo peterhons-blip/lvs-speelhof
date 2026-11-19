@@ -62,13 +62,37 @@
                 <a class="library-button library-button-secondary" href="{{ route('beheer.users.index', request()->boolean('toon_geblokkeerd') ? ['toon_geblokkeerd' => 1] : []) }}">Wissen</a>
             @endif
         </form>
-        <form method="post" action="{{ route('beheer.users.bulk') }}" data-bulk-form id="staff-bulk-form" style="display:flex;align-items:end;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;">
+        <form method="post" action="{{ route('beheer.users.bulk') }}" data-bulk-form id="staff-bulk-form" class="portal-bulk-panel" style="border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:1.25rem;margin:1.25rem 0;">
             @csrf
-            <span data-selected-count>0 geselecteerd (deze pagina)</span>
-            <div class="library-field" style="margin:0;"><label for="staff-bulk-action">Bulkactie</label>
-                <select id="staff-bulk-action" data-bulk-action name="action" required><option value="">Kies actie...</option><option value="role">Schoolrol wijzigen</option><option value="allow">Aanmelden toestaan</option><option value="block">Aanmelden blokkeren</option></select></div>
-            <div class="library-field" data-bulk-role hidden style="margin:0;"><label for="staff-bulk-role">Nieuwe schoolrol</label><select id="staff-bulk-role" name="role">@foreach($roles as $slug => $label)<option value="{{ $slug }}">{{ $label }}</option>@endforeach</select></div>
-            <button type="submit" class="library-button library-button-primary">Toepassen op selectie</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                <div>
+                    <h3 style="margin:0 0 0.25rem;font-size:1.1rem;">Meerdere medewerkers aanpassen</h3>
+                    <p style="margin:0;color:#64748b;">Vink hieronder de medewerkers aan die je samen wilt aanpassen.</p>
+                </div>
+                <strong data-selected-count style="white-space:nowrap;">0 geselecteerd (deze pagina)</strong>
+            </div>
+            <div style="display:flex;align-items:end;gap:1rem;flex-wrap:wrap;">
+                <div class="library-field" style="margin:0;flex:1 1 220px;">
+                    <label for="staff-bulk-action">1. Welke wijziging?</label>
+                    <select id="staff-bulk-action" data-bulk-action name="action" required>
+                        <option value="">Selecteer een actie...</option>
+                        <option value="role">Schoolrol aanpassen</option>
+                        <option value="allow">Toegang tot LVS toestaan</option>
+                        <option value="block">Toegang tot LVS blokkeren</option>
+                    </select>
+                </div>
+                <div class="library-field" data-bulk-role style="margin:0;flex:1 1 220px;display:none;">
+                    <label for="staff-bulk-role">2. Welke nieuwe schoolrol?</label>
+                    <select id="staff-bulk-role" name="role" disabled>
+                        <option value="">Selecteer de nieuwe rol...</option>
+                        @foreach($roles as $slug => $label)
+                            <option value="{{ $slug }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="library-button library-button-primary" data-bulk-submit disabled>Wijziging uitvoeren</button>
+            </div>
+            <p data-bulk-summary role="status" aria-live="polite" style="margin:1rem 0 0;color:#475569;">Selecteer medewerkers en kies een actie. Er wordt nog niets gewijzigd.</p>
         </form>
         <div data-management-results>
         <div class="library-table-wrap">
