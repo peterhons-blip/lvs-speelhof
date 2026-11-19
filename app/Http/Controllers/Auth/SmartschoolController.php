@@ -83,6 +83,11 @@ class SmartschoolController extends Controller
             return redirect('/')->with('error', 'Je account is niet gekend in het LVS. Contacteer de beheerder.');
         }
 
+        // 2) Actuele Smartschool-status is onafhankelijk van de handmatige loginblokkering.
+        if ($baseUser->smartschool_active !== null && (int) $baseUser->smartschool_active === 0) {
+            return redirect('/')->with('error', 'Je account is niet meer actief volgens Smartschool.');
+        }
+
         // 2) Is login toegestaan / account actief?
         if ((int)($baseUser->allowed_login ?? 0) !== 1) {   // of: $baseUser->active
             return redirect('/')->with('error', 'Je account is gedeactiveerd. Contacteer de beheerder.');
