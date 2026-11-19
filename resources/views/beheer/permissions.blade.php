@@ -14,7 +14,7 @@
         <div>
             <p class="portal-eyebrow">PORTAALBEHEER</p>
             <h1>Rollen en rechten</h1>
-            <p>Beheer per schoolrol welke modules zichtbaar zijn en welke acties of instellingen aangepast mogen worden.</p>
+            <p>Bepaal per schoolrol welke modules en beheerschermen toegankelijk zijn. De gekozen rechten gelden voor iedereen met die schoolrol.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('beheer.users.index') }}">Personeelsbeheer</a>
     </div>
@@ -22,41 +22,9 @@
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-    <section class="library-form-card" style="margin-bottom:1.5rem;">
-        <h2>Persoonlijke beheerrechten</h2>
-        <p class="portal-users-card-intro">Geef een individuele medewerker toegang tot specifieke onderdelen van <strong>Beheer</strong>, zonder de schoolrol van die medewerker te veranderen. Met <strong>Volledig beheer</strong> kan bijvoorbeeld een directeur alle beheerschermen openen, inclusief Rollen en rechten, zonder van schoolrol te veranderen. Dit wordt uitsluitend per medewerker toegekend en niet automatisch aan alle directieleden.</p>
-        @if(!$personalReady)
-            <div class="library-errors" role="alert">De tabel voor persoonlijke beheerrechten is nog niet geïnstalleerd. Voer de gerichte migratie uit voordat je individuele rechten kunt opslaan.</div>
-        @else
-            <form method="post" action="{{ route('beheer.permissions.personal.update') }}" id="personal-permissions-form">
-                @csrf
-                <div class="library-field">
-                    <label for="personal-permissions-user">1. Kies een personeelslid</label>
-                    <select id="personal-permissions-user" name="user_id" required style="width:100%;">
-                        <option value="">Selecteer medewerker...</option>
-                        @foreach($personnel as $member)
-                            <option value="{{ $member->id }}">{{ trim(($member->voornaam ?? '').' '.($member->name ?? '')) }} ({{ $member->smartschool_gebruikersnaam }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <p style="font-weight:700;margin:1.25rem 0 .75rem;">2. Welke beheersonderdelen mag deze persoon gebruiken?</p>
-                <div class="portal-permission-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem;">
-                    @foreach($personalPermissions as $permission => $label)
-                        <label class="portal-permission-option" @if($permission === 'beheer.full') style="grid-column:1/-1;border:1px solid #b5c8d6;border-radius:10px;padding:1rem;background:#f2f7fa;" @endif>
-                            <input type="checkbox" name="permissions[]" value="{{ $permission }}" data-personal-permission disabled>
-                            <span><strong>{{ $label }}</strong>@if($permission === 'beheer.full')<small style="display:block;color:#64748b;margin-top:.25rem;">Geeft toegang tot alle beheermodules, inclusief het toekennen van rechten aan andere medewerkers.</small>@endif</span>
-                        </label>
-                    @endforeach
-                </div>
-                <p id="personal-permissions-summary" role="status" style="margin:1rem 0;color:#64748b;">Kies eerst een medewerker. De huidige persoonlijke rechten worden dan ingevuld.</p>
-                <button id="personal-permissions-submit" class="library-button library-button-primary" type="submit" disabled>Persoonlijke beheerrechten opslaan</button>
-            </form>
-        @endif
-    </section>
-
     <div class="portal-roles-intro">
         <span aria-hidden="true" class="portal-roles-intro-icon">✓</span>
-        <p>Alle rollen staan standaard dicht. Klik op een rol om de rechten te bekijken of aan te passen. <strong>Niet aangevinkt = geen toegang.</strong></p>
+        <p>Open een schoolrol en vink ook onder <strong>Portaalbeheer</strong> de gewenste beheerschermen aan. <strong>Niet aangevinkt = geen toegang.</strong></p>
     </div>
 
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
@@ -82,7 +50,7 @@
                 $assigned = $stored[$role] ?? [];
                 $available = collect($modules)->flatMap(fn ($module) =>
                     collect($module['permissions'] ?? [])->keys()->reject(
-                        fn ($key) => in_array($key, array_merge(['beheer.users.manage', 'beheer.permissions.manage'], array_keys(\App\Services\LibraryAccess::PERSONAL_MANAGEMENT)), true)
+                        fn ($key) => in_array($key, [], true)
                     )
                 )->values()->all();
                 $enabledCount = count(array_intersect($assigned, $available));
@@ -110,7 +78,7 @@
                     <div class="portal-permission-modules">
                         @foreach($modules as $module)
                             @php
-                                $rights = collect($module['permissions'] ?? [])->except(array_merge(['beheer.users.manage', 'beheer.permissions.manage'], array_keys(\App\Services\LibraryAccess::PERSONAL_MANAGEMENT)));
+                                $rights = collect($module['permissions'] ?? []);
                                 $moduleActive = count(array_intersect($assigned, $rights->keys()->all()));
                             @endphp
                             @if($rights->isNotEmpty())
@@ -151,27 +119,6 @@
 @push('scripts')
 <script>
 (() => {
-    const personSelect = document.getElementById('personal-permissions-user');
-    if (personSelect) {
-        const grants = @json($personalGrants);
-        const checkboxes = [...document.querySelectorAll('[data-personal-permission]')];
-        const submit = document.getElementById('personal-permissions-submit');
-        const summary = document.getElementById('personal-permissions-summary');
-        const refresh = () => {
-            const selected = personSelect.value;
-            const assigned = grants[selected] || [];
-            for (const box of checkboxes) {
-                box.disabled = !selected;
-                box.checked = selected !== '' && assigned.includes(box.value);
-            }
-            submit.disabled = !selected;
-            summary.textContent = selected
-                ? 'De aangevinkte onderdelen zijn de huidige persoonlijke beheerrechten. Volledig beheer omvat ook Rollen en rechten. Wijzig de selectie en klik op Opslaan.'
-                : 'Kies eerst een medewerker. De huidige persoonlijke rechten worden dan ingevuld.';
-        };
-        personSelect.addEventListener('change', refresh);
-        refresh();
-    }
     document.querySelectorAll('.portal-role-form').forEach(form => {
         const panel = form.closest('[data-role-panel]');
         const checkboxes = [...form.querySelectorAll('input[name="permissions[]"]')];
