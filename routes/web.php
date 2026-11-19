@@ -98,6 +98,19 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->where('task', '[a-z0-9_]+')
         ->name('beheer.scheduled-tasks.log');
 
+    // Leerlingenbeheer: bestaande leerlingen bekijken en beperkte gegevens corrigeren, uitsluitend ICT.
+    Route::get('/beheer/leerlingen', [\App\Http\Controllers\StudentManagementController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.students.index');
+    Route::get('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'show'])
+        ->whereNumber('student')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.students.show');
+    Route::put('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'update'])
+        ->whereNumber('student')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.students.update');
+
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
