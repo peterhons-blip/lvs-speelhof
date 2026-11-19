@@ -21,7 +21,7 @@ class ScheduledTasksController extends Controller
 
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.scheduled_tasks.view');
 
         // These are all tasks currently registered in routes/console.php.
         $scheduledTasks = [
@@ -49,7 +49,7 @@ class ScheduledTasksController extends Controller
     }
     public function log(Request $request, LibraryAccess $access, string $task): Response
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.scheduled_tasks.view');
         abort_unless(array_key_exists($task, self::LOG_FILES), 404);
         $path = storage_path('logs/'.self::LOG_FILES[$task]);
         if (! is_file($path) || ! is_readable($path)) {
