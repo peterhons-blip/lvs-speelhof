@@ -77,6 +77,7 @@
                                         @csrf
                                         <button type="submit" class="library-button library-button-secondary">Inleveren</button>
                                     </form>
+                                    <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.reminders.edit', $loan->id) }}">Herinneringen</a>
                                     <form method="post" action="{{ route('bibliotheek.loans.extend', $loan->id) }}">
                                         @csrf
                                         <button type="submit" class="library-button library-button-secondary">Verlengen ({{ $loan->extensions }})</button>
