@@ -45,8 +45,8 @@
         <div class="portal-users-note"><span aria-hidden="true">i</span><p>Je kent enkel een rol toe aan een <strong>bestaand personeelsaccount</strong>. De gebruikersnaam en de huidige aanmeldrechten blijven behouden.</p></div>
     </section>
 
-    <section class="library-form-card">
-        <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
+    <section class="library-form-card" data-live-management>
+        <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total" data-management-total>{{ $users->total() }} medewerkers</span></div>
         <nav class="portal-users-account-filters" aria-label="Accounts filteren" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin:1rem 0 1.25rem;">
             <a href="{{ route('beheer.users.index', request()->filled('zoek') ? ['zoek' => request('zoek')] : []) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-secondary' : 'library-button-primary' }}" @if(!request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Actieve accounts</a>
             <a href="{{ route('beheer.users.index', array_merge(['toon_geblokkeerd' => 1], request()->filled('zoek') ? ['zoek' => request('zoek')] : [])) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-primary' : 'library-button-secondary' }}" @if(request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Alle accounts</a>
@@ -55,20 +55,30 @@
             @if(request()->boolean('toon_geblokkeerd'))<input type="hidden" name="toon_geblokkeerd" value="1">@endif
             <div class="library-field" style="flex:1 1 250px;margin:0;">
                 <label for="personeel-zoeken">Zoek medewerker of groep</label>
-                <input id="personeel-zoeken" type="search" name="zoek" maxlength="100" value="{{ request('zoek') }}" placeholder="Naam, Smartschool-account of groep...">
+                <input id="personeel-zoeken" data-live-search type="search" name="zoek" maxlength="100" value="{{ request('zoek') }}" placeholder="Naam, Smartschool-account of groep...">
             </div>
             <button type="submit" class="library-button library-button-primary">Zoeken</button>
             @if(request()->filled('zoek'))
                 <a class="library-button library-button-secondary" href="{{ route('beheer.users.index', request()->boolean('toon_geblokkeerd') ? ['toon_geblokkeerd' => 1] : []) }}">Wissen</a>
             @endif
         </form>
+        <form method="post" action="{{ route('beheer.users.bulk') }}" data-bulk-form id="staff-bulk-form" style="display:flex;align-items:end;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;">
+            @csrf
+            <span data-selected-count>0 geselecteerd (deze pagina)</span>
+            <div class="library-field" style="margin:0;"><label for="staff-bulk-action">Bulkactie</label>
+                <select id="staff-bulk-action" data-bulk-action name="action" required><option value="">Kies actie...</option><option value="role">Schoolrol wijzigen</option><option value="allow">Aanmelden toestaan</option><option value="block">Aanmelden blokkeren</option></select></div>
+            <div class="library-field" data-bulk-role hidden style="margin:0;"><label for="staff-bulk-role">Nieuwe schoolrol</label><select id="staff-bulk-role" name="role">@foreach($roles as $slug => $label)<option value="{{ $slug }}">{{ $label }}</option>@endforeach</select></div>
+            <button type="submit" class="library-button library-button-primary">Toepassen op selectie</button>
+        </form>
+        <div data-management-results>
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
+                <thead><tr><th><input type="checkbox" data-select-all aria-label="Selecteer iedereen op deze pagina"></th><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
                 <tbody>
                 @forelse($users as $user)
                     @php($current = array_search($user->groupname, \App\Services\LibraryAccess::ROLES, true))
                     <tr>
+                        <td><input type="checkbox" data-bulk-id form="staff-bulk-form" name="ids[]" value="{{ $user->id }}" aria-label="Selecteer {{ $user->voornaam }} {{ $user->name }}"></td>
                         <td><strong>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}</strong>
                             @if(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
                         </td>
@@ -97,7 +107,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Geen personeelsaccounts gevonden.</td></tr>
+                    <tr><td colspan="6">Geen personeelsaccounts gevonden.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -128,6 +138,7 @@
                 </div>
             @endif
         </nav>
+        </div>
     </section>
 </main>
 @endsection
@@ -224,4 +235,5 @@
     });
 })();
 </script>
+<script src="{{ asset('js/management-live.js') }}?v=1" defer></script>
 @endpush
