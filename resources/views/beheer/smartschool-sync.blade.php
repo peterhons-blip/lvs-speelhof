@@ -97,11 +97,7 @@
                     @foreach($scheduledTasks as $taskKey => $task)
                         @php($last = $lastTaskRuns->get($taskKey))
                         @php($lastStatus = $last?->status ?? 'unknown')
-                        @php($lastStatusText = [
-                            'running' => 'Bezig', 'completed' => 'Gelukt',
-                            'warning' => 'Aandacht nodig', 'failed' => 'Mislukt',
-                            'unknown' => 'Nog geen registratie'
-                        ][$lastStatus] ?? 'Onbekend')
+                        @php($lastStatusText = ['running' => 'Bezig', 'completed' => 'Gelukt', 'warning' => 'Aandacht nodig', 'failed' => 'Mislukt', 'unknown' => 'Nog geen registratie'][$lastStatus] ?? 'Onbekend')
                         <tr>
                             <td>
                                 <strong>{{ $task['title'] }}</strong>
