@@ -45,7 +45,6 @@ return [
     'beheer' => [
         'label' => 'Portaalbeheer',
         'permissions' => [
-            'beheer.users.manage' => 'Gebruikersrollen toekennen en intrekken',
             'beheer.permissions.manage' => 'Rechten per rol en module beheren',
             'beheer.staff.manage' => 'Personeelsbeheer: medewerkers en schoolrollen beheren',
             'beheer.students.manage' => 'Leerlingenbeheer: leerlinggegevens en status beheren',
