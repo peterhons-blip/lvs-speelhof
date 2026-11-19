@@ -12,6 +12,7 @@ class LibraryAccess
     // Do not rename the four legacy groups or change their IDs.
     public const ROLES = [
         'leerkracht' => 'leerkracht',
+        'administratie' => 'administratie',
         'directie' => 'directeur',
         'leerlingbegeleiding' => 'leerlingbegeleider',
         'ict_coordinator' => 'ICT-coördinator',
@@ -28,6 +29,7 @@ class LibraryAccess
         'boekhouding' => 'Boekhouding',
         'tac' => 'TAC',
         'leerkracht' => 'Leerkracht',
+        'administratie' => 'Administratie',
     ];
 
     public function username(Request $request): string
