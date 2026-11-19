@@ -48,9 +48,20 @@
     <section class="library-form-card">
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
         <nav class="portal-users-account-filters" aria-label="Accounts filteren" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin:1rem 0 1.25rem;">
-            <a href="{{ route('beheer.users.index') }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-secondary' : 'library-button-primary' }}" @if(!request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Actieve accounts</a>
-            <a href="{{ route('beheer.users.index', ['toon_geblokkeerd' => 1]) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-primary' : 'library-button-secondary' }}" @if(request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Alle accounts</a>
+            <a href="{{ route('beheer.users.index', request()->filled('zoek') ? ['zoek' => request('zoek')] : []) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-secondary' : 'library-button-primary' }}" @if(!request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Actieve accounts</a>
+            <a href="{{ route('beheer.users.index', array_merge(['toon_geblokkeerd' => 1], request()->filled('zoek') ? ['zoek' => request('zoek')] : [])) }}" class="library-button {{ request()->boolean('toon_geblokkeerd') ? 'library-button-primary' : 'library-button-secondary' }}" @if(request()->boolean('toon_geblokkeerd')) aria-current="page" @endif>Alle accounts</a>
         </nav>
+        <form method="get" action="{{ route('beheer.users.index') }}" class="portal-users-search-form" style="display:flex;align-items:end;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
+            @if(request()->boolean('toon_geblokkeerd'))<input type="hidden" name="toon_geblokkeerd" value="1">@endif
+            <div class="library-field" style="flex:1 1 250px;margin:0;">
+                <label for="personeel-zoeken">Zoek medewerker of groep</label>
+                <input id="personeel-zoeken" type="search" name="zoek" maxlength="100" value="{{ request('zoek') }}" placeholder="Naam, Smartschool-account of groep...">
+            </div>
+            <button type="submit" class="library-button library-button-primary">Zoeken</button>
+            @if(request()->filled('zoek'))
+                <a class="library-button library-button-secondary" href="{{ route('beheer.users.index', request()->boolean('toon_geblokkeerd') ? ['toon_geblokkeerd' => 1] : []) }}">Wissen</a>
+            @endif
+        </form>
         <div class="library-table-wrap">
             <table class="library-table">
                 <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
@@ -59,7 +70,7 @@
                     @php($current = array_search($user->groupname, \App\Services\LibraryAccess::ROLES, true))
                     <tr>
                         <td><strong>{{ trim(($user->voornaam ?? '').' '.($user->name ?? '')) ?: '—' }}</strong>
-                            @if($user->smartschool_active !== null && !(int) $user->smartschool_active)<div class="library-help">Niet meer actief in Smartschool</div>@elseif(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
+                            @if(!(int) $user->allowed_login)<div class="library-help">Aanmelding geblokkeerd</div>@endif
                         </td>
                         <td><strong>{{ $user->smartschool_gebruikersnaam ?: $user->gebruikersnaam }}</strong></td>
                         <td>{{ $user->groupname ?: 'Geen groep' }}</td>
@@ -80,7 +91,7 @@
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="allowed_login" value="{{ (int) $user->allowed_login ? '0' : '1' }}">
-                                <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ $user->smartschool_active !== null && !(int) $user->smartschool_active ? 'Smartschool inactief' : ((int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd') }}</span>
+                                <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ (int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd' }}</span>
                                 <button type="submit" class="library-button library-button-secondary">{{ (int) $user->allowed_login ? 'Blokkeren' : 'Toestaan' }}</button>
                             </form>
                         </td>
