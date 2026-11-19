@@ -63,25 +63,10 @@
                 <thead><tr><th>Gestart door</th><th>Aangevraagd</th><th>Status</th><th>Resultaat</th></tr></thead>
                 <tbody>
                 @forelse($runs as $run)
-                    @php($statusText = [
-                        'waiting' => 'In wachtrij',
-                        'running' => 'Bezig',
-                        'completed' => 'Voltooid',
-                        'warning' => 'Deels voltooid',
-                        'failed' => 'Mislukt',
-                    ][$run->status] ?? $run->status)
-                    @php
-                        // Existing runs with actual imports but empty official classes
-                        // were previously marked failed. Preserve raw state, clarify display.
-                        $imported = preg_match('/Processed=([1-9][0-9]*)/', $run->summary ?? '');
-                        $emptyOnly = preg_match('/failed_classes=0,\s*empty_classes=[1-9][0-9]*/', $run->summary ?? '');
-                        $displayStatus = $run->status === 'failed' && $imported && $emptyOnly ? 'warning' : $run->status;
-                        $displayText = $displayStatus === 'warning' ? 'Deels voltooid' : $statusText;
-                    @endphp
                     <tr>
                         <td>{{ $run->requested_by }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($run->created_at)->timezone('Europe/Brussels')->format('d/m/Y H:i') }}</td>
-                        <td><span class="portal-sync-status portal-sync-status-{{ $displayStatus }}">{{ $displayText }}</span></td>
+                        <td><span class="portal-sync-status portal-sync-status-{{ $run->display_status }}">{{ $run->display_status_text }}</span></td>
                         <td class="portal-sync-result">{{ $run->display_summary }}</td>
                     </tr>
                 @empty
