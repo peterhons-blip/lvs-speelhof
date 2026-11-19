@@ -91,7 +91,7 @@ class LibraryLoanController extends Controller
             ->where('gebruikersnaam', $value)
             ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
 
-        if (! $student && \Illuminate\Support\Facades\Schema::hasColumn('leerlingen', 'scannable_code')) {
+        if (! $student && \App\Support\LegacyDatabase\App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code')) {
             $student = DB::table('leerlingen')
                 ->where('scannable_code', $value)->where('active', 1)
                 ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first();
