@@ -67,6 +67,15 @@ class PortalPermissionsController extends Controller
         $access->requireManager($request);
         // Always read from the existing LVS tables; no second personnel database.
         $search = trim((string) $request->query('zoek', ''));
+        $sortColumns = [
+            'medewerker' => 'users.name',
+            'account' => 'users.smartschool_gebruikersnaam',
+            'groep' => 'groups.groupname',
+            'aanmelden' => 'users.allowed_login',
+        ];
+        $sort = (string) $request->query('sort', 'groep');
+        if (! array_key_exists($sort, $sortColumns)) $sort = 'groep';
+        $direction = strtolower((string) $request->query('richting', 'asc')) === 'desc' ? 'desc' : 'asc';
         $users = DB::table('users')->leftJoin('groups', 'groups.id', '=', 'users.groupId')
             // Smartschool-inactieve medewerkers blijven altijd buiten de beheerlijst.
             ->where(function ($q) {
@@ -84,17 +93,16 @@ class PortalPermissionsController extends Controller
             })
             ->select('users.id', 'users.gebruikersnaam', 'users.voornaam', 'users.name',
                 'users.groupId', 'users.allowed_login', 'users.smartschool_active', 'users.smartschool_gebruikersnaam', 'groups.groupname')
-            ->orderByRaw("CASE groups.groupname
-                WHEN 'ICT-coördinator' THEN 0
-                WHEN 'directeur' THEN 1
-                WHEN 'secretariaat' THEN 2
-                WHEN 'leerlingbegeleider' THEN 3
-                WHEN 'boekhouding' THEN 4
-                WHEN 'TAC' THEN 5
-                WHEN 'administratie' THEN 6
-                WHEN 'leerkracht' THEN 7
-                ELSE 7 END")
-            ->orderBy('users.name')->orderBy('users.voornaam')->paginate(40)->withQueryString();
+            ->when($sort === 'groep', function ($query) use ($direction) {
+                $query->orderByRaw("CASE groups.groupname
+                    WHEN 'ICT-coördinator' THEN 0 WHEN 'directeur' THEN 1
+                    WHEN 'secretariaat' THEN 2 WHEN 'leerlingbegeleider' THEN 3
+                    WHEN 'boekhouding' THEN 4 WHEN 'TAC' THEN 5
+                    WHEN 'administratie' THEN 6 WHEN 'leerkracht' THEN 7
+                    ELSE 8 END ".($direction === 'desc' ? 'DESC' : 'ASC'));
+            }, fn ($query) => $query->orderBy($sortColumns[$sort], $direction))
+            ->orderBy('users.name')->orderBy('users.voornaam')->orderBy('users.id')
+            ->paginate(40)->withQueryString();
         $roles = LibraryAccess::LABELS;
         $groups = DB::table('groups')->pluck('id', 'groupname');
         return view('beheer.users', compact('users', 'roles', 'groups'));
