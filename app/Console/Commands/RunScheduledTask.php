@@ -17,7 +17,7 @@ class RunScheduledTask extends Command
         'becoming_18' => ['command' => 'leerlingen:check-18'],
         'birthdays' => ['command' => 'verjaardagen:check'],
         'student_sync' => ['command' => 'smartschool:sync-leerlingen', 'parameters' => ['--schoolid' => 1]],
-        'staff_sync' => ['command' => 'smartschool:sync-personeel', 'parameters' => ['--schoolid' => 1]],
+        'staff_sync' => ['command' => 'smartschool:sync-personeel', 'parameters' => ['--schoolid' => 1, '--apply' => true]],
         'library_reminders' => ['command' => 'bibliotheek:herinneringen'],
     ];
 
@@ -101,9 +101,9 @@ class RunScheduledTask extends Command
         }
         if ($key === 'staff_sync') {
             if (preg_match('/Nieuw:\s*(\d+).*?Bijwerken:\s*(\d+).*?Uitschakelen:\s*(\d+)/u', $output, $m)) {
-                return "Preview: {$m[1]} nieuw, {$m[2]} bij te werken, {$m[3]} mogelijk inactief.";
+                return "Synchronisatie: {$m[1]} nieuw, {$m[2]} bij te werken, {$m[3]} inactief te markeren.";
             }
-            return 'Personeelspreview uitgevoerd; controleer de beveiligde serverlog.';
+            return 'Personeelssync uitgevoerd; controleer de beveiligde serverlog.';
         }
         if ($key === 'library_reminders') {
             if (str_contains($output, 'Smartschool-herinneringen staan uit')) return 'Geen berichten verzonden: herinneringen staan uit.';
