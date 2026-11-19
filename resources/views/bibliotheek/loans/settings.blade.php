@@ -43,7 +43,10 @@
         </div>
         <div class="library-field">
             <label for="smartschool_enabled">Smartschool-berichten vanuit bib</label>
-            <select id="smartschool_enabled" name="smartschool_enabled">
+            @if(!app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
+                <input type="hidden" name="smartschool_enabled" value="{{ $settings['smartschool_enabled'] ?? '0' }}">
+            @endif
+            <select id="smartschool_enabled" name="smartschool_enabled" @disabled(!app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))>
                 <option value="0" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '0')>Uitgeschakeld (veilig voor testen)</option>
                 <option value="1" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '1')>Ingeschakeld</option>
             </select>
