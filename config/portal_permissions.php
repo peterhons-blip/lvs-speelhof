@@ -47,6 +47,7 @@ return [
         'permissions' => [
             'beheer.users.manage' => 'Gebruikersrollen toekennen en intrekken',
             'beheer.permissions.manage' => 'Rechten per rol en module beheren',
+            'beheer.full' => 'Volledig beheer inclusief rechtenbeheer (uitsluitend persoonlijk toekenbaar)',
             'beheer.staff.manage' => 'Personeelsbeheer openen en medewerkers aanpassen (persoonlijk recht)',
             'beheer.students.manage' => 'Leerlingenbeheer openen en gegevens aanpassen (persoonlijk recht)',
             'beheer.smartschool_test.send' => 'Smartschool-testberichten verzenden (persoonlijk recht)',
