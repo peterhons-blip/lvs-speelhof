@@ -15,7 +15,7 @@
             <h1>Gebruikersbeheer</h1>
             <p>De medewerkers komen rechtstreeks uit de bestaande LVS-tabellen <strong>users</strong> en <strong>groups</strong>. Er worden geen dubbele gebruikers aangemaakt.</p>
         </div>
-        <a class="library-button library-button-secondary" href="{{ route('beheer.permissions.index') }}">Rollen en rechten</a>
+        <div class="portal-role-actions"><a class="library-button library-button-secondary" href="{{ route('beheer.staff-sync.index') }}">Personeel synchroniseren</a><a class="library-button library-button-secondary" href="{{ route('beheer.permissions.index') }}">Rollen en rechten</a></div>
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -47,6 +47,7 @@
 
     <section class="library-form-card">
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total">{{ $users->total() }} medewerkers</span></div>
+        <p><a href="{{ route('beheer.users.index', request('toon_geblokkeerd') ? [] : ['toon_geblokkeerd' => 1]) }}">{{ request('toon_geblokkeerd') ? 'Alleen actieve accounts tonen' : 'Ook geblokkeerde accounts tonen' }}</a></p>
         <div class="library-table-wrap">
             <table class="library-table">
                 <thead><tr><th>Medewerker</th><th>Smartschool-account</th><th>Huidige groep</th><th>Nieuwe rol</th><th>Aanmelden</th></tr></thead>
