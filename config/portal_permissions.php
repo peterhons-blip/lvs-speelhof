@@ -47,6 +47,12 @@ return [
         'permissions' => [
             'beheer.users.manage' => 'Gebruikersrollen toekennen en intrekken',
             'beheer.permissions.manage' => 'Rechten per rol en module beheren',
+            'beheer.staff.manage' => 'Personeelsbeheer openen en medewerkers aanpassen (persoonlijk recht)',
+            'beheer.students.manage' => 'Leerlingenbeheer openen en gegevens aanpassen (persoonlijk recht)',
+            'beheer.smartschool_test.send' => 'Smartschool-testberichten verzenden (persoonlijk recht)',
+            'beheer.student_sync.manage' => 'Leerlingensynchronisatie beheren (persoonlijk recht)',
+            'beheer.staff_sync.manage' => 'Personeelssynchronisatie beheren (persoonlijk recht)',
+            'beheer.scheduled_tasks.view' => 'Geplande taken en logs bekijken (persoonlijk recht)',
         ],
     ],
 ];
