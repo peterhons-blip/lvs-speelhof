@@ -146,6 +146,22 @@ class LibraryLoanController extends Controller
             'Exemplaar '.$barcode.' uitgeleend.' . ($sent ? ' Smartschool-bevestiging verstuurd.' : ''));
     }
 
+    public function returnByBarcode(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['barcode' => ['required', 'string', 'max:60']]);
+
+        $loan = DB::table('library_loans as loans')
+            ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
+            ->where('copies.barcode', trim($data['barcode']))
+            ->whereNull('loans.returned_at')->select('loans.id')->first();
+
+        if (! $loan) {
+            return back()->withErrors(['barcode' => 'Geen openstaande uitlening voor deze barcode gevonden.']);
+        }
+
+        return $this->returnLoan((int) $loan->id);
+    }
+
     public function returnLoan(int $loan): RedirectResponse
     {
         return DB::transaction(function () use ($loan) {
