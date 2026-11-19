@@ -151,7 +151,8 @@ class SmartschoolSyncStaff extends Command
             if (! isset($accounts[$username]) && isset($existing[$username])
                 && ($existing[$username]->schoolid === null || (int) $existing[$username]->schoolid === $schoolId)
                 && ! in_array($username, self::SERVICE_ACCOUNTS, true)
-                && $existing[$username]->smartschool_active !== 0) {
+                && ($existing[$username]->smartschool_active === null
+                    || (int) $existing[$username]->smartschool_active !== 0)) {
                 $disable[] = $username;
             }
         }
