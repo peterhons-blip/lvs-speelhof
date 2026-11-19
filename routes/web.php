@@ -73,6 +73,14 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:5,1'])
         ->name('beheer.smartschool-test.send');
 
+    // Leerlingensynchronisatie handmatig starten via de wachtrij (alleen ICT-beheer).
+    Route::get('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.smartschool-sync.index');
+    Route::post('/beheer/leerlingensync', [\App\Http\Controllers\SmartschoolStudentSyncController::class, 'start'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:3,1'])
+        ->name('beheer.smartschool-sync.start');
+
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
