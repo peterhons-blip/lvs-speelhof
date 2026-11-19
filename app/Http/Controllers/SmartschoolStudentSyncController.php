@@ -53,6 +53,8 @@ class SmartschoolStudentSyncController extends Controller
                 'description' => 'Verjaardagen van leerlingen en personeel controleren en berichten versturen.'],
             'student_sync' => ['title' => 'Leerlingensynchronisatie', 'time' => '03.00',
                 'description' => 'Klassen, actieve leerlingen, wijzigingen en Smartschool-QR-codes bijwerken.'],
+            'staff_sync' => ['title' => 'Personeelssynchronisatie', 'time' => '04.00',
+                'description' => 'Personeelsaccounts bijwerken en verdwenen medewerkers inactief markeren.'],
             'library_reminders' => ['title' => 'Bibliotheekherinneringen', 'time' => '08.00',
                 'description' => 'Vervallende boeken controleren; berichten alleen als de bibliotheekinstelling actief is.'],
         ];
