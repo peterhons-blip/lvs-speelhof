@@ -12,7 +12,7 @@ class StudentManagementController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.students.manage');
         $search = mb_substr(trim((string) $request->query('zoek', '')), 0, 100);
         $showInactive = $request->boolean('toon_inactief');
         $sortColumns = [
@@ -48,7 +48,7 @@ class StudentManagementController extends Controller
 
     public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.students.manage');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
@@ -71,7 +71,7 @@ class StudentManagementController extends Controller
 
     public function show(Request $request, LibraryAccess $access, int $student): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.students.manage');
         $studentRow = DB::table('leerlingen')
             ->leftJoin('klassen', 'klassen.id', '=', 'leerlingen.klasid')
             ->where('leerlingen.id', $student)
@@ -88,7 +88,7 @@ class StudentManagementController extends Controller
 
     public function update(Request $request, LibraryAccess $access, int $student): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.students.manage');
         $data = $request->validate([
             'voornaam' => ['required', 'string', 'max:120'],
             'naam' => ['required', 'string', 'max:120'],
