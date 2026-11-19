@@ -256,14 +256,25 @@ class LibraryLoanController extends Controller
             ->with('success', 'Herinneringsinstellingen voor deze uitlening aangepast.');
     }
 
+    private function authorizeSettings(Request $request): void
+    {
+        $username = strtolower(trim($this->username($request)));
+        $configured = preg_split('/[;,\s]+/', strtolower((string) config('library.manager_usernames', ''))) ?: [];
+        $allowed = array_filter(array_map('trim', $configured));
+        abort_unless($username !== '' && in_array($username, $allowed, true), 403,
+            'Alleen aangestelde bibliotheekbeheerders kunnen deze instellingen wijzigen.');
+    }
+
     public function settings(): View
     {
+        $this->authorizeSettings(request());
         $settings = DB::table('library_settings')->pluck('value', 'key');
         return view('bibliotheek.loans.settings', compact('settings'));
     }
 
     public function saveSettings(Request $request): RedirectResponse
     {
+        $this->authorizeSettings($request);
         $values = $request->validate([
             'loan_days' => ['required', 'integer', 'min:1', 'max:365'],
             'max_loans' => ['required', 'integer', 'min:1', 'max:30'],
