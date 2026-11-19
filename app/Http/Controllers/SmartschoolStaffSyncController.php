@@ -22,7 +22,14 @@ class SmartschoolStaffSyncController extends Controller
             && \App\Support\LegacyDatabaseSchema::hasColumn('users', 'smartschool_active');
         $runs = $ready ? DB::table('smartschool_staff_sync_runs')
             ->where('school_id', 1)->orderByDesc('id')->limit(15)->get() : collect();
-        return view('beheer.staff-sync', compact('ready', 'runs'));
+        $taskMonitoringEnabled = Schema::hasTable('scheduled_task_runs');
+        $lastScheduledRun = $taskMonitoringEnabled
+            ? DB::table('scheduled_task_runs')->where('task_key', 'staff_sync')->orderByDesc('id')->first()
+            : null;
+        $scheduledHistory = $taskMonitoringEnabled
+            ? DB::table('scheduled_task_runs')->where('task_key', 'staff_sync')->orderByDesc('id')->limit(10)->get()
+            : collect();
+        return view('beheer.staff-sync', compact('ready', 'runs', 'taskMonitoringEnabled', 'lastScheduledRun', 'scheduledHistory'));
     }
 
     public function start(Request $request, LibraryAccess $access): RedirectResponse
