@@ -1,0 +1,183 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+
+class LibraryLoanController extends Controller
+{
+    private function setting(string $key, int $fallback): int
+    {
+        return max(1, (int) (DB::table('library_settings')->where('key', $key)->value('value') ?: $fallback));
+    }
+
+    private function username(Request $request): string
+    {
+        return (string) data_get($request->session()->get('ss_user'), 'gebruikersnaam',
+            data_get($request->session()->get('ss_user'), 'id', ''));
+    }
+
+    public function index(Request $request): View
+    {
+        $search = trim((string) $request->query('q', ''));
+        $mode = (string) $request->query('filter', 'open');
+        if (! in_array($mode, ['open', 'overdue', 'returned', 'all'], true)) $mode = 'open';
+
+        $query = DB::table('library_loans as loans')
+            ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
+            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
+            ->leftJoin('leerlingen as leerlingen', 'leerlingen.id', '=', 'loans.leerling_id')
+            ->select('loans.*', 'copies.barcode', 'books.title',
+                'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam');
+
+        if ($mode === 'open') $query->whereNull('loans.returned_at');
+        if ($mode === 'overdue') $query->whereNull('loans.returned_at')->where('loans.due_date', '<', now()->toDateString());
+        if ($mode === 'returned') $query->whereNotNull('loans.returned_at');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('copies.barcode', 'like', "%{$search}%")
+                    ->orWhere('books.title', 'like', "%{$search}%")
+                    ->orWhere('leerlingen.naam', 'like', "%{$search}%")
+                    ->orWhere('leerlingen.voornaam', 'like', "%{$search}%")
+                    ->orWhere('leerlingen.gebruikersnaam', 'like', "%{$search}%");
+            });
+        }
+
+        $loans = $query->orderByRaw('CASE WHEN loans.returned_at IS NULL AND loans.due_date < CURDATE() THEN 0 ELSE 1 END')
+            ->orderByDesc('loans.id')->paginate(30)->withQueryString();
+
+        $totals = [
+            'open' => DB::table('library_loans')->whereNull('returned_at')->count(),
+            'overdue' => DB::table('library_loans')->whereNull('returned_at')->where('due_date', '<', now()->toDateString())->count(),
+            'returned' => DB::table('library_loans')->whereNotNull('returned_at')->count(),
+        ];
+
+        return view('bibliotheek.loans.index', compact('loans', 'totals', 'search', 'mode'));
+    }
+
+    public function create(Request $request): View
+    {
+        $barcode = trim((string) $request->query('barcode', ''));
+        $username = trim((string) $request->query('leerling', ''));
+        $copies = DB::table('library_copies as copies')
+            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
+            ->where('copies.status', 'beschikbaar')
+            ->select('copies.id', 'copies.barcode', 'books.title')
+            ->orderBy('books.title')->limit(250)->get();
+
+        $leerlingen = DB::table('leerlingen')
+            ->where('active', 1)
+            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')
+            ->orderBy('naam')->limit(250)->get();
+
+        $copy = $barcode !== '' ? DB::table('library_copies as copies')
+            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
+            ->where('copies.barcode', $barcode)->select('copies.id', 'copies.barcode', 'books.title', 'copies.status')->first() : null;
+
+        $leerling = $username !== '' ? DB::table('leerlingen')
+            ->where('active', 1)->where('gebruikersnaam', $username)
+            ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first() : null;
+
+        return view('bibliotheek.loans.create', compact('copies', 'leerlingen', 'barcode', 'username', 'copy', 'leerling'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'barcode' => ['required', 'string', 'max:60'],
+            'leerling' => ['required', 'string', 'max:200'],
+        ]);
+
+        $barcode = trim($data['barcode']);
+        $leerlingCode = trim($data['leerling']);
+
+        return DB::transaction(function () use ($barcode, $leerlingCode, $request) {
+            $copy = DB::table('library_copies')->where('barcode', $barcode)->lockForUpdate()->first();
+            if (! $copy) throw ValidationException::withMessages(['barcode' => 'Exemplaar niet gevonden. Controleer de barcode.']);
+            if ($copy->status !== 'beschikbaar') throw ValidationException::withMessages(['barcode' => 'Dit exemplaar is niet beschikbaar.']);
+
+            $leerling = DB::table('leerlingen')
+                ->where('gebruikersnaam', $leerlingCode)->where('active', 1)->first();
+            if (! $leerling) throw ValidationException::withMessages(['leerling' => 'Geen actieve leerling met deze gebruikersnaam gevonden.']);
+
+            if (DB::table('library_loans')->where('copy_id', $copy->id)->whereNull('returned_at')->exists()) {
+                throw ValidationException::withMessages(['barcode' => 'Dit exemplaar staat al uitgeleend.']);
+            }
+
+            // Lock the selected pupil to serialize concurrent loans for the same borrower.
+            DB::table('leerlingen')->where('id', $leerling->id)->lockForUpdate()->first();
+
+            $open = DB::table('library_loans')->where('leerling_id', $leerling->id)
+                ->whereNull('returned_at')->count();
+            if ($open >= $this->setting('max_loans', 3)) {
+                throw ValidationException::withMessages(['leerling' => 'Deze leerling heeft het maximale aantal openstaande uitleningen bereikt.']);
+            }
+
+            $today = CarbonImmutable::today('Europe/Brussels');
+            DB::table('library_loans')->insert([
+                'copy_id' => $copy->id, 'leerling_id' => $leerling->id,
+                'registered_by' => $this->username($request),
+                'loan_date' => $today->toDateString(),
+                'due_date' => $today->addDays($this->setting('loan_days', 21))->toDateString(),
+                'extensions' => 0, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+            DB::table('library_copies')->where('id', $copy->id)
+                ->update(['status' => 'uitgeleend', 'updated_at' => now()]);
+
+            return redirect()->route('bibliotheek.loans.index')->with('success', 'Exemplaar '.$barcode.' uitgeleend.');
+        });
+    }
+
+    public function returnLoan(int $loan): RedirectResponse
+    {
+        return DB::transaction(function () use ($loan) {
+            $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
+            abort_unless($item, 404);
+            if ($item->returned_at !== null) return back()->withErrors(['return' => 'Dit exemplaar is al ingeleverd.']);
+
+            DB::table('library_loans')->where('id', $loan)
+                ->update(['returned_at' => now(), 'updated_at' => now()]);
+            DB::table('library_copies')->where('id', $item->copy_id)
+                ->update(['status' => 'beschikbaar', 'updated_at' => now()]);
+            return back()->with('success', 'Exemplaar succesvol ingeleverd.');
+        });
+    }
+
+    public function extend(int $loan): RedirectResponse
+    {
+        return DB::transaction(function () use ($loan) {
+            $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
+            abort_unless($item, 404);
+            if ($item->returned_at !== null) return back()->withErrors(['extend' => 'Een ingeleverd boek kan niet verlengd worden.']);
+            if ((int) $item->extensions >= $this->setting('max_extensions', 2)) {
+                return back()->withErrors(['extend' => 'Maximaal aantal verlengingen bereikt.']);
+            }
+            $old = CarbonImmutable::parse($item->due_date, 'Europe/Brussels');
+            $base = $old->isAfter(CarbonImmutable::today('Europe/Brussels')) ? $old : CarbonImmutable::today('Europe/Brussels');
+            DB::table('library_loans')->where('id', $loan)->update([
+                'due_date' => $base->addDays($this->setting('extension_days', 21))->toDateString(),
+                'extensions' => (int) $item->extensions + 1, 'updated_at' => now(),
+            ]);
+            return back()->with('success', 'Uitleentermijn verlengd.');
+        });
+    }
+
+    public function students(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2) return response()->json([]);
+        $result = DB::table('leerlingen')->where('active', 1)
+            ->where(function ($query) use ($q) {
+                $query->where('voornaam', 'like', "%{$q}%")
+                    ->orWhere('naam', 'like', "%{$q}%")
+                    ->orWhere('gebruikersnaam', 'like', "%{$q}%");
+            })->select('voornaam', 'naam', 'gebruikersnaam')->limit(15)->get();
+        return response()->json($result);
+    }
+}
