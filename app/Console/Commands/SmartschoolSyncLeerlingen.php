@@ -355,8 +355,11 @@ class SmartschoolSyncLeerlingen extends Command
             }
         }
 
-        if ($failedClasses > 0 || $emptyClasses > 0) {
-            $this->warn("Onvolledige leerlingensync: {$failedClasses} mislukte en {$emptyClasses} lege klassen. Deactivatie veilig overgeslagen.");
+        if ($emptyClasses > 0) {
+            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen. Dit is geen fout; deactivering uit voorzorg overgeslagen.");
+        }
+        if ($failedClasses > 0) {
+            $this->warn("WAARSCHUWING: {$failedClasses} klassen konden niet opgehaald worden. Deactivering overgeslagen.");
         }
 
         $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
