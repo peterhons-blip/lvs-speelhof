@@ -37,16 +37,24 @@ De originele SQL-dump bevat demonstratie-/persoonsgegevens en wordt **niet** ing
 - Mailherinneringen aan secretariaat/semesterperiodes: vervangen door de gevraagde Smartschool-reminders; afzonderlijke opvolgmeldingen vergen bijkomende afspraken.
 - Import van Svens historische gegevens: pas na expliciete controle van mapping en toestemming.
 
-## Toegangsrechten
+## Centrale gebruikersrollen en rechten (geen .env)
 
-Voeg voor je lokale test deze variabelen toe aan je eigen `.env` (niet aan GitHub):
+De bibliotheek maakt gebruik van **centrale portaalrechten**, geen hardcoded .env-gebruikerslijsten.
 
-```ini
-LIBRARY_MANAGER_USERNAMES=peter.hons
-LIBRARY_OPERATOR_USERNAMES=peter.hons
-```
-
-Pas de voorbeeldgebruikersnamen aan aan de Smartschool-gebruikersnamen van bevoegde personeelsleden. Beheerders mogen globale instellingen wijzigen en de Smartschool-verzending aanzetten; operators mogen uitleningen en individuele herinneringen beheren. Beide vereisen een actieve Smartschool-sessie. Na wijzigingen aan `.env`: `php artisan optimize:clear`.
+- `portal_staff`: personeelsleden gekoppeld aan een Smartschool-gebruikersnaam en een rol.
+- `portal_role_permissions`: toegestane rechten per rol én per module/instelling.
+- Rollen: **ICT-coördinator**, **directie**, **boekhouding**, **secretariaat**, **leerlingbegeleiding**, **TAC**.
+- Alleen ICT-coördinatoren hebben automatisch alle rechten en mogen gebruikers en de rechtenmatrix aanpassen.
+- Alle andere rollen starten zonder toegekende modulebevoegdheden (*deny by default*).
+- Beheerinterface: **Beheer → Gebruikersbeheer** en **Beheer → Rollen en rechten**.
+- Registreer de **eerste ICT-coördinator** éénmalig op de lokale ontwikkelmachine of vertrouwde serverconsole:
+  `C:\xampp\php\php.exe artisan bibliotheek:eerste-beheerder peter.hons`
+  (controleer vooraf de exacte Smartschool-gebruikersnaam; de command vraagt interactief bevestiging).
+- Daarna kun je andere personeelsleden via de interface toevoegen en aanpassen.
+- Aanbevolen test: directie zonder bibliotheekrechten krijgt HTTP 403; na verlenen van `bibliotheek.loans.view` kan die uitleningen bekijken maar niet wijzigen.
+- De modules EMA, Onboarding en Nascholingen staan in de rechtenmatrix als **voorbereide toekomstige rechten**, niet als bestaande functionaliteit.
+- LVS-rollen worden **niet zonder afzonderlijke migratie en autorisatie afgedwongen** op de oude LVS-routes: die blijven momenteel voor bestaande gebruikers werken zoals voordien. Hiermee vermijden we dat een bibliotheekdeploy het bestaande LVS blokkeert.
+- Enkel een bestaande Smartschool-sessie volstaat niet om bibliotheek- of beheermutaties uit te voeren; de server controleert rolrechten.
 
 ## Lokaal installeren en veilig testen
 
@@ -57,6 +65,8 @@ cd C:\xampp\htdocs\LVS
 git fetch origin
 git switch --track origin/feature/bibliotheek-sven-integratie
 C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_110000_create_library_loans_and_settings.php
+C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_120000_create_library_staff_table.php
+C:\xampp\php\php.exe artisan bibliotheek:eerste-beheerder peter.hons
 C:\xampp\php\php.exe artisan optimize:clear
 C:\xampp\php\php.exe artisan bibliotheek:herinneringen --test
 ```
@@ -70,7 +80,7 @@ Om herinneringen op productie te activeren moet eerst het Smartschool-account `b
 ## Open voor formele livegang
 
 - Lokale syntax-, route-, functionele en integratietests met de werkelijke Laravel/MariaDB-versie
-- Controle welke Smartschool-gebruikers operator/beheerder mogen zijn en stel `LIBRARY_OPERATOR_USERNAMES` en `LIBRARY_MANAGER_USERNAMES` in
+- Controle welke Smartschool-gebruikers onder de rollen vallen; voeg hen toe in **Beheer → Gebruikersbeheer** en vink alleen noodzakelijke module-/instellingenrechten aan
 - Check of `bib` als afzender op de juiste Smartschool-school geautoriseerd is
 - Controleer of de scheduler dagelijks de nieuwe opdracht uitvoert
 - Privacy-/gegevensbewaarbeleid voor uitleenhistoriek en notificatielogs
