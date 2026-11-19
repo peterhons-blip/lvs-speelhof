@@ -20,6 +20,12 @@
         @csrf
         @method('PUT')
         <div class="library-field">
+            <label for="due_date">Uiterste inleverdatum</label>
+            <input type="date" id="due_date" name="due_date" required min="{{ now('Europe/Brussels')->toDateString() }}"
+                   value="{{ old('due_date', $item->due_date) }}">
+            <p class="library-help">Hier kun je de inleverdatum voor alleen deze uitlening aanpassen.</p>
+        </div>
+        <div class="library-field">
             <label for="reminder_days_before">Aantal dagen vooraf</label>
             <input type="number" min="0" max="60" id="reminder_days_before" name="reminder_days_before"
                    value="{{ old('reminder_days_before', $item->reminder_days_before) }}" placeholder="Leeg = globale instelling">
