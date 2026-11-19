@@ -13,7 +13,7 @@
 </head>
 <body class="portal-body">
 @php($ss_user = session('ss_user'))
-@php if ($ss_user): @endphp
+<?php if ($ss_user): ?>
     <div class="app portal-app">
         <header class="portal-topbar">
             <a class="portal-brand" href="{{ route('home') }}" aria-label="Atheneum Portaal, naar dashboard">
@@ -119,11 +119,11 @@
             </div>
         </div>
     </div>
-@php else: @endphp
+<?php else: ?>
     <div class="app portal-public">
         @yield('content')
     </div>
-@php endif; @endphp
+<?php endif; ?>
 
 {{-- Elke pagina laadt alleen de eigen scripts, na de HTML-inhoud. --}}
 @stack('scripts')
