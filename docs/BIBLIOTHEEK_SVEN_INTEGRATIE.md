@@ -174,3 +174,13 @@ De gebruiker heeft de huidige bibliotheekfunctionaliteit zelf functioneel getest
 ### Werkwijze voor de volgende sessie
 
 Eerst actuele code op `main` nalopen en een nieuwe featurebranch maken. Implementeren en lokaal testen zonder Smartschool-berichten automatisch live te versturen. Pas na expliciete goedkeuring samenvoegen en op productie uitrollen.
+
+### Geplande personeels-/gebruikerssynchronisatie vanuit Smartschool (19-11-2026)
+
+- In Tinker bevestigd: `getAllAccountsExtended('Leerkrachten Atheneum Sint-Truiden', true)` levert 117 accounts; `getAllAccountsExtended('Administratie Campus Speelhof', true)` levert 20 accounts; ongeveer 135 unieke gebruikers (nog exact verifiëren). De tweede parameter `true` is noodzakelijk om subgroepen recursief op te halen.
+- De webservice levert onder andere `gebruikersnaam`, `voornaam`, `naam`, `emailadres`, `geboortedatum`, `basisrol`, `status` en `scannableCode`. Synchroniseer alleen noodzakelijke velden, geen privacygevoelige extra velden.
+- Accounts uit uitsluitend de leerkrachtengroep krijgen standaardrol **Leerkracht**; uitsluitend administratiegroep **Administratie**; als een account in beide groepen voorkomt krijgt **Administratie voorrang**.
+- Deduplicatie op Smartschool-gebruikersnaam; nieuwe gebruikers éénmaal in `users` aanmaken. Bestaande speciale handmatig toegekende rollen (ICT, directie, TAC, leerlingbegeleiding enz.) bewaren; de standaardrollen Leerkracht/Administratie mogen bij gewijzigde groepslidmaatschappen worden aangepast.
+- Gebruikers in de lokale `users`-tabel die **niet meer voorkomen in de actuele, volledig opgehaalde Smartschool-personeelsgroepen**: niet wissen, wel `allowed_login=false` en uit standaardoverzicht van actieve gebruikers filteren, historiek behouden. Alleen accounts uitschakelen die aantoonbaar tot de door Smartschool beheerde populatie behoren; nooit handmatig gemaakte systeem-, service- of externe accounts door afwezigheid uit deze twee groepen uitschakelen.
+- **Fail-safe verplicht:** geen uitschakelingen bij SOAP-fouten, onvolledige respons, onverwacht sterke terugval in accountaantal, ontbrekende groepsdata of andere twijfel over volledigheid. Dry-run/preview tonen welke bestaande accounts zouden worden uitgeschakeld. Voor bestaande accounts `allowed_login` niet onbedoeld overschrijven, behalve bij expliciete uitschakeling wegens bevestigde afwezigheid.
+- Voorzie handmatige sync via Beheer en een afzonderlijke nachtelijke taak met monitoring; eerst testen op aparte featurebranch, nooit direct productie activeren.
