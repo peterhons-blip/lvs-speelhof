@@ -8,6 +8,9 @@
     const count = root.querySelector('[data-selected-count]');
     const action = root.querySelector('[data-bulk-action]');
     const role = root.querySelector('[data-bulk-role]');
+    const roleSelect = role?.querySelector('select');
+    const submit = root.querySelector('[data-bulk-submit]');
+    const summary = root.querySelector('[data-bulk-summary]');
     let controller = null;
     let timer;
     let serial = 0;
@@ -24,9 +27,29 @@
             selectAll.checked = boxes.length > 0 && n === boxes.length;
             selectAll.indeterminate = n > 0 && n < boxes.length;
         }
+        updateAction();
     }
     function updateAction() {
-        if (role && action) role.style.display = action.value === 'role' ? '' : 'none';
+        if (!action) return;
+        const isRole = action.value === 'role';
+        if (role) role.style.display = isRole ? '' : 'none';
+        if (roleSelect) {
+            roleSelect.disabled = !isRole;
+            roleSelect.required = isRole;
+        }
+        const n = chosen().length;
+        const target = isRole && roleSelect?.value ? roleSelect.options[roleSelect.selectedIndex]?.text : '';
+        const ready = n > 0 && !!action.value && (!isRole || !!roleSelect?.value);
+        if (submit) submit.disabled = !ready;
+        if (summary) {
+            let message = 'Selecteer medewerkers en kies een actie. Er wordt nog niets gewijzigd.';
+            if (n > 0 && !action.value) message = n + ' medewerkers geselecteerd. Kies welke wijziging je wilt uitvoeren.';
+            else if (n > 0 && isRole && !target) message = n + ' medewerkers geselecteerd. Kies nu expliciet de nieuwe schoolrol.';
+            else if (n > 0 && isRole) message = n + ' medewerkers krijgen de schoolrol "' + target + '". Hun aanmeldtoegang verandert niet.';
+            else if (n > 0 && action.value === 'allow') message = n + ' medewerkers krijgen toegang tot het LVS. Hun schoolrol blijft behouden.';
+            else if (n > 0 && action.value === 'block') message = n + ' medewerkers worden geblokkeerd voor aanmelden in het LVS. Hun schoolrol blijft behouden.';
+            summary.textContent = message;
+        }
     }
 
     async function load(url) {
@@ -83,7 +106,7 @@
             results.querySelectorAll('[data-bulk-id]').forEach(box => { box.checked = e.target.checked; });
             updateSelection();
         }
-        if (e.target.matches('[data-bulk-action]')) updateAction();
+        if (e.target.matches('[data-bulk-action]') || e.target.matches('[data-bulk-role] select')) updateAction();
     });
     root.addEventListener('click', e => {
         const link = e.target.closest('[data-management-results] a[href]');
@@ -95,7 +118,8 @@
         const n = chosen().length;
         if (!n) { e.preventDefault(); alert('Selecteer eerst minstens één persoon.'); return; }
         if (action && !action.value) { e.preventDefault(); alert('Kies eerst een bulkactie.'); return; }
-        if (!confirm('Deze actie toepassen op ' + n + ' geselecteerde personen?')) e.preventDefault();
+        const message = summary?.textContent || ('Deze actie toepassen op ' + n + ' geselecteerde personen?');
+        if (!confirm(message + '\n\nWeet je zeker dat je deze wijziging wilt uitvoeren?')) e.preventDefault();
     });
     updateAction();
     updateSelection();
