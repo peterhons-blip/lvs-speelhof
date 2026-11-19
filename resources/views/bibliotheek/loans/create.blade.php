@@ -42,7 +42,7 @@
                             <input id="student-card-scan" type="text" maxlength="200" placeholder="Scan de kaart of typ de gebruikersnaam">
                             <button id="student-scan-button" class="library-button library-button-secondary" type="button">Herkennen</button>
                         </div>
-                        <p class="library-help">Een Smartschool-kaart met unieke scanwaarde koppel je één keer aan een leerling.</p>
+                        <p class="library-help">De QR-code wordt bij de Smartschool-leerlingensync lokaal opgeslagen. Bij het scannen is geen webserviceoproep nodig.</p>
                     </div>
                     <div class="library-field">
                         <label for="student-name-search">Leerling zoeken</label>
@@ -58,10 +58,6 @@
                     <button type="button" id="student-clear" class="library-button library-button-secondary">Wijzigen</button>
                 </div>
 
-                <div id="student-card-pairing" class="library-checkout-pairing" hidden>
-                    <p><strong>Kaart nog niet gekoppeld.</strong> Zoek de juiste leerling hierboven en klik daarna op ‘Kaart koppelen’. Zo herkennen we deze Smartschool-kaart bij volgende uitleningen.</p>
-                    <button type="button" id="student-card-link" class="library-button library-button-secondary">Kaart aan geselecteerde leerling koppelen</button>
-                </div>
                 <input type="hidden" id="selected-student-username" name="leerling" value="{{ old('leerling', $username) }}">
             </div>
         </section>
@@ -133,8 +129,6 @@
     const studentName = document.getElementById('student-selected-name');
     const studentLabel = document.getElementById('student-selected-username');
     const studentScan = document.getElementById('student-card-scan');
-    const cardPairing = document.getElementById('student-card-pairing');
-    const cardLink = document.getElementById('student-card-link');
     const studentFeedback = document.getElementById('student-feedback');
     const bookInput = document.getElementById('checkout-barcode');
     const bookFeedback = document.getElementById('book-feedback');
@@ -145,11 +139,9 @@
     const term = document.getElementById('loan-days');
     const due = document.getElementById('checkout-due-date');
     const maxLoans = @json($maxLoans);
-    const token = @json(csrf_token());
     const endpoints = {
         students: @json(route('bibliotheek.loans.students')),
         scan: @json(route('bibliotheek.loans.student-scan')),
-        link: @json(route('bibliotheek.loans.student-card.link')),
         copy: @json(route('bibliotheek.loans.copy-scan'))
     };
     const initialStudent = @json($leerling);
@@ -157,7 +149,6 @@
     const oldBarcodes = @json(old('barcodes', []));
     let books = [];
     let learner = null;
-    let unlinkedScan = '';
     let studentLookupSeq = 0;
     let bookBusy = false;
 
@@ -178,15 +169,12 @@
         studentList.replaceChildren();
         studentSearch.value = '';
         feedback(studentFeedback, '');
-        cardPairing.hidden = !unlinkedScan;
         updateSubmit();
     }
     function clearStudent() {
         learner = null;
-        unlinkedScan = '';
         studentUsername.value = '';
         studentSelected.hidden = true;
-        cardPairing.hidden = true;
         studentScan.value = '';
         updateSubmit();
         studentSearch.focus();
@@ -203,9 +191,7 @@
             });
             const data = await response.json();
             if (!response.ok) {
-                unlinkedScan = code;
                 feedback(studentFeedback, data.message || 'Leerling niet gevonden.', true);
-                if (learner) cardPairing.hidden = false;
                 studentSearch.focus();
                 return;
             }
@@ -242,7 +228,7 @@
                 btn.textContent = [person.voornaam, person.naam].filter(Boolean).join(' ') + ' · ' + person.gebruikersnaam;
                 btn.addEventListener('click', () => {
                     selectStudent(person);
-                    if (!unlinkedScan) bookInput.focus();
+                    bookInput.focus();
                 });
                 studentList.appendChild(btn);
             }
@@ -253,27 +239,6 @@
     });
     document.getElementById('student-scan-button').addEventListener('click', lookupStudent);
     document.getElementById('student-clear').addEventListener('click', clearStudent);
-    cardLink.addEventListener('click', async () => {
-        if (!learner || !unlinkedScan) return;
-        cardLink.disabled = true;
-        try {
-            const response = await fetch(endpoints.link, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token},
-                body: JSON.stringify({code: unlinkedScan, leerling: learner.gebruikersnaam}),
-            });
-            const data = await response.json();
-            feedback(studentFeedback, data.message || 'Kaartkoppeling verwerkt.', !response.ok);
-            if (response.ok) {
-                unlinkedScan = '';
-                studentScan.value = '';
-                cardPairing.hidden = true;
-                bookInput.focus();
-            }
-        } catch { feedback(studentFeedback, 'Kaart koppelen is mislukt.', true); }
-        finally { cardLink.disabled = false; }
-    });
-
     function renderBooks() {
         bookFields.replaceChildren();
         bookTable.replaceChildren();
