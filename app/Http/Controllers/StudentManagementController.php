@@ -6,7 +6,6 @@ use App\Services\LibraryAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class StudentManagementController extends Controller
@@ -50,7 +49,7 @@ class StudentManagementController extends Controller
 
         return view('beheer.students.show', [
             'student' => $studentRow,
-            'hasScanCode' => Schema::hasColumn('leerlingen', 'scannable_code'),
+            'hasScanCode' => \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code'),
         ]);
     }
 
