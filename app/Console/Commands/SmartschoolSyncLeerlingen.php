@@ -99,6 +99,8 @@ class SmartschoolSyncLeerlingen extends Command
         $created = 0;
         $updated = 0;
         $createdClasses = 0;
+        $failedClasses = 0;
+        $emptyClasses = 0;
 
         foreach ($smartschoolClasses as $ssClass) {
             if (!is_array($ssClass)) {
@@ -148,6 +150,7 @@ class SmartschoolSyncLeerlingen extends Command
             try {
                 $accounts = $ss->getAllAccountsExtended($classCode, false);
             } catch (\Throwable $e) {
+                $failedClasses++;
                 $this->warn("Fout bij ophalen accounts voor {$classCode}: " . $e->getMessage());
                 continue;
             }
@@ -155,6 +158,7 @@ class SmartschoolSyncLeerlingen extends Command
             $list = $this->extractAccountList($accounts);
 
             if (count($list) === 0) {
+                $emptyClasses++;
                 $this->warn("  Geen accounts gevonden voor {$className} ({$classCode})");
                 continue;
             }
@@ -316,7 +320,8 @@ class SmartschoolSyncLeerlingen extends Command
 
         $deactivated = 0;
 
-        if (!$dryRun && count($seenUsernames) > 0) {
+        // Never deactivate absent pupils when Smartschool returned an incomplete snapshot.
+        if (!$dryRun && $failedClasses === 0 && $emptyClasses === 0 && count($seenUsernames) > 0) {
 
             $query = Leerling::query()
                 ->where('schoolid', $schoolId);
@@ -350,12 +355,16 @@ class SmartschoolSyncLeerlingen extends Command
             }
         }
 
-        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}" . ($dryRun ? ' [DRY-RUN]' : '');
+        if ($failedClasses > 0 || $emptyClasses > 0) {
+            $this->warn("Onvolledige leerlingensync: {$failedClasses} mislukte en {$emptyClasses} lege klassen. Deactivatie veilig overgeslagen.");
+        }
+
+        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
 
         $this->info($msg);
         Log::info('Smartschool sync leerlingen: ' . $msg);
 
-        return self::SUCCESS;
+        return ($failedClasses > 0 || $emptyClasses > 0) ? self::FAILURE : self::SUCCESS;
     }
 
     /**
