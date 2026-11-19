@@ -33,6 +33,18 @@
     </div>
 
     <section class="library-form-card">
+        <h2>Snel inleveren met barcode</h2>
+        <form method="post" action="{{ route('bibliotheek.loans.return-barcode') }}" class="library-loan-filters">
+            @csrf
+            <div class="library-field">
+                <label for="return-barcode">Scan of typ de barcode van het exemplaar</label>
+                <input id="return-barcode" name="barcode" placeholder="BIB-..." required maxlength="60">
+            </div>
+            <button type="submit" class="library-button library-button-primary">Als ingeleverd registreren</button>
+        </form>
+    </section>
+
+    <section class="library-form-card">
         <form method="get" class="library-loan-filters">
             <div class="library-field"><label for="loan-search">Zoeken op leerling, titel of barcode</label>
                 <input id="loan-search" name="q" value="{{ $search }}" placeholder="Naam, gebruikersnaam, boek of barcode">
