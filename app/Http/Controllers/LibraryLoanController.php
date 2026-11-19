@@ -242,6 +242,16 @@ class LibraryLoanController extends Controller
                 ? null : (int) $data['remind_on_due_date'],
             'updated_at' => now(),
         ]);
+        DB::table('library_loan_events')->insert([
+            'loan_id' => $loan, 'action' => 'herinneringen_aangepast',
+            'actor' => $this->username($request),
+            'details' => json_encode([
+                'due_date' => $data['due_date'],
+                'reminder_days_before' => $data['reminder_days_before'] ?? null,
+                'remind_on_due_date' => $data['remind_on_due_date'] ?? null,
+            ]),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
         return redirect()->route('bibliotheek.loans.index')
             ->with('success', 'Herinneringsinstellingen voor deze uitlening aangepast.');
     }
