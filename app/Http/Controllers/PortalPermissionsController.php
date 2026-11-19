@@ -84,6 +84,29 @@ class PortalPermissionsController extends Controller
         return view('beheer.users', compact('users', 'roles', 'groups'));
     }
 
+    public function searchUsers(Request $request, LibraryAccess $access): \Illuminate\Http\JsonResponse
+    {
+        $access->requireManager($request);
+
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:80']]);
+        $term = trim($data['q']);
+        if (mb_strlen($term) < 2) return response()->json([]);
+
+        $users = DB::table('users')
+            ->leftJoin('groups', 'groups.id', '=', 'users.groupId')
+            ->where(function ($query) use ($term) {
+                $query->where('users.gebruikersnaam', 'like', '%'.$term.'%')
+                    ->orWhere('users.voornaam', 'like', '%'.$term.'%')
+                    ->orWhere('users.name', 'like', '%'.$term.'%');
+            })
+            ->select('users.gebruikersnaam', 'users.voornaam', 'users.name',
+                'groups.groupname')
+            ->orderBy('users.name')->orderBy('users.voornaam')
+            ->limit(12)->get();
+
+        return response()->json($users);
+    }
+
     public function storeUser(Request $request, LibraryAccess $access): RedirectResponse
     {
         $access->requireManager($request);
