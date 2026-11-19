@@ -71,44 +71,29 @@
                             </nav>
                         @endif
                     </div>
-                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     @php
                         $managementAccess = app(\App\Services\LibraryAccess::class);
-                        $managementLanding = collect([
-                            'beheer.staff.manage' => 'beheer.users.index',
-                            'beheer.students.manage' => 'beheer.students.index',
-                            'beheer.permissions.manage' => 'beheer.permissions.index',
-                            'beheer.smartschool_test.send' => 'beheer.smartschool-test.create',
-                            'beheer.student_sync.manage' => 'beheer.smartschool-sync.index',
-                            'beheer.staff_sync.manage' => 'beheer.staff-sync.index',
-                            'beheer.scheduled_tasks.view' => 'beheer.scheduled-tasks.index',
-                        ])->first(fn ($route, $permission) => $managementAccess->has(request(), $permission)) ?? 'home';
+                        $managementLinks = [
+                            ['permission' => 'beheer.staff.manage', 'route' => 'beheer.users.index', 'active' => 'beheer.users.*', 'label' => 'Personeelsbeheer'],
+                            ['permission' => 'beheer.students.manage', 'route' => 'beheer.students.index', 'active' => 'beheer.students.*', 'label' => 'Leerlingenbeheer'],
+                            ['permission' => 'beheer.permissions.manage', 'route' => 'beheer.permissions.index', 'active' => 'beheer.permissions.*', 'label' => 'Rollen en rechten'],
+                            ['permission' => 'beheer.smartschool_test.send', 'route' => 'beheer.smartschool-test.create', 'active' => 'beheer.smartschool-test.*', 'label' => 'Smartschool-testbericht'],
+                            ['permission' => 'beheer.student_sync.manage', 'route' => 'beheer.smartschool-sync.index', 'active' => 'beheer.smartschool-sync.*', 'label' => 'Leerlingensynchronisatie'],
+                            ['permission' => 'beheer.staff_sync.manage', 'route' => 'beheer.staff-sync.index', 'active' => 'beheer.staff-sync.*', 'label' => 'Personeelssynchronisatie'],
+                            ['permission' => 'beheer.scheduled_tasks.view', 'route' => 'beheer.scheduled-tasks.index', 'active' => 'beheer.scheduled-tasks.*', 'label' => 'Geplande taken'],
+                        ];
+                        $managementLinks = array_values(array_filter($managementLinks, function ($link) use ($managementAccess) {
+                            return $managementAccess->has(request(), $link['permission']);
+                        }));
                     @endphp
+                    @if(count($managementLinks) > 0)
                     <div class="portal-nav-module">
-                        <a href="{{ route($managementLanding) }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <a href="{{ route($managementLinks[0]['route']) }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
-                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
-                            <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
-                            <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
-                            <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
-                            <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
-                            <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
-                            <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
-                            @endif
+                            @foreach($managementLinks as $link)
+                                <a href="{{ route($link['route']) }}" class="portal-nav-subitem {{ request()->routeIs($link['active']) ? 'is-active' : '' }}">{{ $link['label'] }}</a>
+                            @endforeach
                         </nav>
                         @endif
                     </div>
