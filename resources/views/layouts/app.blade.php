@@ -13,7 +13,7 @@
 </head>
 <body class="portal-body">
 @php($ss_user = session('ss_user'))
-<?php if ($ss_user): ?>
+@if($ss_user)
     <div class="app portal-app">
         <header class="portal-topbar">
             <a class="portal-brand" href="{{ route('home') }}" aria-label="Atheneum Portaal, naar dashboard">
@@ -71,29 +71,32 @@
                             </nav>
                         @endif
                     </div>
-                    @php
-                        $managementAccess = app(\App\Services\LibraryAccess::class);
-                        $managementLinks = [
-                            ['permission' => 'beheer.staff.manage', 'route' => 'beheer.users.index', 'active' => 'beheer.users.*', 'label' => 'Personeelsbeheer'],
-                            ['permission' => 'beheer.students.manage', 'route' => 'beheer.students.index', 'active' => 'beheer.students.*', 'label' => 'Leerlingenbeheer'],
-                            ['permission' => 'beheer.permissions.manage', 'route' => 'beheer.permissions.index', 'active' => 'beheer.permissions.*', 'label' => 'Rollen en rechten'],
-                            ['permission' => 'beheer.smartschool_test.send', 'route' => 'beheer.smartschool-test.create', 'active' => 'beheer.smartschool-test.*', 'label' => 'Smartschool-testbericht'],
-                            ['permission' => 'beheer.student_sync.manage', 'route' => 'beheer.smartschool-sync.index', 'active' => 'beheer.smartschool-sync.*', 'label' => 'Leerlingensynchronisatie'],
-                            ['permission' => 'beheer.staff_sync.manage', 'route' => 'beheer.staff-sync.index', 'active' => 'beheer.staff-sync.*', 'label' => 'Personeelssynchronisatie'],
-                            ['permission' => 'beheer.scheduled_tasks.view', 'route' => 'beheer.scheduled-tasks.index', 'active' => 'beheer.scheduled-tasks.*', 'label' => 'Geplande taken'],
-                        ];
-                        $managementLinks = array_values(array_filter($managementLinks, function ($link) use ($managementAccess) {
-                            return $managementAccess->has(request(), $link['permission']);
-                        }));
-                    @endphp
-                    @if(count($managementLinks) > 0)
+                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     <div class="portal-nav-module">
-                        <a href="{{ route($managementLinks[0]['route']) }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                            @foreach($managementLinks as $link)
-                                <a href="{{ route($link['route']) }}" class="portal-nav-subitem {{ request()->routeIs($link['active']) ? 'is-active' : '' }}">{{ $link['label'] }}</a>
-                            @endforeach
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
+                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
+                            <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
+                            <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
+                            <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
+                            <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
+                            <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
+                            <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
+                            @endif
                         </nav>
                         @endif
                     </div>
@@ -119,11 +122,11 @@
             </div>
         </div>
     </div>
-<?php else: ?>
+@else
     <div class="app portal-public">
         @yield('content')
     </div>
-<?php endif; ?>
+@endif
 
 {{-- Elke pagina laadt alleen de eigen scripts, na de HTML-inhoud. --}}
 @stack('scripts')
