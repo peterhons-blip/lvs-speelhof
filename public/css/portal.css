@@ -489,3 +489,30 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-page-link.is-current{background:#164a68;color:#fff;border-color:#164a68}
 .portal-page-link.is-disabled{background:#f5f7f9;color:#a3b0ba;border-color:#ebeff2;cursor:default}
 @media(max-width:650px){.portal-users-pagination{align-items:flex-start;flex-direction:column}.portal-pagination-controls{gap:4px}.portal-page-link{min-width:32px;padding:0 9px}}
+
+
+/* Smartschool-test: duidelijke selectie en bevestiging, onafhankelijk van globale form-stijlen. */
+.portal-test-message-page .portal-test-message-form select{
+    box-sizing:border-box;width:100%;min-width:0;height:45px;
+    padding:10px 35px 10px 14px;font-size:.92rem;line-height:1.5;
+    color:#1b3851;background-color:#fff;border:1px solid #cbdbe5;border-radius:9px
+}
+.portal-test-message-page .portal-test-message-form select:focus{outline:none;border-color:#2683a1;box-shadow:0 0 0 3px rgba(38,131,161,.11)}
+.portal-message-recipient-search{width:100%;position:relative}
+.portal-message-recipient-selection{display:grid;gap:5px;padding:9px 12px;border:1px solid #e0eaf0;background:#f7fafc;border-radius:9px}
+.portal-message-recipient-selection>span{color:#6a7e90;font-size:.75rem;font-weight:650}
+.portal-test-message-page .portal-test-message-form .portal-message-recipient-selection input{
+    height:30px!important;padding:0!important;background:transparent!important;border:0!important;
+    box-shadow:none!important;color:#255470!important;font-weight:750
+}
+.portal-test-message-consent-row{display:flex;align-items:center;padding:13px 16px;border:1px solid #e0e9ef;background:#f7fafc;border-radius:10px}
+.portal-test-message-page .portal-test-message-form .portal-test-message-consent{
+    display:flex!important;flex-direction:row!important;align-items:center!important;gap:13px!important;
+    margin:0!important;padding:0!important;font-size:.86rem;line-height:1.5;cursor:pointer
+}
+.portal-test-message-page .portal-test-message-form .portal-test-message-consent input[type="checkbox"]{
+    appearance:auto!important;display:block!important;width:18px!important;height:18px!important;
+    min-width:18px!important;max-width:18px!important;min-height:18px!important;
+    margin:0!important;padding:0!important;flex:0 0 18px!important;accent-color:#176f8b
+}
+.portal-test-message-page .portal-test-message-form .portal-test-message-consent span{display:block;flex:1;min-width:0;color:#38556a}
