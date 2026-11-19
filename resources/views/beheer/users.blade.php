@@ -20,31 +20,6 @@
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-    <section class="library-form-card">
-        <h2>Schoolrol toekennen</h2>
-        <p class="portal-users-card-intro">Zoek een bestaand personeelsaccount via de Smartschool-gebruikersnaam en kies de gewenste schoolrol.</p>
-        <form action="{{ route('beheer.users.store') }}" method="post" class="portal-users-assign-form">
-            @csrf
-            <div class="library-field">
-                <label for="smartschool_username">Bestaande Smartschool-gebruikersnaam</label>
-                <div class="portal-user-autocomplete">
-                    <input id="smartschool_username" name="smartschool_username" value="{{ old('smartschool_username') }}" required maxlength="120" placeholder="Typ naam of gebruikersnaam..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="portal-user-suggestions">
-                    <div id="portal-user-suggestions" class="portal-user-suggestions" role="listbox" hidden></div>
-                </div>
-            </div>
-            <div class="library-field">
-                <label for="role">Schoolrol</label>
-                <select id="role" name="role">
-                    @foreach($roles as $slug => $label)
-                        <option value="{{ $slug }}" @selected(old('role') === $slug)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="portal-users-assign-action"><button class="library-button library-button-primary" type="submit">Rol toekennen</button></div>
-        </form>
-        <div class="portal-users-note"><span aria-hidden="true">i</span><p>Je kent enkel een rol toe aan een <strong>bestaand personeelsaccount</strong>. De gebruikersnaam en de huidige aanmeldrechten blijven behouden.</p></div>
-    </section>
-
     <section class="library-form-card" data-live-management>
         <div class="portal-users-table-heading"><div><h2>Personeelsaccounts</h2><p>Gesorteerd per schoolrol en vervolgens alfabetisch op familienaam.</p></div><span class="portal-users-total" data-management-total>{{ $users->total() }} medewerkers</span></div>
         <nav class="portal-users-account-filters" aria-label="Accounts filteren" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin:1rem 0 1.25rem;">
@@ -168,96 +143,5 @@
 @endsection
 
 @push('scripts')
-<script>
-(() => {
-    const input = document.getElementById('smartschool_username');
-    const menu = document.getElementById('portal-user-suggestions');
-    const url = @json(route('beheer.users.search'));
-    if (!input || !menu) return;
-
-    let sequence = 0;
-    let controller = null;
-
-    const close = () => {
-        menu.replaceChildren();
-        menu.hidden = true;
-        input.setAttribute('aria-expanded', 'false');
-    };
-    const show = () => {
-        menu.hidden = false;
-        input.setAttribute('aria-expanded', 'true');
-    };
-    const lookup = async () => {
-        const term = input.value.trim();
-        const current = ++sequence;
-        if (controller) controller.abort();
-        controller = null;
-        close();
-        if (term.length < 2) return;
-        controller = new AbortController();
-        try {
-            const response = await fetch(url + '?q=' + encodeURIComponent(term), {
-                headers: {Accept: 'application/json'},
-                signal: controller.signal
-            });
-            if (!response.ok) throw new Error('Zoeken mislukt');
-            const items = await response.json();
-            if (current !== sequence || input.value.trim() !== term) return;
-            if (!items.length) {
-                const empty = document.createElement('div');
-                empty.className = 'portal-user-suggestion-empty';
-                empty.textContent = 'Geen bestaande medewerkers gevonden.';
-                menu.appendChild(empty);
-                show();
-                return;
-            }
-            for (const person of items) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'portal-user-suggestion';
-                button.setAttribute('role', 'option');
-                const name = document.createElement('span');
-                name.className = 'portal-user-suggestion-name';
-                name.textContent = [person.voornaam, person.name].filter(Boolean).join(' ') || person.gebruikersnaam;
-                const meta = document.createElement('small');
-                meta.textContent = (person.smartschool_gebruikersnaam || person.gebruikersnaam) + (person.groupname ? ' · ' + person.groupname : '');
-                button.append(name, meta);
-                button.addEventListener('click', () => {
-                    input.value = person.smartschool_gebruikersnaam || person.gebruikersnaam;
-                    input.focus();
-                    ++sequence;
-                    if (controller) controller.abort();
-                    close();
-                });
-                menu.appendChild(button);
-            }
-            show();
-        } catch (e) {
-            if (e.name !== 'AbortError' && current === sequence) close();
-        }
-    };
-    input.addEventListener('input', lookup);
-    input.addEventListener('focus', () => { if (input.value.trim().length >= 2) lookup(); });
-    input.addEventListener('keydown', e => {
-        if (e.key === 'Escape') close();
-        if (e.key === 'ArrowDown' && !menu.hidden) {
-            const first = menu.querySelector('button');
-            if (first) { e.preventDefault(); first.focus(); }
-        }
-    });
-    menu.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { close(); input.focus(); }
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            const buttons = [...menu.querySelectorAll('button')];
-            const index = buttons.indexOf(document.activeElement);
-            const next = buttons[index + (e.key === 'ArrowDown' ? 1 : -1)];
-            if (next) { e.preventDefault(); next.focus(); }
-        }
-    });
-    document.addEventListener('click', e => {
-        if (!input.contains(e.target) && !menu.contains(e.target)) close();
-    });
-})();
-</script>
 <script src="{{ asset('js/management-live.js') }}?v=1" defer></script>
 @endpush
