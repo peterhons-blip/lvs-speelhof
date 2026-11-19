@@ -42,7 +42,7 @@ class CheckLeeftijdLeerlingen extends Command
         $ss = app(SmartschoolSoap::class);
 
         // Laad relaties mee
-        $leerlingen = Leerling::with(['klas', 'school'])->get();
+        $leerlingen = Leerling::query()->where('active', 1)->with(['klas', 'school'])->get();
 
         // 7 dagen vooraf + vandaag
         $leerlingenBinnenWeek18 = $leerlingen->filter(fn($l) => $l->wordtBinnen7Dagen18());

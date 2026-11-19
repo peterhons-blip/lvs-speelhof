@@ -101,6 +101,7 @@ class CheckVerjaardagen extends Command
         // =========================
         if ($only === '' || $only === 'leerlingen') {
             $leerlingen = Leerling::with('school')
+                ->where('active', 1)
                 ->whereMonth('geboortedatum', $today->month)
                 ->whereDay('geboortedatum', $today->day)
                 ->get();
