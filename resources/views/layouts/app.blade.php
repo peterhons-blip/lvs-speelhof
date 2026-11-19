@@ -71,6 +71,15 @@
                             </nav>
                         @endif
                     </div>
+                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
+                    <div class="portal-nav-module">
+                        <a href="{{ route('beheer.users.index') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}"><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
+                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Gebruikersbeheer</a>
+                            <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
+                        </nav>
+                    </div>
+                    @endif
                     <span class="portal-sidebar-label portal-sidebar-label-secondary">BINNENKORT</span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▦</span> EMA's <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">⊕</span> Onboarding personeel <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
