@@ -116,7 +116,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
-        Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
+        Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')->name('users.index');
         Route::post('/gebruikers/bulk', [\App\Http\Controllers\PortalPermissionsController::class, 'bulkUpdate'])
             ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.staff.manage')
             ->name('users.bulk');
