@@ -38,7 +38,7 @@ Schedule::command('monitor:scheduled library_reminders')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/bibliotheek_herinneringen.log'));
 
-// Personeelssync: om 04.00 uur gemonitorde preview; geen automatische --apply.
+// Personeelssync: om 04.00 uur automatisch uitvoeren, met bestaande veiligheidscontroles.
 Schedule::command('monitor:scheduled staff_sync')
     ->dailyAt('04:00')
     ->timezone('Europe/Brussels')
