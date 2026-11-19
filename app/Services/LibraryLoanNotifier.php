@@ -73,11 +73,10 @@ class LibraryLoanNotifier
 
             // School-specific SOAP endpoint when configured. No co-account messages.
             $school = DB::table('scholen')->where('id', $loan->schoolid)->first();
-            if ($school && ! empty($school->smartschool_wsdl) && ! empty($school->smartschool_accesscode)) {
-                $ss = new SmartschoolSoap($school->smartschool_wsdl, $school->smartschool_accesscode);
-            } else {
-                $ss = app(SmartschoolSoap::class);
+            if (! $school || empty($school->smartschool_wsdl) || empty($school->smartschool_accesscode)) {
+                throw new \RuntimeException('Smartschool-webservices ontbreken voor de school van deze leerling.');
             }
+            $ss = new SmartschoolSoap($school->smartschool_wsdl, $school->smartschool_accesscode);
             $ss->sendMessage($loan->gebruikersnaam, $subject, $message, $sender, false, 0);
 
             DB::table('library_loan_notifications')
