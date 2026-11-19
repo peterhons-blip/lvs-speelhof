@@ -180,6 +180,36 @@ class LibraryLoanController extends Controller
         });
     }
 
+    public function editReminders(int $loan): View
+    {
+        $item = DB::table('library_loans as loans')
+            ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
+            ->join('library_books as books', 'books.id', '=', 'copies.book_id')
+            ->where('loans.id', $loan)->whereNull('loans.returned_at')
+            ->select('loans.*', 'copies.barcode', 'books.title')->first();
+        abort_unless($item, 404);
+        return view('bibliotheek.loans.reminders', compact('item'));
+    }
+
+    public function updateReminders(Request $request, int $loan): RedirectResponse
+    {
+        $data = $request->validate([
+            'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
+            'remind_on_due_date' => ['nullable', 'in:0,1'],
+        ]);
+        $item = DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->first();
+        abort_unless($item, 404);
+        DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->update([
+            'reminder_days_before' => ($data['reminder_days_before'] ?? '') === ''
+                ? null : (int) $data['reminder_days_before'],
+            'remind_on_due_date' => ($data['remind_on_due_date'] ?? '') === ''
+                ? null : (int) $data['remind_on_due_date'],
+            'updated_at' => now(),
+        ]);
+        return redirect()->route('bibliotheek.loans.index')
+            ->with('success', 'Herinneringsinstellingen voor deze uitlening aangepast.');
+    }
+
     public function settings(): View
     {
         $settings = DB::table('library_settings')->pluck('value', 'key');
