@@ -132,7 +132,10 @@ Route::get('/smartschool/test-user', function (SmartschoolSoap $smartschool) {
     }
 });
 
+// Development-only helper: never allow a forged Smartschool identity on production.
 Route::get('/fake-login', function (\Illuminate\Http\Request $request) {
+    abort_unless(app()->environment('local') && $request->isFromTrustedProxy() === false
+        && in_array($request->ip(), ['127.0.0.1', '::1'], true), 404);
 
     $request->session()->put('ss_user', [
         'id'                => '143',
