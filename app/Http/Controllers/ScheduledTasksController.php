@@ -26,15 +26,15 @@ class ScheduledTasksController extends Controller
         // These are all tasks currently registered in routes/console.php.
         $scheduledTasks = [
             'becoming_18' => ['title' => '18-jarigen en co-accounts', 'type' => 'Leerlingen', 'time' => '01.00',
-                'description' => 'Controle op 18-jarigen, waarschuwingen en co-accounts.'],
+                'description' => 'Controleert welke leerlingen binnenkort 18 jaar worden of vandaag 18 worden. Verwerkt de voorziene Smartschoolmeldingen en opvolging rond co-accounts bij meerderjarigheid.'],
             'birthdays' => ['title' => 'Verjaardagsberichten', 'type' => 'Leerlingen en personeel', 'time' => '02.00',
-                'description' => 'Verjaardagen van leerlingen en medewerkers nakijken en berichten versturen.'],
+                'description' => 'Controleert dagelijks de geboortedatums van leerlingen en personeelsleden. Verstuurt de ingestelde verjaardagsberichten via Smartschool naar de betrokken personen.'],
             'student_sync' => ['title' => 'Leerlingensynchronisatie', 'type' => 'Leerlingen', 'time' => '03.00',
-                'description' => 'Leerlingen, klassen en Smartschool-QR-codes bijwerken.'],
+                'description' => 'Haalt de actuele leerlingen en klassen uit Smartschool op, verwerkt nieuwe of gewijzigde gegevens, actualiseert de actieve status en vult beschikbare QR-scancodes aan.'],
             'staff_sync' => ['title' => 'Personeelssynchronisatie', 'type' => 'Personeel', 'time' => '04.00',
-                'description' => 'Personeelsaccounts bijwerken en verdwenen medewerkers inactief markeren.'],
+                'description' => 'Haalt leerkrachten en administratieve medewerkers uit de Smartschool-groepen op. Maakt ontbrekende accounts aan, werkt bestaande gegevens en standaardrollen bij en markeert verdwenen medewerkers als inactief.'],
             'library_reminders' => ['title' => 'Bibliotheekherinneringen', 'type' => 'Bibliotheek / leerlingen', 'time' => '08.00',
-                'description' => 'Vervallende uitleningen controleren; berichten uitsluitend als herinneringen actief zijn.'],
+                'description' => 'Controleert welke bibliotheekboeken binnenkort moeten worden ingeleverd of al vervallen zijn. Verstuurt alleen Smartschoolherinneringen wanneer die functie in de bibliotheekinstellingen is ingeschakeld.'],
         ];
 
         $taskMonitoringEnabled = Schema::hasTable('scheduled_task_runs');
