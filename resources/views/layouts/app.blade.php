@@ -76,7 +76,8 @@
                         <a href="{{ route('beheer.users.index') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Gebruikersbeheer</a>
+                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
+                            <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
                             <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
                             <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
                             <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
