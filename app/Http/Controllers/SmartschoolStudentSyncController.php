@@ -14,7 +14,7 @@ class SmartschoolStudentSyncController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.student_sync.manage');
         $ready = Schema::hasTable('smartschool_sync_runs')
             && \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code');
 
@@ -46,33 +46,12 @@ class SmartschoolStudentSyncController extends Controller
             ? DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)
                 ->whereNotNull('scannable_code')->count() : 0;
 
-        $scheduledTasks = [
-            'becoming_18' => ['title' => '18-jarigen en co-accounts', 'time' => '01.00',
-                'description' => 'Controle op leerlingen die binnenkort 18 worden, Smartschoolmeldingen en co-accounts.'],
-            'birthdays' => ['title' => 'Verjaardagsberichten', 'time' => '02.00',
-                'description' => 'Verjaardagen van leerlingen en personeel controleren en berichten versturen.'],
-            'student_sync' => ['title' => 'Leerlingensynchronisatie', 'time' => '03.00',
-                'description' => 'Klassen, actieve leerlingen, wijzigingen en Smartschool-QR-codes bijwerken.'],
-            'library_reminders' => ['title' => 'Bibliotheekherinneringen', 'time' => '08.00',
-                'description' => 'Vervallende boeken controleren; berichten alleen als de bibliotheekinstelling actief is.'],
-        ];
-        $taskHistory = collect();
-        $taskMonitoringEnabled = Schema::hasTable('scheduled_task_runs');
-        if ($taskMonitoringEnabled) {
-            $taskHistory = DB::table('scheduled_task_runs')
-                ->orderByDesc('id')->limit(30)->get();
-        }
-        $lastTaskRuns = $taskHistory->unique('task_key')->keyBy('task_key');
-
-        return view('beheer.smartschool-sync', compact(
-            'ready', 'runs', 'pupils', 'codes',
-            'scheduledTasks', 'taskHistory', 'lastTaskRuns', 'taskMonitoringEnabled'
-        ));
+        return view('beheer.smartschool-sync', compact('ready', 'runs', 'pupils', 'codes'));
     }
 
     public function start(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.student_sync.manage');
         $data = $request->validate([
             'confirm_sync' => ['accepted'],
             'refresh_scancodes' => ['nullable', 'in:0,1'],

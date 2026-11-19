@@ -32,6 +32,18 @@ class LibraryAccess
         'administratie' => 'Administratie',
     ];
 
+    public const MANAGEMENT_PERMISSIONS = [
+        'beheer.permissions.manage',
+        'beheer.staff.manage', 'beheer.students.manage',
+        'beheer.smartschool_test.send', 'beheer.student_sync.manage',
+        'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
+    ];
+
+    public function requireIctManager(Request $request): void
+    {
+        $this->requirePermission($request, 'beheer.permissions.manage');
+    }
+
     public function username(Request $request): string
     {
         // Smartschool OAuth's canonical username; never authorize by supplied groupname.
@@ -45,7 +57,7 @@ class LibraryAccess
 
         $groupName = DB::table('users')
             ->join('groups', 'groups.id', '=', 'users.groupId')
-            ->where('users.gebruikersnaam', $username)
+            ->where('users.smartschool_gebruikersnaam', $username)
             ->where('users.allowed_login', 1)
             ->where(function ($q) { $q->whereNull('users.smartschool_active')->orWhere('users.smartschool_active', 1); })
             ->value('groups.groupname');
@@ -68,8 +80,9 @@ class LibraryAccess
             ->contains($permission);
         if (! $known) return false;
 
-        // Existing ICT-coordinator group (id=4 in current test DB) always retains admin access.
+        // ICT-coördinator behoudt altijd volledige beheertoegang.
         if ($role === 'ict_coordinator') return true;
+        // Alle rechten, ook beheermodules, worden per schoolrol toegekend.
         if (! Schema::hasTable('portal_role_permissions')) return false;
 
         return DB::table('portal_role_permissions')
@@ -84,7 +97,11 @@ class LibraryAccess
 
     public function isManager(Request $request): bool
     {
-        return $this->role($request) === 'ict_coordinator';
+        if ($this->role($request) === 'ict_coordinator') return true;
+        foreach (self::MANAGEMENT_PERMISSIONS as $permission) {
+            if ($this->has($request, $permission)) return true;
+        }
+        return false;
     }
 
     public function isOperator(Request $request): bool
@@ -94,7 +111,7 @@ class LibraryAccess
 
     public function requireManager(Request $request): void
     {
-        $this->requirePermission($request, 'beheer.users.manage');
+        $this->requirePermission($request, 'beheer.staff.manage');
     }
 
     public function requireOperator(Request $request): void

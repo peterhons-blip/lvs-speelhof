@@ -77,7 +77,7 @@ class SmartschoolController extends Controller
         $user = $userResponse->object(); // ->userID, ->name, ->surname, ->username, ->platform
 
         // 1) Bestaat de gebruiker lokaal?
-        $baseUser = User::where('gebruikersnaam', $user->username)->first();
+        $baseUser = User::where('smartschool_gebruikersnaam', $user->username)->first();
 
         if (!$baseUser) {
             return redirect('/')->with('error', 'Je account is niet gekend in het LVS. Contacteer de beheerder.');
@@ -96,7 +96,7 @@ class SmartschoolController extends Controller
         // 3) Nu pas: groepnaam ophalen
         $dbUser = User::query()
             ->leftJoin('groups', 'users.groupId', '=', 'groups.id')
-            ->where('users.gebruikersnaam', $user->username)
+            ->where('users.id', $baseUser->id)
             ->first([
                 'users.*',
                 'groups.groupname as groupname',

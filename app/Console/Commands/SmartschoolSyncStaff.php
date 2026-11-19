@@ -16,7 +16,7 @@ class SmartschoolSyncStaff extends Command
     protected $description = 'Personeelsaccounts uit Smartschool ophalen; standaard veilige preview zonder wijzigingen.';
 
     // Smartschool bevat ook technische afzenderaccounts in personeelsgroepen.
-    // Deze zijn geen menselijke personeelsleden; niet als Google-portaaluser aanmaken.
+    // Deze zijn geen menselijke personeelsleden; niet als LVS-portaaluser aanmaken.
     private const SERVICE_ACCOUNTS = ['ict', 'lvs', 'bib', 'beleid'];
 
     private const GROUPS = [
@@ -117,8 +117,8 @@ class SmartschoolSyncStaff extends Command
             return self::FAILURE;
         }
 
-        // Smartschool-gebruikersnaam is de matchsleutel. users.gebruikersnaam
-        // bevat de Google-naam en mag NIET voor matching gebruikt of overschreven worden.
+        // Smartschool-gebruikersnaam is de matchsleutel voor de sync en de login.
+        // users.gebruikersnaam is een afzonderlijk legacy veld en mag niet overschreven worden.
         // Legacy LVS-accounts kunnen schoolid=null hebben.
         $allUsers = DB::table('users')->get();
         $existing = $allUsers->filter(fn ($user) => trim((string) $user->smartschool_gebruikersnaam) !== '')
@@ -210,7 +210,7 @@ class SmartschoolSyncStaff extends Command
         $this->info(($apply ? 'UITVOEREN' : 'PREVIEW').': leerkrachtgroep '.$totals['leerkracht']
             .', administratiegroep '.$totals['administratie'].', uniek '.count($accounts).'.');
         $this->line('Technische Smartschool-accounts overgeslagen: '.$skippedService);
-        $this->line('Nieuw: '.$changes['nieuw'].' (nieuwe accounts voorlopig geblokkeerd zonder Google-koppeling) | Bijwerken: '.$changes['bijwerken']
+        $this->line('Nieuw: '.$changes['nieuw'].' (nieuwe accounts wachten op handmatige toelating) | Bijwerken: '.$changes['bijwerken']
             .' | Uitschakelen: '.$changes['uitschakelen']);
         $this->line('Bestaande Smartschool-accounts zonder schoolid die werden herkend: '.$matchedWithoutSchool);
         if ($missingUsernames) $this->line('Nog niet lokaal gevonden: '.implode(', ', $missingUsernames));
@@ -238,8 +238,8 @@ class SmartschoolSyncStaff extends Command
                     }
                     DB::table('users')->insert([
                         'schoolid' => $schoolId,
-                        // Google-gebruikersnaam mag niet met een Smartschool-naam gevuld worden.
-                        // Tijdelijke unieke identificatie: blijft geblokkeerd tot Google-login gekoppeld is.
+                        // Behoud een aparte unieke legacy gebruikersnaam zonder Google-login als vereiste.
+                        // Aanmeldtoegang blijft standaard uit tot een beheerder die toelaat.
                         'gebruikersnaam' => 'ss-pending-'.substr(hash('sha256', $schoolId.':'.$username), 0, 32),
                         'smartschool_gebruikersnaam' => $username,
                         'voornaam' => $row['first'],

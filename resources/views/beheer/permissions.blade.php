@@ -14,9 +14,9 @@
         <div>
             <p class="portal-eyebrow">PORTAALBEHEER</p>
             <h1>Rollen en rechten</h1>
-            <p>Beheer per schoolrol welke modules zichtbaar zijn en welke acties of instellingen aangepast mogen worden.</p>
+            <p>Bepaal per schoolrol welke modules en beheerschermen toegankelijk zijn. De gekozen rechten gelden voor iedereen met die schoolrol.</p>
         </div>
-        <a class="library-button library-button-secondary" href="{{ route('beheer.users.index') }}">Gebruikersbeheer</a>
+        <a class="library-button library-button-secondary" href="{{ route('beheer.users.index') }}">Personeelsbeheer</a>
     </div>
 
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
@@ -24,7 +24,7 @@
 
     <div class="portal-roles-intro">
         <span aria-hidden="true" class="portal-roles-intro-icon">✓</span>
-        <p>Alle rollen staan standaard dicht. Klik op een rol om de rechten te bekijken of aan te passen. <strong>Niet aangevinkt = geen toegang.</strong></p>
+        <p>Open een schoolrol en vink ook onder <strong>Portaalbeheer</strong> de gewenste beheerschermen aan. <strong>Niet aangevinkt = geen toegang.</strong></p>
     </div>
 
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
@@ -49,9 +49,7 @@
             @php
                 $assigned = $stored[$role] ?? [];
                 $available = collect($modules)->flatMap(fn ($module) =>
-                    collect($module['permissions'] ?? [])->keys()->reject(
-                        fn ($key) => in_array($key, ['beheer.users.manage', 'beheer.permissions.manage'], true)
-                    )
+                    array_keys($module['permissions'] ?? [])
                 )->values()->all();
                 $enabledCount = count(array_intersect($assigned, $available));
             @endphp
@@ -78,7 +76,7 @@
                     <div class="portal-permission-modules">
                         @foreach($modules as $module)
                             @php
-                                $rights = collect($module['permissions'] ?? [])->except(['beheer.users.manage', 'beheer.permissions.manage']);
+                                $rights = collect($module['permissions'] ?? []);
                                 $moduleActive = count(array_intersect($assigned, $rights->keys()->all()));
                             @endphp
                             @if($rights->isNotEmpty())

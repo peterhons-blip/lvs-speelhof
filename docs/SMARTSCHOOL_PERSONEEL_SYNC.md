@@ -6,7 +6,7 @@
 - `Administratie Campus Speelhof`: recursief ophalen; standaardrol **administratie**, krijgt voorrang als dezelfde gebruikersnaam in beide lijsten staat.
 - De Tinker-controle van 19 november 2026 gaf respectievelijk 117 en 20 accounts, naar schatting 135 unieke accounts. Deze aantallen zijn veiligheidsindicaties, geen harde waarheid.
 
-De koppelsleutel is de Smartschool-`gebruikersnaam` uit de API met `users.smartschool_gebruikersnaam` in LVS. `users.gebruikersnaam` is de Google-gebruikersnaam en wordt bij bestaande accounts nooit aangepast. Nieuwe accounts krijgen voorlopig een interne placeholder in dat Google-veld en blijven `allowed_login=0` totdat de echte Google-koppeling geregeld is. Nieuwe accounts krijgen standaardrollen; bestaande bijzondere rollen (ICT, directeur, secretariaat, TAC, leerlingbegeleider enz.) worden niet overschreven. Een bestaande handmatige blokkering (`allowed_login=0`) wordt door de sync niet automatisch teruggezet. De rol administratie heeft **geen impliciete ICT-beheerrechten**; toekenning van rechten verloopt via het bestaande rol- en rechtenbeheer.
+De koppelsleutel is de Smartschool-`gebruikersnaam` uit de API met `users.smartschool_gebruikersnaam` in LVS. `users.gebruikersnaam` is de Google-gebruikersnaam en wordt bij bestaande accounts nooit aangepast. Nieuwe accounts krijgen een interne unieke placeholder in het legacy veld `gebruikersnaam` en blijven `allowed_login=0` tot een beheerder toegang toelaat. Google is geen vereiste voor aanmelden; Smartschool OAuth gebruikt `smartschool_gebruikersnaam`. Nieuwe accounts krijgen standaardrollen; bestaande bijzondere rollen (ICT, directeur, secretariaat, TAC, leerlingbegeleider enz.) worden niet overschreven. Een bestaande handmatige blokkering (`allowed_login=0`) wordt door de sync niet automatisch teruggezet. De rol administratie heeft **geen impliciete ICT-beheerrechten**; toekenning van rechten verloopt via het bestaande rol- en rechtenbeheer.
 
 ## Fail-safe
 
@@ -14,7 +14,7 @@ De koppelsleutel is de Smartschool-`gebruikersnaam` uit de API met `users.smarts
 - Technische accounts (`ict`, `lvs`, `bib`, `beleid`) worden niet als gewone `users` aangemaakt; ze blijven beschikbaar in Smartschool voor afzenders. De ontdubbeling gebeurt per Smartschool-gebruikersnaam. De sync schrijft alleen noodzakelijke accountgegevens weg: voornaam, familienaam, geboortedatum indien geldig, Smartschool-gebruikersnaam en de standaardrol. Bij nieuwe accounts wordt het Smartschool-e-mailadres als contact-e-mail gebruikt indien geldig; bestaande e-mailadressen worden niet overschreven. Lege geboortedatums wissen geen bestaande waarde. De bestaande Google-gebruikersnaam, bijzondere rollen en handmatige aanmeldinstellingen blijven behouden.
 - Alle bestaande, aan school 1 gekoppelde accounts met `users.smartschool_gebruikersnaam` die niet meer in de volledig opgehaalde personeelsgroepen voorkomen worden bij de definitieve sync als inactief gemarkeerd (`smartschool_active=0`) en geblokkeerd (`allowed_login=0`), ook als ze een bijzondere rol hebben. Het account en die rol blijven bewaard. Technische afzenderaccounts `ict`, `lvs`, `bib`, `beleid` zijn uitgesloten. Aanwezige accounts krijgen `smartschool_active=1`; handmatige loginblokkeringen worden niet zomaar opgeheven.
 - Bij meer dan 25 of meer dan een kwart van de lokale accounts voorgestelde blokkeringen, of een onverwacht grote terugval, stopt de gehele opdracht. De laatste actieve ICT-coördinator mag niet worden geblokkeerd. De eerste sync wordt alleen uitgevoerd na controle van de preview en een backup.
-- Geblokkeerde gebruikers zijn standaard verborgen in Beheer → Gebruikersbeheer; met 'Ook geblokkeerde accounts tonen' worden ze weer zichtbaar om handmatig aan te passen.
+- Gebruikers met `smartschool_active=0` worden nooit getoond in Beheer → Gebruikersbeheer. Met 'Alle accounts' worden ook handmatig geblokkeerde accounts getoond die nog actief zijn in Smartschool. De lijst kan gefilterd worden op naam, Smartschool-account of groep.
 
 ## Lokaal installeren
 
@@ -48,7 +48,7 @@ Handmatige webinterface: **Beheer → Personeel synchroniseren**. Deze gebruikt 
 C:\xampp\php\php.exe artisan queue:work smartschool_sync --queue=smartschool-sync --stop-when-empty --tries=1 --timeout=1800
 ```
 
-Nachtelijk is voorlopig slechts een **preview om 03:30** gepland. Bewust nog geen automatische `--apply` geactiveerd; die pas aanzetten na functionele controle en expliciete vrijgave. Live/production nooit zonder goedkeuring bijwerken.
+De Laravel Scheduler voert de personeelssync **elke nacht om 04.00 uur met `--apply`** uit, met de bestaande veiligheidscontroles. Dit is expliciet toegestaan door de beheerder. De taak gebruikt rechtstreeks `monitor:scheduled staff_sync` en vereist geen queue-worker, wel een werkende Laravel Scheduler (`schedule:run`). Status en historiek zijn zichtbaar onder 'Geplande nachtelijke taken' op zowel de leerlingen- als personeelssynchronisatiepagina. Controleer de productieconfiguratie, scheduler en gegevensback-up vóór uitrol.
 
 ## Nog lokaal valideren
 
