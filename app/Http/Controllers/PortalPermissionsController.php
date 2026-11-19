@@ -14,7 +14,7 @@ class PortalPermissionsController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requirePermission($request, 'beheer.permissions.manage');
+        $access->requireManager($request);
         $modules = config('portal_permissions', []);
         $roles = LibraryAccess::ROLES;
         $stored = DB::table('portal_role_permissions')->get()->groupBy('role')
@@ -25,7 +25,7 @@ class PortalPermissionsController extends Controller
 
     public function update(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.permissions.manage');
+        $access->requireManager($request);
         $data = $request->validate([
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
             'permissions' => ['sometimes', 'array'],
@@ -37,6 +37,10 @@ class PortalPermissionsController extends Controller
         $valid = collect(config('portal_permissions', []))
             ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))->all();
         $requested = array_values(array_unique($data['permissions'] ?? []));
+        // Portal-wide rights administration remains exclusively with ICT.
+        abort_if(in_array('beheer.users.manage', $requested, true)
+            || in_array('beheer.permissions.manage', $requested, true), 422,
+            'Portaalbeheer kan alleen aan ICT-coördinatoren worden toegekend.');
         abort_unless(count(array_diff($requested, $valid)) === 0, 422, 'Onbekend recht.');
 
         DB::transaction(function () use ($role, $requested) {
@@ -54,7 +58,7 @@ class PortalPermissionsController extends Controller
 
     public function users(Request $request, LibraryAccess $access): View
     {
-        $access->requirePermission($request, 'beheer.users.manage');
+        $access->requireManager($request);
         $users = DB::table('portal_staff')->orderBy('role')->orderBy('smartschool_username')->get();
         $roles = LibraryAccess::ROLES;
         return view('beheer.users', compact('users', 'roles'));
@@ -62,7 +66,7 @@ class PortalPermissionsController extends Controller
 
     public function storeUser(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.users.manage');
+        $access->requireManager($request);
         $data = $request->validate([
             'smartschool_username' => ['required', 'string', 'max:120', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/'],
             'display_name' => ['nullable', 'string', 'max:160'],
@@ -86,7 +90,7 @@ class PortalPermissionsController extends Controller
 
     public function updateUser(Request $request, LibraryAccess $access, int $staff): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.users.manage');
+        $access->requireManager($request);
         $data = $request->validate([
             'display_name' => ['nullable', 'string', 'max:160'],
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
