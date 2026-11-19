@@ -72,8 +72,20 @@
                         @endif
                     </div>
                     @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
+                    @php
+                        $managementAccess = app(\App\Services\LibraryAccess::class);
+                        $managementLanding = collect([
+                            'beheer.staff.manage' => 'beheer.users.index',
+                            'beheer.students.manage' => 'beheer.students.index',
+                            'beheer.permissions.manage' => 'beheer.permissions.index',
+                            'beheer.smartschool_test.send' => 'beheer.smartschool-test.create',
+                            'beheer.student_sync.manage' => 'beheer.smartschool-sync.index',
+                            'beheer.staff_sync.manage' => 'beheer.staff-sync.index',
+                            'beheer.scheduled_tasks.view' => 'beheer.scheduled-tasks.index',
+                        ])->first(fn ($route, $permission) => $managementAccess->has(request(), $permission)) ?? 'home';
+                    @endphp
                     <div class="portal-nav-module">
-                        <a href="{{ route('beheer.users.index') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        <a href="{{ route($managementLanding) }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
