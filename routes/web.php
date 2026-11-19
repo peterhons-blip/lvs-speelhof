@@ -59,6 +59,14 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
 
     });
 
+    // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.
+    Route::get('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'create'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')
+        ->name('beheer.smartschool-test.create');
+    Route::post('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'send'])
+        ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage', 'throttle:5,1'])
+        ->name('beheer.smartschool-test.send');
+
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
     Route::prefix('beheer')->name('beheer.')->group(function () {
         Route::get('/gebruikers', [\App\Http\Controllers\PortalPermissionsController::class, 'users'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.users.manage')->name('users.index');
