@@ -15,7 +15,7 @@ class SmartschoolTestMessageController extends Controller
 {
     public function create(Request $request, LibraryAccess $access): View
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.smartschool_test.send');
 
         $sender = old('sender', 'bib');
         $recipient = old('recipient', $access->username($request));
@@ -24,7 +24,7 @@ class SmartschoolTestMessageController extends Controller
 
     public function recipients(Request $request, LibraryAccess $access): \Illuminate\Http\JsonResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.smartschool_test.send');
         $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:80']]);
         $term = trim($data['q']);
         if (mb_strlen($term) < 2) return response()->json([]);
@@ -66,7 +66,7 @@ class SmartschoolTestMessageController extends Controller
 
     public function send(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requireManager($request);
+        $access->requirePermission($request, 'beheer.smartschool_test.send');
 
         $data = $request->validate([
             'sender' => ['required', Rule::in(['lvs', 'bib'])],
