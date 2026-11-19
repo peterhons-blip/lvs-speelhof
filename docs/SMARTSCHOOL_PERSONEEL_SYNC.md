@@ -11,9 +11,9 @@ De koppelsleutel is de Smartschool-`gebruikersnaam` uit de API met `users.smarts
 ## Fail-safe
 
 - Eerst beide hoofdgroepen volledig recursief ophalen; bij SOAP-fout, onverwachte structuur, leerlingaccounts, missende gebruikersnaam of veel lagere aantallen stopt de sync zonder DB-wijziging.
-- De ontdubbeling gebeurt per Smartschool-gebruikersnaam. De sync schrijft alleen noodzakelijke accountgegevens weg: voornaam, familienaam, geboortedatum indien geldig, Smartschool-gebruikersnaam en de standaardrol. Bij nieuwe accounts wordt het Smartschool-e-mailadres als contact-e-mail gebruikt indien geldig; bestaande e-mailadressen worden niet overschreven. Lege geboortedatums wissen geen bestaande waarde. De bestaande Google-gebruikersnaam, bijzondere rollen en handmatige aanmeldinstellingen blijven behouden.
-- Accounts die verdwenen zijn uit Smartschool worden alleen geblokkeerd (`allowed_login=0`), niet verwijderd. Voor uitschakeling komen alleen eerder door deze sync geregistreerde accounts en bestaande accounts met standaardrol leerkracht/administratie in aanmerking; systeemaccounts en onbekende speciale rollen niet, tenzij ze eerder door de sync beheerd werden.
-- Bij meer dan tien voorgestelde blokkeringen of een onverwacht grote terugval stopt de gehele opdracht.
+- Technische accounts (`ict`, `lvs`, `bib`, `beleid`) worden niet als gewone `users` aangemaakt; ze blijven beschikbaar in Smartschool voor afzenders. De ontdubbeling gebeurt per Smartschool-gebruikersnaam. De sync schrijft alleen noodzakelijke accountgegevens weg: voornaam, familienaam, geboortedatum indien geldig, Smartschool-gebruikersnaam en de standaardrol. Bij nieuwe accounts wordt het Smartschool-e-mailadres als contact-e-mail gebruikt indien geldig; bestaande e-mailadressen worden niet overschreven. Lege geboortedatums wissen geen bestaande waarde. De bestaande Google-gebruikersnaam, bijzondere rollen en handmatige aanmeldinstellingen blijven behouden.
+- Alle bestaande, aan school 1 gekoppelde accounts met `users.smartschool_gebruikersnaam` die niet meer in de volledig opgehaalde personeelsgroepen voorkomen worden bij de definitieve sync als inactief gemarkeerd (`smartschool_active=0`) en geblokkeerd (`allowed_login=0`), ook als ze een bijzondere rol hebben. Het account en die rol blijven bewaard. Technische afzenderaccounts `ict`, `lvs`, `bib`, `beleid` zijn uitgesloten. Aanwezige accounts krijgen `smartschool_active=1`; handmatige loginblokkeringen worden niet zomaar opgeheven.
+- Bij meer dan 25 of meer dan een kwart van de lokale accounts voorgestelde blokkeringen, of een onverwacht grote terugval, stopt de gehele opdracht. De laatste actieve ICT-coördinator mag niet worden geblokkeerd. De eerste sync wordt alleen uitgevoerd na controle van de preview en een backup.
 - Geblokkeerde gebruikers zijn standaard verborgen in Beheer → Gebruikersbeheer; met 'Ook geblokkeerde accounts tonen' worden ze weer zichtbaar om handmatig aan te passen.
 
 ## Lokaal installeren
@@ -26,6 +26,7 @@ git fetch origin
 git switch feature/smartschool-personeel-sync
 git pull origin feature/smartschool-personeel-sync
 C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_180000_create_staff_memberships.php
+C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_19_190000_add_smartschool_active_to_users.php
 C:\xampp\php\php.exe artisan optimize:clear
 ```
 
