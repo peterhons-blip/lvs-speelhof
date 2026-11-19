@@ -364,7 +364,10 @@ class SmartschoolSyncLeerlingen extends Command
         $this->info($msg);
         Log::info('Smartschool sync leerlingen: ' . $msg);
 
-        return ($failedClasses > 0 || $emptyClasses > 0) ? self::FAILURE : self::SUCCESS;
+        // An empty class can be legitimate in Smartschool. The imported 645+ pupil
+        // records remain valid; report a warning instead of a failed task.
+        // Genuine errors obtaining classes still fail.
+        return $failedClasses > 0 ? self::FAILURE : self::SUCCESS;
     }
 
     /**
