@@ -21,13 +21,13 @@ class LibraryAccess
     ];
 
     public const LABELS = [
-        'leerkracht' => 'Leerkracht',
-        'directie' => 'Directie',
-        'leerlingbegeleiding' => 'Leerlingbegeleiding',
         'ict_coordinator' => 'ICT-coördinator',
-        'boekhouding' => 'Boekhouding',
+        'directie' => 'Directie',
         'secretariaat' => 'Secretariaat',
+        'leerlingbegeleiding' => 'Leerlingbegeleiding',
+        'boekhouding' => 'Boekhouding',
         'tac' => 'TAC',
+        'leerkracht' => 'Leerkracht',
     ];
 
     public function username(Request $request): string
