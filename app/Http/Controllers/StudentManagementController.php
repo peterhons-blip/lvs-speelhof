@@ -15,6 +15,15 @@ class StudentManagementController extends Controller
         $access->requireManager($request);
         $search = mb_substr(trim((string) $request->query('zoek', '')), 0, 100);
         $showInactive = $request->boolean('toon_inactief');
+        $sortColumns = [
+            'leerling' => 'leerlingen.naam',
+            'klas' => 'klassen.klasnaam',
+            'account' => 'leerlingen.gebruikersnaam',
+            'status' => 'leerlingen.active',
+        ];
+        $sort = (string) $request->query('sort', 'leerling');
+        if (! array_key_exists($sort, $sortColumns)) $sort = 'leerling';
+        $direction = strtolower((string) $request->query('richting', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $students = DB::table('leerlingen')
             ->leftJoin('klassen', 'klassen.id', '=', 'leerlingen.klasid')
@@ -31,7 +40,8 @@ class StudentManagementController extends Controller
             })
             ->select('leerlingen.id', 'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam',
                 'leerlingen.active', 'leerlingen.geboortedatum', 'klassen.klasnaam')
-            ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam')
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
         return view('beheer.students.index', compact('students', 'search', 'showInactive'));
     }
