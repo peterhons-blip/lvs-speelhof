@@ -16,6 +16,20 @@ return new class extends Migration {
             ]);
         }
 
+        if (! Schema::hasTable('smartschool_staff_sync_runs')) {
+            Schema::create('smartschool_staff_sync_runs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('school_id');
+                $table->string('requested_by', 120);
+                $table->string('status', 20)->default('waiting');
+                $table->boolean('apply_changes')->default(false);
+                $table->text('summary')->nullable();
+                $table->timestamp('started_at')->nullable();
+                $table->timestamp('finished_at')->nullable();
+                $table->timestamps();
+            });
+        }
+
         if (! Schema::hasTable('smartschool_staff_memberships')) {
             Schema::create('smartschool_staff_memberships', function (Blueprint $table) {
                 $table->id();
@@ -31,6 +45,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('smartschool_staff_memberships');
+        Schema::dropIfExists('smartschool_staff_sync_runs');
         // Groep administratie bewaren: er kunnen intussen gebruikers aan gekoppeld zijn.
     }
 };
