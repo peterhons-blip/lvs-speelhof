@@ -135,6 +135,59 @@ class LibraryLoanController extends Controller
         return response()->json($people);
     }
 
+    /**
+     * Find catalogue titles and the individual copies that can still be loaned.
+     * All writes are validated again in store() using the selected barcode.
+     */
+    public function searchBooks(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2 || mb_strlen($q) > 120) return response()->json([]);
+
+        $term = '%'.addcslashes($q, '%_\\').'%';
+        $books = DB::table('library_books as books')
+            ->where(function ($query) use ($term) {
+                $query->where('books.title', 'like', $term)
+                    ->orWhere('books.isbn', 'like', $term)
+                    ->orWhere('books.authors', 'like', $term);
+            })
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')->from('library_copies as copies')
+                    ->whereColumn('copies.book_id', 'books.id')
+                    ->where('copies.status', 'beschikbaar')
+                    ->whereNotExists(function ($loans) {
+                        $loans->selectRaw('1')->from('library_loans as loans')
+                            ->whereColumn('loans.copy_id', 'copies.id')
+                            ->whereNull('loans.returned_at');
+                    });
+            })
+            ->select('books.id', 'books.title', 'books.isbn', 'books.authors')
+            ->orderBy('books.title')->limit(20)->get();
+
+        return response()->json($books);
+    }
+
+    public function availableCopies(Request $request, int $book): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $exists = DB::table('library_books')->where('id', $book)->exists();
+        if (! $exists) return response()->json(['message' => 'Boek niet gevonden.'], 404);
+
+        $copies = DB::table('library_copies as copies')
+            ->where('copies.book_id', $book)
+            ->where('copies.status', 'beschikbaar')
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')->from('library_loans as loans')
+                    ->whereColumn('loans.copy_id', 'copies.id')
+                    ->whereNull('loans.returned_at');
+            })
+            ->select('copies.barcode', 'copies.shelf_location', 'copies.condition')
+            ->orderBy('copies.barcode')->limit(100)->get();
+
+        return response()->json($copies);
+    }
+
     public function lookupCopy(Request $request): \Illuminate\Http\JsonResponse
     {
         $this->authorizeOperator($request);

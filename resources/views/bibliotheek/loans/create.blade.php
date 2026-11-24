@@ -88,7 +88,7 @@
         <section class="library-checkout-card">
             <div class="library-checkout-section-head">
                 <span class="library-checkout-step">2</span>
-                <div><h2>Boeken toevoegen</h2><p>Scan de exemplaren na elkaar. Elk boek verschijnt in de lijst hieronder.</p></div>
+                <div><h2>Boeken toevoegen</h2><p>Scan een exemplaarbarcode of zoek een titel/ISBN en kies het juiste beschikbare exemplaar.</p></div>
                 <span class="library-checkout-counter"><strong id="checkout-book-count">0</strong> boek(en)</span>
             </div>
             <div class="library-checkout-section-body">
@@ -99,6 +99,16 @@
                         <button type="button" id="checkout-add-book" class="library-button library-button-secondary">+ Boek toevoegen</button>
                     </div>
                     <p class="library-help">Druk na het scannen op Enter of klik op ‘Boek toevoegen’. Dubbele exemplaren worden geweigerd.</p>
+                </div>
+                <div class="library-field" style="margin-top:1rem">
+                    <label for="checkout-book-search">Of zoek een boek op titel, auteur of ISBN</label>
+                    <input id="checkout-book-search" type="search" placeholder="Typ minstens 2 tekens van titel, auteur of ISBN" autocomplete="off" maxlength="120">
+                    <div id="checkout-book-search-results" class="library-checkout-results" role="status"></div>
+                    <p class="library-help">Selecteer een titel om de beschikbare exemplaren en hun barcodes te bekijken.</p>
+                </div>
+                <div id="checkout-available-copies" class="library-field" hidden>
+                    <strong id="checkout-selected-book-title"></strong>
+                    <div id="checkout-copy-results" class="library-checkout-results" role="status"></div>
                 </div>
                 <div id="book-feedback" class="library-checkout-feedback" aria-live="polite" hidden></div>
                 <div id="checkout-book-fields"></div>
@@ -165,6 +175,11 @@
     const studentFeedback = document.getElementById('student-feedback');
     const bookInput = document.getElementById('checkout-barcode');
     const bookFeedback = document.getElementById('book-feedback');
+    const bookSearch = document.getElementById('checkout-book-search');
+    const bookSearchResults = document.getElementById('checkout-book-search-results');
+    const availableCopies = document.getElementById('checkout-available-copies');
+    const selectedBookTitle = document.getElementById('checkout-selected-book-title');
+    const copyResults = document.getElementById('checkout-copy-results');
     const bookTable = document.getElementById('checkout-books');
     const bookFields = document.getElementById('checkout-book-fields');
     const bookCount = document.getElementById('checkout-book-count');
@@ -176,7 +191,9 @@
         students: @json(route('bibliotheek.loans.students')),
         staff: @json(route('bibliotheek.loans.staff')),
         scan: @json(route('bibliotheek.loans.student-scan')),
-        copy: @json(route('bibliotheek.loans.copy-scan'))
+        copy: @json(route('bibliotheek.loans.copy-scan')),
+        books: @json(route('bibliotheek.loans.books-search')),
+        availableCopiesBase: @json(url('/bibliotheek/uitleningen/boeken'))
     };
     const initialStudent = @json($leerling);
     const initialStaff = @json($staffMember);
@@ -187,6 +204,8 @@
     let studentLookupSeq = 0;
     let staffLookupSeq = 0;
     let bookBusy = false;
+    let bookSearchSeq = 0;
+    let copySearchSeq = 0;
 
     function feedback(element, message, isError = false) {
         element.hidden = !message;
@@ -417,6 +436,91 @@
     bookInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); addBook(bookInput.value); }
     });
+
+    bookSearch.addEventListener('input', async () => {
+        const q = bookSearch.value.trim();
+        const seq = ++bookSearchSeq;
+        ++copySearchSeq;
+        bookSearchResults.replaceChildren();
+        copyResults.replaceChildren();
+        availableCopies.hidden = true;
+        if (q.length < 2) return;
+        try {
+            const response = await fetch(endpoints.books + '?q=' + encodeURIComponent(q), {
+                headers: {Accept: 'application/json'}
+            });
+            if (!response.ok) {
+                feedback(bookFeedback, 'Boeken zoeken is momenteel niet beschikbaar.', true);
+                return;
+            }
+            const titles = await response.json();
+            if (seq !== bookSearchSeq) return;
+            feedback(bookFeedback, '');
+            if (!titles.length) {
+                const empty = document.createElement('p');
+                empty.className = 'library-help';
+                empty.textContent = 'Geen boeken met beschikbare exemplaren gevonden.';
+                bookSearchResults.appendChild(empty);
+            }
+            for (const book of titles) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'library-checkout-result';
+                button.textContent = book.title + (book.isbn ? ' · ISBN ' + book.isbn : '') +
+                    (book.authors ? ' · ' + book.authors : '');
+                button.addEventListener('click', () => showAvailableCopies(book));
+                bookSearchResults.appendChild(button);
+            }
+        } catch {
+            if (seq === bookSearchSeq) feedback(bookFeedback, 'Boeken zoeken is momenteel niet beschikbaar.', true);
+        }
+    });
+
+    async function showAvailableCopies(book) {
+        const seq = ++copySearchSeq;
+        bookSearchResults.replaceChildren();
+        selectedBookTitle.textContent = book.title + (book.isbn ? ' · ISBN ' + book.isbn : '');
+        availableCopies.hidden = false;
+        copyResults.replaceChildren();
+        const busy = document.createElement('p');
+        busy.className = 'library-help';
+        busy.textContent = 'Beschikbare exemplaren laden...';
+        copyResults.appendChild(busy);
+        try {
+            const url = endpoints.availableCopiesBase + '/' + encodeURIComponent(book.id) + '/beschikbare-exemplaren';
+            const response = await fetch(url, {headers: {Accept: 'application/json'}});
+            if (!response.ok) throw new Error('lookup');
+            const copies = await response.json();
+            if (seq !== copySearchSeq) return;
+            copyResults.replaceChildren();
+            const eligible = copies.filter(copy => !books.some(selected => selected.barcode === copy.barcode));
+            if (!eligible.length) {
+                const empty = document.createElement('p');
+                empty.className = 'library-help';
+                empty.textContent = 'Geen andere beschikbare exemplaren. Zoek opnieuw of scan een barcode.';
+                copyResults.appendChild(empty);
+                return;
+            }
+            for (const copy of eligible) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'library-checkout-result';
+                button.textContent = 'Exemplaar ' + copy.barcode
+                    + (copy.shelf_location ? ' · Rek ' + copy.shelf_location : '')
+                    + (copy.condition ? ' · Staat: ' + copy.condition : '');
+                button.addEventListener('click', async () => {
+                    await addBook(copy.barcode);
+                    if (seq === copySearchSeq) showAvailableCopies(book);
+                });
+                copyResults.appendChild(button);
+            }
+        } catch {
+            if (seq === copySearchSeq) {
+                copyResults.replaceChildren();
+                feedback(bookFeedback, 'Beschikbare exemplaren ophalen is niet gelukt.', true);
+            }
+        }
+    }
 
     function updateDate() {
         const days = Number(term.value);
