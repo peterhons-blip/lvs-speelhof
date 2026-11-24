@@ -191,6 +191,66 @@
         </form>
     </section>
 
+    <section class="library-form-card library-birthday-adult">
+        <h2>Berichten op de 18e verjaardag</h2>
+        <p class="library-help">De privacyprocedure schakelt gekoppelde co-accounts automatisch uit, los van de berichten hieronder. Je kunt de communicatie aanpassen, maar <strong>niet</strong> de verplichte uitschakeling uitschakelen.</p>
+        <form method="post" action="{{ route('beheer.birthdays.adult.update') }}" class="library-form">
+            @csrf
+            <h3>Bericht over ouderaccounts aan de leerling</h3>
+            <div class="library-form-grid">
+                <div class="library-field"><label for="adult_student_notice">Bericht verzenden</label>
+                    <select id="adult_student_notice" name="adult_student_notice">
+                        <option value="1" @selected(old('adult_student_notice', $settings['adult_student_notice']) === '1')>Ja</option>
+                        <option value="0" @selected(old('adult_student_notice', $settings['adult_student_notice']) === '0')>Nee</option>
+                    </select></div>
+                <div class="library-field"><label for="adult_sender_student">Afzender Smartschool</label>
+                    <input id="adult_sender_student" name="adult_sender_student" maxlength="120" value="{{ old('adult_sender_student', $settings['adult_sender_student']) }}" placeholder="Automatisch: algemene schoolafzender"></div>
+                <div class="library-field library-wide"><label for="adult_subject_student">Onderwerp</label>
+                    <input id="adult_subject_student" name="adult_subject_student" maxlength="200" required value="{{ old('adult_subject_student', $settings['adult_subject_student']) }}"></div>
+                <div class="library-field library-wide"><label for="adult_body_student">Berichttekst leerling</label>
+                    <textarea id="adult_body_student" name="adult_body_student" maxlength="5000" rows="5" placeholder="Leeg laten = bestaande Smartschool-template van de school">{{ old('adult_body_student', $settings['adult_body_student']) }}</textarea>
+                    <p class="library-help">Leeg laten behoudt het huidige schoolbericht. Gebruik indien gewenst {voornaam}, {naam} en {school}.</p>
+                </div>
+            </div>
+            <h3>Uitnodiging leerlingensecretariaat</h3>
+            <div class="library-form-grid">
+                <div class="library-field"><label for="adult_secretariat_notice">Uitnodiging versturen</label>
+                    <select id="adult_secretariat_notice" name="adult_secretariat_notice">
+                        <option value="1" @selected(old('adult_secretariat_notice', $settings['adult_secretariat_notice']) === '1')>Ja</option>
+                        <option value="0" @selected(old('adult_secretariat_notice', $settings['adult_secretariat_notice']) === '0')>Nee</option>
+                    </select></div>
+                <div class="library-field"><label for="adult_sender_secretariat">Afzender Smartschool</label>
+                    <input id="adult_sender_secretariat" name="adult_sender_secretariat" maxlength="120" value="{{ old('adult_sender_secretariat', $settings['adult_sender_secretariat']) }}" placeholder="Automatisch: secretariaatsaccount"></div>
+                <div class="library-field library-wide"><label for="adult_subject_secretariat">Onderwerp</label>
+                    <input id="adult_subject_secretariat" name="adult_subject_secretariat" maxlength="200" required value="{{ old('adult_subject_secretariat', $settings['adult_subject_secretariat']) }}"></div>
+                <div class="library-field library-wide"><label for="adult_body_secretariat">Berichttekst secretariaat</label>
+                    <textarea id="adult_body_secretariat" name="adult_body_secretariat" maxlength="5000" rows="5" placeholder="Leeg laten = bestaande Smartschool-template van de school">{{ old('adult_body_secretariat', $settings['adult_body_secretariat']) }}</textarea>
+                </div>
+            </div>
+            <h3>Dagelijkse overzichten voor medewerkers</h3>
+            <div class="library-form-grid">
+                @foreach([
+                    'adult_overview_smartschool_enabled' => 'Overzicht via Smartschool versturen',
+                    'adult_overview_email_enabled' => 'Overzicht via e-mail versturen',
+                ] as $key => $label)
+                    <div class="library-field"><label for="{{ $key }}">{{ $label }}</label>
+                        <select id="{{ $key }}" name="{{ $key }}">
+                            <option value="1" @selected(old($key, $settings[$key]) === '1')>Ja</option>
+                            <option value="0" @selected(old($key, $settings[$key]) === '0')>Nee</option>
+                        </select></div>
+                @endforeach
+                <div class="library-field library-wide"><label for="adult_overview_smartschool_subject">Onderwerp Smartschool-overzicht</label>
+                    <input id="adult_overview_smartschool_subject" name="adult_overview_smartschool_subject" maxlength="200" required value="{{ old('adult_overview_smartschool_subject', $settings['adult_overview_smartschool_subject']) }}"></div>
+                <div class="library-field"><label for="adult_overview_sender">Afzender Smartschool-overzicht</label>
+                    <input id="adult_overview_sender" name="adult_overview_sender" maxlength="120" value="{{ old('adult_overview_sender', $settings['adult_overview_sender']) }}" placeholder="Automatisch: algemene schoolafzender"></div>
+                <div class="library-field"><label for="adult_overview_email_subject">Onderwerp e-mailoverzicht</label>
+                    <input id="adult_overview_email_subject" name="adult_overview_email_subject" maxlength="200" value="{{ old('adult_overview_email_subject', $settings['adult_overview_email_subject']) }}" placeholder="Leeg = bestaand onderwerp behouden"></div>
+            </div>
+            <p class="library-help">De ontvangerslijsten voor de overzichten wijzig je hieronder, per school. De inhoud van het overzicht blijft de bestaande leerling- en actiegegevens tonen.</p>
+            <button type="submit" class="library-button library-button-primary">Berichten en overzichten opslaan</button>
+        </form>
+    </section>
+
     <section class="library-form-card" style="margin-top:20px">
         <h2>4. Ontvangers van het 18-jarigenoverzicht</h2>
         <p class="library-help">Naast de verjaardagsfelicitaties verstuurt de <strong>aparte 18-jarigentaak</strong> een overzicht naar aangewezen medewerkers. Deze ontvangers zijn <strong>per school</strong> instelbaar en staan los van de berichten die leerlingen zelf krijgen.</p>
@@ -280,6 +340,45 @@
             </div>
         @endforeach
         <p class="library-help">‘Zou verzonden worden’ betekent dat de huidige instellingen en accountgegevens verzending toelaten. Het garandeert niet dat Smartschool of de mailserver het bericht effectief zal bezorgen. Registraties van eerdere pogingen worden meegetoond.</p>
+    </section>
+
+    <section class="library-form-card library-birthday-history" style="margin-top:24px">
+        <h2>Opvolging 18-jarigen</h2>
+        <p class="library-help">Bekijk per datum welke leerlingen 18 worden en de afzonderlijke acties. Een mislukte of onzekere actie wordt niet automatisch opnieuw uitgevoerd; controleer zulke gevallen handmatig. Deze pagina verstuurt niets.</p>
+        <form method="get" action="{{ route('beheer.birthdays.index') }}" class="library-birthday-preview-form">
+            <div class="library-field"><label for="adult_date">18e verjaardag op</label>
+                <input type="date" name="adult_date" id="adult_date" value="{{ $adultDate }}" required></div>
+            <button type="submit" class="library-button library-button-secondary">Opvolging bekijken</button>
+        </form>
+        <h3>Leerlingen die op deze datum 18 worden</h3>
+        <div class="library-table-wrap"><table class="library-table">
+            <thead><tr><th>Leerling</th><th>Smartschool</th><th>School</th></tr></thead>
+            <tbody>
+                @forelse($adultUpcoming as $student)
+                    <tr><td>{{ $student->voornaam }} {{ $student->naam }}</td><td>{{ $student->gebruikersnaam ?: 'Ontbreekt' }}</td><td>{{ $student->schoolid }}</td></tr>
+                @empty
+                    <tr><td colspan="3">Geen actieve leerlingen gevonden.</td></tr>
+                @endforelse
+            </tbody>
+        </table></div>
+        <h3>Actiehistoriek ({{ $adultActions->count() }})</h3>
+        <div class="library-table-wrap"><table class="library-table">
+            <thead><tr><th>Leerling</th><th>Actie</th><th>Ontvanger</th><th>Status</th><th>Foutmelding</th></tr></thead>
+            <tbody>
+                @forelse($adultActions as $entry)
+                    <tr>
+                        <td>{{ $entry->student_id ? trim(($entry->voornaam ?? '').' '.($entry->naam ?? '')) : 'Overzicht naar medewerkers' }}</td>
+                        <td>{{ str_replace('_', ' ', $entry->action_key) }}</td>
+                        <td>{{ $entry->recipient ?: '—' }}</td>
+                        <td>{{ ['sent'=>'Uitgevoerd','failed'=>'Mislukt','processing'=>'In verwerking'][$entry->status] ?? $entry->status }}</td>
+                        <td>{{ $entry->error_message ?: '—' }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5">Geen geregistreerde acties op deze datum.</td></tr>
+                @endforelse
+            </tbody>
+        </table></div>
+        <p class="library-help">Maximaal 250 records per overzicht. Oudere uitvoeringen van vóór de invoering van deze log verschijnen hier niet.</p>
     </section>
 
     <section class="library-form-card" style="margin-top:20px">
