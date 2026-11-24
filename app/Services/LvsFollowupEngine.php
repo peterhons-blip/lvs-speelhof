@@ -129,13 +129,13 @@ class LvsFollowupEngine
             'rule_id' => $ruleId, 'melding_id' => $incident->id,
             'leerling_id' => $incident->leerlingId,
             'action' => $action, 'recipient' => $recipient,
-            'coaccount' => $coaccount, 'status' => $status,
+            'coaccount' => $coaccount ?? 0, 'status' => $status,
             'error_message' => $error, 'created_at' => now(), 'updated_at' => now(),
         ]);
         if (!$inserted) return null;
         return (int) DB::table('lvs_followup_events')
             ->where('rule_id', $ruleId)->where('melding_id', $incident->id)
-            ->where('recipient', $recipient)->where('coaccount', $coaccount)
+            ->where('recipient', $recipient)->where('coaccount', $coaccount ?? 0)
             ->value('id');
     }
 
