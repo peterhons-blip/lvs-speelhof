@@ -5,7 +5,8 @@
 @section('breadcrumbs')
 @include('partials.breadcrumbs', ['items' => [
             ['label' => 'Dashboard', 'url' => route('home')],
-            ['label' => 'LVS', 'url' => route('leerlingen.index')],
+            ['label' => 'LVS', 'url' => route('lvs.dashboard')],
+            ['label' => 'Leerlingen', 'url' => route('leerlingen.index')],
             ['label' => $leerling->voornaam . ' ' . $leerling->achternaam, 'url' => route('leerlingen.show', $leerling->id)],
             ['label' => 'Nieuwe melding'],
         ]])
