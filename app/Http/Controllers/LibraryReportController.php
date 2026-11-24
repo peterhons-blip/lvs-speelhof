@@ -71,6 +71,15 @@ class LibraryReportController extends Controller
             ->groupBy('books.id', 'books.title', 'books.authors')
             ->orderByDesc('times_loaned')->limit(10)->get();
 
+        $borrowers = $this->loans($from, $to, $status, $borrower)
+            ->select('loans.staff_user_id', 'loans.leerling_id',
+                'student.voornaam as student_first', 'student.naam as student_last',
+                'staff.voornaam as staff_first', 'staff.name as staff_last')
+            ->selectRaw('COUNT(loans.id) as times_loaned')
+            ->groupBy('loans.staff_user_id', 'loans.leerling_id',
+                'student.voornaam', 'student.naam', 'staff.voornaam', 'staff.name')
+            ->orderByDesc('times_loaned')->limit(20)->get();
+
         $loans = $this->loans($from, $to, $status, $borrower)
             ->select('loans.id', 'loans.loan_date', 'loans.due_date', 'loans.returned_at',
                 'books.title', 'copies.barcode', 'student.voornaam as student_first',
@@ -79,7 +88,7 @@ class LibraryReportController extends Controller
             ->orderByDesc('loans.loan_date')->orderByDesc('loans.id')
             ->paginate(25)->withQueryString();
 
-        return view('bibliotheek.reports.index', compact('from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'loans'));
+        return view('bibliotheek.reports.index', compact('from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'borrowers', 'loans'));
     }
 
     public function export(Request $request, LibraryAccess $access): StreamedResponse
