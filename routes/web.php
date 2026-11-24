@@ -43,6 +43,9 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::post('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'saveSettings'])->name('settings.save')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.settings.manage');
         Route::get('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'editReminders'])->whereNumber('loan')->name('reminders.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::put('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'updateReminders'])->whereNumber('loan')->name('reminders.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::post('/{loan}/herinnering-versturen', [\App\Http\Controllers\LibraryLoanController::class, 'sendManualReminder'])
+            ->whereNumber('loan')->name('reminders.send')
+            ->middleware(['throttle:10,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage']);
         Route::post('/{loan}/inleveren', [\App\Http\Controllers\LibraryLoanController::class, 'returnLoan'])->whereNumber('loan')->name('return')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/{loan}/verlengen', [\App\Http\Controllers\LibraryLoanController::class, 'extend'])->whereNumber('loan')->name('extend')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
     });
