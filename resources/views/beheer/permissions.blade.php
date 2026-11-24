@@ -24,7 +24,7 @@
 
     <div class="portal-roles-intro">
         <span aria-hidden="true" class="portal-roles-intro-icon">✓</span>
-        <p>Open een schoolrol en vink ook onder <strong>Portaalbeheer</strong> de gewenste beheerschermen aan. <strong>Niet aangevinkt = geen toegang.</strong></p>
+        <p>Open een schoolrol en vink de gewenste rechten aan, inclusief <strong>Bibliotheekrapportages en CSV</strong>, <strong>QR-labelbeheer</strong>, <strong>Smartschool-berichtsjablonen</strong> en <strong>Verjaardagsberichten beheren</strong>. Nieuwe rechten worden niet automatisch aan bestaande rollen toegekend. <strong>Niet aangevinkt = geen toegang.</strong></p>
     </div>
 
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
