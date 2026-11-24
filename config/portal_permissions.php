@@ -30,6 +30,14 @@ return [
             'bibliotheek.messages.manage' => 'Smartschool-berichtsjablonen en verzending beheren',
         ],
     ],
+    'bestellingen' => [
+        'label' => 'Aanvraag bestelling (toekomstig)',
+        'permissions' => ['bestellingen.view' => 'Bestelaanvragen bekijken (pas werkzaam na implementatie)'],
+    ],
+    'edbi' => [
+        'label' => 'EDBI-instrument (toekomstig)',
+        'permissions' => ['edbi.view' => 'EDBI-instrument bekijken (pas werkzaam na implementatie)'],
+    ],
     'ema' => [
         'label' => 'EMA (toekomstig)',
         'permissions' => ['ema.view' => 'EMA-module bekijken (pas werkzaam na implementatie)'],
