@@ -85,6 +85,25 @@
         </table></div>
     </section>
     <section class="library-form-card">
+        <h2>Meest actieve ontleners</h2>
+        <div class="library-table-wrap"><table class="library-table">
+            <thead><tr><th>Ontlener</th><th>Type</th><th>Aantal uitleningen</th></tr></thead>
+            <tbody>
+                @forelse($borrowers as $person)
+                    <tr>
+                        <td>{{ $person->staff_user_id !== null
+                            ? trim(($person->staff_first ?? '').' '.($person->staff_last ?? ''))
+                            : trim(($person->student_first ?? '').' '.($person->student_last ?? '')) }}</td>
+                        <td>{{ $person->staff_user_id !== null ? 'Personeel' : 'Leerling' }}</td>
+                        <td>{{ $person->times_loaned }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3">Geen ontleners gevonden.</td></tr>
+                @endforelse
+            </tbody>
+        </table></div>
+    </section>
+    <section class="library-form-card">
         <h2>Uitleningen ({{ $stats['period_loans'] }})</h2>
         <div class="library-table-wrap"><table class="library-table">
             <thead><tr><th>Datum</th><th>Ontlener</th><th>Boek</th><th>Exemplaarcode</th><th>Inleverdatum</th><th>Status</th></tr></thead>
