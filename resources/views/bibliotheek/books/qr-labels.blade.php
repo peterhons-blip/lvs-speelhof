@@ -80,7 +80,7 @@
                 @foreach($copies as $copy)
                     <label class="library-qr-choice">
                         <input class="qr-copy-checkbox" type="checkbox" value="{{ $copy->id }}" checked>
-                        <span><strong>{{ $copy->title }}</strong><small>{{ $copy->barcode }} · {{ $copy->qr_printed_at ? 'Etiket bevestigd' : 'Nog niet bevestigd' }}</small></span>
+                        <span><strong>{{ $copy->title }}</strong><small>{{ $copy->barcode }} · {{ $copy->qr_printed_at ? 'Etiket bevestigd' : ($copy->qr_generated_at ? 'QR gemaakt' : 'Nog geen QR gemaakt') }}</small></span>
                     </label>
                 @endforeach
             </div>
@@ -121,6 +121,19 @@
 (() => {
     const copies = @json($copies);
     const checks = Array.from(document.querySelectorAll('.qr-copy-checkbox'));
+    const generatedEndpoint = @json(route('bibliotheek.books.qr-generated'));
+    const mayTrack = @json(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.manage'));
+    const csrf = @json(csrf_token());
+    async function recordGenerated(copies) {
+        if (!mayTrack || !copies.length) return;
+        try {
+            await fetch(generatedEndpoint, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': csrf},
+                body: JSON.stringify({copies: copies.map(item => item.id)})
+            });
+        } catch { /* A download must still work if optional tracking is unavailable. */ }
+    }
     const countElement = document.getElementById('qr-selection-count');
     const statusForm = document.getElementById('qr-status-form');
     if (statusForm) {
@@ -209,8 +222,11 @@
         feedback.textContent = 'QR-codes genereren is mislukt: ' + error.message;
     }
     document.getElementById('qr-print').addEventListener('click', () => {
-        if (ready && selectedCopies().length) window.print();
-        else feedback.textContent = 'Selecteer eerst minstens één exemplaar.';
+        const selected = selectedCopies();
+        if (ready && selected.length) {
+            void recordGenerated(selected);
+            window.print();
+        } else feedback.textContent = 'Selecteer eerst minstens één exemplaar.';
     });
     document.getElementById('qr-download-zip').addEventListener('click', async () => {
         if (!ready || !selectedCopies().length) {
@@ -223,6 +239,7 @@
         try {
             const selected = selectedCopies();
             await LibraryQr.downloadZip(selected, 'bibliotheek-exemplaren-qr.zip');
+            await recordGenerated(selected);
             feedback.textContent = 'ZIP met ' + selected.length + ' QR-codes klaar.';
         } catch (error) {
             feedback.textContent = 'Download mislukt: ' + error.message;
