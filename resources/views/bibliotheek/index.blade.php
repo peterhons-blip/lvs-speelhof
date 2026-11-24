@@ -45,8 +45,8 @@
                 <p>Bekijk vervallen inleverdatums en alle openstaande uitleningen.</p>
                 <span class="portal-library-feature-state">Bekijk te late boeken →</span>
             </a>
-            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.settings.manage'))
-                <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
+                <a href="{{ route('bibliotheek.messages.index') }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">✉</span>
                     <h2>Smartschool-berichten</h2>
                     <p>Beheer bevestigingen bij uitlenen en terugbrengen, automatische herinneringen en de afzender bib.</p>
@@ -68,6 +68,6 @@
                 <span class="portal-library-feature-state">Instellingen openen →</span>
             </a>
         </div>
-        <p class="portal-library-notice">Smartschool-berichten worden verstuurd vanuit account bib zodra de verzending bij Uitleeninstellingen is ingeschakeld.</p>
+        <p class="portal-library-notice">Smartschool-berichten vertrekken vanuit account bib. Beheer de teksten en schakel verzending in via de tegel Smartschool-berichten.</p>
     </main>
 @endsection
