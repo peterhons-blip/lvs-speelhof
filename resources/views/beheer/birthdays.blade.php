@@ -161,7 +161,15 @@
                 <div class="library-field library-wide">
                     <label for="warning_sender">Smartschool-afzender waarschuwing</label>
                     <input id="warning_sender" name="warning_sender" maxlength="120"
-                        value="{{ old('warning_sender', $settings['warning_sender']) }}" placeholder="Automatisch: secretariaatsaccount van de school">
+                        value="{{ old('warning_sender', $settings['warning_sender']) }}" placeholder="Leeg = bestaande schoolafzender gebruiken">
+                    <p class="library-help">
+                        @if($warningSenderFallback)
+                            Huidig automatisch account voor {{ $warningPreviewSchool->schoolnaam }}: <strong>{{ $warningSenderFallback }}</strong>.
+                        @else
+                            De effectieve afzender verschilt per school: eerst het ingestelde secretariaatsaccount, dan de algemene schoolafzender en als laatste het standaardaccount (vaak <code>lvs</code>). Kies hierboven een school om de automatische afzender te zien.
+                        @endif
+                        Laat het veld leeg om deze bestaande instelling te behouden.
+                    </p>
                 </div>
                 <div class="library-field library-wide">
                     <label for="warning_subject">Onderwerp van de waarschuwing</label>
@@ -170,13 +178,14 @@
                 </div>
                 <div class="library-field library-wide">
                     <label for="warning_body_student">Berichttekst leerling (optioneel)</label>
-                    <textarea id="warning_body_student" name="warning_body_student" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_student', $settings['warning_body_student']) }}</textarea>
+                    <textarea id="warning_body_student" name="warning_body_student" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_student', $settings['warning_body_student'] !== '' ? $settings['warning_body_student'] : $warningStudentDefault) }}</textarea>
                 </div>
                 <div class="library-field library-wide">
                     <label for="warning_body_coaccount">Berichttekst ouders/voogden (optioneel)</label>
-                    <textarea id="warning_body_coaccount" name="warning_body_coaccount" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_coaccount', $settings['warning_body_coaccount']) }}</textarea>
+                    <textarea id="warning_body_coaccount" name="warning_body_coaccount" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_coaccount', $settings['warning_body_coaccount'] !== '' ? $settings['warning_body_coaccount'] : $warningCoaccountDefault) }}</textarea>
                 </div>
             </div>
+            <p class="library-help">De tekstvakken zijn vooraf ingevuld met bewerkbare voorbeeldteksten, gebaseerd op de huidige schooltemplates. <strong>Ze worden pas gebruikt nadat je op ‘Waarschuwingsinstellingen opslaan’ klikt.</strong> Wil je de originele schoolspecifieke template blijven gebruiken, maak het tekstvak dan leeg.</p>
             <p class="library-help">Beschikbare variabelen voor de aangepaste teksten: <code>{voornaam}</code>, <code>{naam}</code>, <code>{school}</code> en <code>{dagen}</code>. Leeg laten behoudt de bestaande standaard- of schoolteksten. Bij een andere termijn dan 7 dagen wordt de standaardtekst automatisch aangepast.</p>
             <button type="submit" class="library-button library-button-primary">Waarschuwingsinstellingen opslaan</button>
         </form>
