@@ -811,3 +811,18 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
     .library-page:has(.library-birthday-warning) .library-form-card { padding:18px 16px; }
     .library-birthday-warning .library-form-grid { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* Safe, visually isolated message preview on birthday administration */
+.library-birthday-adult .library-form { display:flex; flex-direction:column; gap:18px; }
+.library-birthday-adult .library-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 22px; }
+.library-birthday-adult .library-wide { grid-column:1 / -1; }
+.library-birthday-adult h3 { margin:20px 0 4px; }
+.library-birthday-adult .library-form-grid textarea { box-sizing:border-box; width:100%; min-height:125px; }
+.library-birthday-example { padding:18px 20px; }
+.library-birthday-example > p { margin:0 0 12px; overflow-wrap:anywhere; }
+.library-birthday-example iframe { display:block; width:100%; max-width:100%; min-height:380px; border:1px solid #d7e3ef; border-radius:10px; background:white; }
+.library-birthday-history .library-table-wrap { margin:12px 0 22px; }
+@media(max-width:700px) {
+  .library-birthday-adult .library-form-grid { grid-template-columns:minmax(0,1fr); }
+}
