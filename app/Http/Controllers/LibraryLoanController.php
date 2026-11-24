@@ -375,7 +375,7 @@ class LibraryLoanController extends Controller
     public function extend(int $loan): RedirectResponse
     {
         $this->authorizeOperator(request());
-        return DB::transaction(function () use ($loan) {
+        $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
             if ($item->returned_at !== null) return back()->withErrors(['extend' => 'Een ingeleverd boek kan niet verlengd worden.']);
@@ -395,8 +395,12 @@ class LibraryLoanController extends Controller
                 'details' => json_encode(['old_due' => $item->due_date, 'new_due' => $newDue]),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            return back()->with('success', 'Uitleentermijn verlengd.');
+            return $newDue;
         });
+        if ($result instanceof RedirectResponse) return $result;
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'extended', $result);
+        return back()->with('success', 'Uitleentermijn verlengd.'
+            .($sent ? ' Smartschool-bevestiging verzonden.' : ''));
     }
 
     public function editReminders(int $loan): View
