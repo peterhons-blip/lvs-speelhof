@@ -70,13 +70,33 @@ class BirthdaySettingsController extends Controller
             }
             $schoolSmartschoolChoices[$school->id] = $options;
         }
+        $adultDate = (string) $request->query('adult_date', now('Europe/Brussels')->toDateString());
+        $adultDateValue = \DateTimeImmutable::createFromFormat('!Y-m-d', $adultDate);
+        if (! $adultDateValue || $adultDateValue->format('Y-m-d') !== $adultDate) {
+            $adultDate = now('Europe/Brussels')->toDateString();
+        }
+        $adultActions = Schema::hasTable('birthday_18_actions')
+            ? DB::table('birthday_18_actions as actions')
+                ->leftJoin('leerlingen as students', 'students.id', '=', 'actions.student_id')
+                ->select('actions.*', 'students.voornaam', 'students.naam', 'students.gebruikersnaam')
+                ->where('actions.target_date', $adultDate)
+                ->orderBy('students.naam')->orderBy('actions.action_key')
+                ->limit(250)->get()
+            : collect();
+        $adultUpcoming = DB::table('leerlingen')
+            ->where('active', 1)
+            ->whereNotNull('geboortedatum')
+            ->whereRaw('MONTH(geboortedatum) = MONTH(?) AND DAY(geboortedatum) = DAY(?) AND YEAR(geboortedatum) = YEAR(?) - 18',
+                [$adultDate, $adultDate, $adultDate])
+            ->orderBy('naam')->limit(250)
+            ->get(['id', 'voornaam', 'naam', 'gebruikersnaam', 'schoolid']);
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming'));
     }
 
 
@@ -127,6 +147,38 @@ class BirthdaySettingsController extends Controller
 
         return redirect()->route('beheer.birthdays.index', ['overzicht_school' => $data['school_id']])
             ->with('success', 'Ontvangers van het 18-jarigenoverzicht opgeslagen voor de geselecteerde school.');
+    }
+
+    public function updateAdult(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $data = $request->validate([
+            'adult_student_notice' => ['required', 'in:0,1'],
+            'adult_secretariat_notice' => ['required', 'in:0,1'],
+            'adult_subject_student' => ['required', 'string', 'max:200'],
+            'adult_subject_secretariat' => ['required', 'string', 'max:200'],
+            'adult_body_student' => ['nullable', 'string', 'max:5000'],
+            'adult_body_secretariat' => ['nullable', 'string', 'max:5000'],
+            'adult_sender_student' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
+            'adult_sender_secretariat' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
+            'adult_overview_smartschool_enabled' => ['required', 'in:0,1'],
+            'adult_overview_email_enabled' => ['required', 'in:0,1'],
+            'adult_overview_smartschool_subject' => ['required', 'string', 'max:200'],
+            'adult_overview_sender' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
+            'adult_overview_email_subject' => ['nullable', 'string', 'max:200'],
+        ]);
+        if (! Schema::hasTable('birthday_settings')) {
+            return back()->withErrors(['database' => 'Voer eerst de verjaardagsmigratie uit.']);
+        }
+        DB::transaction(function () use ($data) {
+            foreach ($data as $key => $value) {
+                DB::table('birthday_settings')->updateOrInsert(
+                    ['setting_key' => $key], ['setting_value' => trim((string) ($value ?? ''))]
+                );
+            }
+        });
+        return redirect()->route('beheer.birthdays.index')
+            ->with('success', 'Instellingen voor de 18e verjaardag en overzichten opgeslagen.');
     }
 
     public function updateWarning(Request $request, LibraryAccess $access): RedirectResponse
