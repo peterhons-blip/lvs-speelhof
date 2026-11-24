@@ -11,7 +11,10 @@
 <main class="library-page lvs-reports-page">
     <div class="library-page-head">
         <div><p class="portal-eyebrow">LVS / OPVOLGING</p><h1>Klassenraadoverzicht</h1><p>Een voorbereidende telling van meldingen per klas en categorie. Geen automatische sancties of meldingen naar ouders.</p></div>
-        <a href="{{ route('meldingen.index') }}" class="library-button library-button-secondary">Alle meldingen</a>
+        <div class="lvs-dashboard-header-actions">
+            <a href="{{ route('meldingen.index') }}" class="library-button library-button-secondary">Alle meldingen</a>
+            <a href="{{ route('lvs.reports.export', ['start' => $start, 'end' => $end, 'klas' => $data['klas'] ?? '']) }}" class="library-button library-button-primary">CSV exporteren</a>
+        </div>
     </div>
     <section class="library-form-card">
         <h2>Periode en klas</h2>
