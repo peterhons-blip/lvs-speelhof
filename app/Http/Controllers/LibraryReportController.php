@@ -55,6 +55,7 @@ class LibraryReportController extends Controller
             'available' => DB::table('library_copies')->where('status', 'beschikbaar')->count(),
             'on_loan' => DB::table('library_loans')->whereNull('returned_at')->count(),
             'overdue' => DB::table('library_loans')->whereNull('returned_at')->where('due_date', '<', now('Europe/Brussels')->toDateString())->count(),
+            'qr_generated' => DB::table('library_copies')->whereNotNull('qr_generated_at')->count(),
             'qr_printed' => DB::table('library_copies')->whereNotNull('qr_printed_at')->count(),
             'period_loans' => $this->loans($from, $to, $status, $borrower)->count(),
         ];
