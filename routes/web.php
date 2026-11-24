@@ -99,6 +99,9 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.smartschool_test.send', 'throttle:45,1'])
         ->name('beheer.smartschool-test.recipients');
 
+    Route::get('/beheer/verzonden-items', [\App\Http\Controllers\SentItemsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.sent_items.view')
+        ->name('beheer.sent-items.index');
     Route::get('/beheer/verjaardagsberichten', [\App\Http\Controllers\BirthdaySettingsController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
         ->name('beheer.birthdays.index');
