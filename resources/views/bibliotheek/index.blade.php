@@ -15,12 +15,12 @@
             <div>
                 <p class="portal-eyebrow">ATHENEUM PORTAAL</p>
                 <h1 id="library-title">Bibliotheek</h1>
-                <p>Beheer boekencatalogus, fysieke exemplaren en uitleningen. Automatische herinneringen volgen later.</p>
+                <p>Beheer boeken, fysieke exemplaren, uitleningen, Smartschool-berichten en QR-etiketten.</p>
             </div>
             <span class="portal-library-status">Catalogus en uitleningen</span>
         </div>
 
-        <div class="portal-library-feature-grid" aria-label="Geplande bibliotheekfuncties">
+        <div class="portal-library-feature-grid" aria-label="Bibliotheekfuncties">
             <a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">▤</span>
                 <h2>Boekencatalogus</h2>
@@ -30,7 +30,7 @@
             <a href="{{ route('bibliotheek.loans.create') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↗</span>
                 <h2>Boek uitlenen</h2>
-                <p>Scan een exemplaar en koppel het aan een actieve leerling.</p>
+                <p>Scan een exemplaar of zoek op titel/ISBN. Leen uit aan leerlingen of personeel.</p>
                 <span class="portal-library-feature-state">Start een uitlening →</span>
             </a>
             <a href="{{ route('bibliotheek.loans.index') }}" class="portal-library-feature portal-library-feature-active">
@@ -45,12 +45,22 @@
                 <p>Bekijk vervallen inleverdatums en alle openstaande uitleningen.</p>
                 <span class="portal-library-feature-state">Bekijk te late boeken →</span>
             </a>
-            <section class="portal-library-feature">
-                <span class="portal-library-feature-icon" aria-hidden="true">✉</span>
-                <h2>Smartschool-berichten</h2>
-                <p>Automatische berichten bij uitleen en herinneringen via een aparte bibliotheekafzender.</p>
-                <span class="portal-library-feature-state">Binnenkort</span>
-            </section>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.settings.manage'))
+                <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
+                    <span class="portal-library-feature-icon" aria-hidden="true">✉</span>
+                    <h2>Smartschool-berichten</h2>
+                    <p>Beheer bevestigingen bij uitlenen en terugbrengen, automatische herinneringen en de afzender bib.</p>
+                    <span class="portal-library-feature-state">Berichten instellen →</span>
+                </a>
+            @endif
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
+                <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-library-feature portal-library-feature-active">
+                    <span class="portal-library-feature-icon" aria-hidden="true">▦</span>
+                    <h2>QR-codes en etiketten</h2>
+                    <p>Selecteer exemplaren, download QR-codes of druk 21 etiketten per A4-vel af.</p>
+                    <span class="portal-library-feature-state">QR-codes maken →</span>
+                </a>
+            @endif
             <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">⚙</span>
                 <h2>Uitleeninstellingen</h2>
@@ -58,6 +68,6 @@
                 <span class="portal-library-feature-state">Instellingen openen →</span>
             </a>
         </div>
-        <p class="portal-library-notice">De uitleenmodule verwerkt nu uitleningen per exemplaar. Automatische Smartschool-herinneringen blijven uitgeschakeld totdat ze afzonderlijk getest zijn.</p>
+        <p class="portal-library-notice">Smartschool-berichten worden verstuurd vanuit account bib zodra de verzending bij Uitleeninstellingen is ingeschakeld.</p>
     </main>
 @endsection
