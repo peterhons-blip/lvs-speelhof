@@ -89,8 +89,8 @@ class LibraryLoanNotifier
             .'<p>Met vriendelijke groeten<br>De schoolbibliotheek</p>';
 
         try {
-            $sender = trim($this->setting('smartschool_sender', 'bib'));
-            if ($sender === '') $sender = 'bib';
+            // Always send library messages under the dedicated Smartschool 'bib' account.
+            $sender = 'bib';
 
             // School-specific SOAP endpoint when configured. No co-account messages.
             $school = DB::table('scholen')->where('id', $schoolId)->first();
