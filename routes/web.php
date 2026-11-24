@@ -188,6 +188,9 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::get('/lvs', [\App\Http\Controllers\LvsDashboardController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
         ->name('lvs.dashboard');
+    Route::get('/lvs/klassenraad/export', [\App\Http\Controllers\LvsReportsController::class, 'export'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
+        ->name('lvs.reports.export');
     Route::get('/lvs/klassenraad', [\App\Http\Controllers\LvsReportsController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
         ->name('lvs.reports.index');
