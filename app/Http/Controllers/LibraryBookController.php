@@ -40,7 +40,7 @@ class LibraryBookController extends Controller
         $copyId = $request->query('copy');
         if ($copyId !== null && (! ctype_digit((string) $copyId) || (int) $copyId < 1)) abort(404);
         $qrStatus = (string) $request->query('qr_status', 'all');
-        if (! in_array($qrStatus, ['all', 'unprinted', 'printed'], true)) $qrStatus = 'all';
+        if (! in_array($qrStatus, ['all', 'unprinted', 'printed', 'not_generated', 'generated_unprinted'], true)) $qrStatus = 'all';
         $mode = (string) $request->query('select', 'all');
         if (! in_array($mode, ['all', 'latest5', 'selected'], true)) $mode = 'all';
         if ($bookId !== null && (! ctype_digit((string) $bookId) || (int) $bookId < 1)) abort(404);
@@ -63,6 +63,10 @@ class LibraryBookController extends Controller
 
         if ($qrStatus === 'unprinted') $query->whereNull('copies.qr_printed_at');
         if ($qrStatus === 'printed') $query->whereNotNull('copies.qr_printed_at');
+        if ($qrStatus === 'not_generated') $query->whereNull('copies.qr_generated_at');
+        if ($qrStatus === 'generated_unprinted') {
+            $query->whereNotNull('copies.qr_generated_at')->whereNull('copies.qr_printed_at');
+        }
 
         if ($mode === 'latest5') {
             $query->orderByDesc('copies.created_at')->orderByDesc('copies.id');
