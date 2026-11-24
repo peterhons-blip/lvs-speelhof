@@ -130,7 +130,8 @@ class MeldingController extends Controller
             $attributes['auteur_gebruikersnaam'] =
                 app(\App\Services\LibraryAccess::class)->username($request);
         }
-        Melding::create($attributes);
+        $saved = Melding::create($attributes);
+        app(\App\Services\LvsFollowupEngine::class)->evaluate($saved);
 
         $destination = app(\App\Services\LibraryAccess::class)->has($request, 'lvs.view')
             ? route('leerlingen.show', $leerling->id)
