@@ -21,13 +21,23 @@
         <div class="library-qr-toolbar">
             <strong>{{ $copies->count() }} van {{ $total }} exemplaren</strong>
             <button type="button" class="library-button library-button-primary" id="qr-download-zip">Alle QR-codes downloaden (ZIP)</button>
-            <button type="button" class="library-button library-button-secondary" id="qr-print">Labels afdrukken / als PDF opslaan</button>
+            <button type="button" class="library-button library-button-secondary" id="qr-print">A4-etiketten afdrukken / PDF opslaan</button>
         </div>
         @if($total > 500)
             <p class="library-help">Er zijn meer dan 500 exemplaren. Om de browser vlot te houden worden maximaal 500 labels per keer gegenereerd. Filter op titel of ISBN in de catalogus om de overige exemplaren afzonderlijk te downloaden.</p>
         @endif
+        <div class="library-field library-label-settings">
+            <label for="qr-start-position">Eerste etiket op het eerste A4-vel</label>
+            <select id="qr-start-position">
+                @for($position = 1; $position <= 21; $position++)
+                    <option value="{{ $position }}" @selected($position === 1)>Positie {{ $position }} (rij {{ intdiv($position - 1, 3) + 1 }}, kolom {{ ($position - 1) % 3 + 1 }})</option>
+                @endfor
+            </select>
+            <p class="library-help">Etiketten: 63,5 × 38,1 mm · 3 kolommen × 7 rijen · 21 per A4. Kies bijvoorbeeld positie 8 als de eerste zeven etiketten al gebruikt zijn.</p>
+            <p class="library-help">Kies bij het afdrukken A4, schaal 100%, marges 'Geen' en schakel kop- en voetteksten uit. Als je een PDF wilt, kies je 'Opslaan als PDF' als printer. Druk eerst één testvel af op gewoon papier.</p>
+        </div>
         <p id="qr-feedback" class="library-help" role="status">QR-codes genereren...</p>
-        <div id="qr-grid" class="library-qr-grid"></div>
+        <div id="qr-sheets" class="library-label-sheets"></div>
     </section>
 </main>
 @endsection
@@ -39,12 +49,48 @@
 (() => {
     const copies = @json($copies);
     const feedback = document.getElementById('qr-feedback');
-    const grid = document.getElementById('qr-grid');
+    const sheets = document.getElementById('qr-sheets');
+    const startPosition = document.getElementById('qr-start-position');
+    function makeLabel(copy) {
+        const label = document.createElement('div');
+        label.className = 'library-sheet-label';
+        const qr = document.createElement('img');
+        qr.src = LibraryQr.dataUrl(copy.barcode);
+        qr.alt = 'QR-code ' + copy.barcode;
+        const text = document.createElement('div');
+        text.className = 'library-sheet-label-text';
+        const title = document.createElement('strong');
+        title.textContent = copy.title || 'Boek';
+        title.title = copy.title || '';
+        const code = document.createElement('span');
+        code.textContent = copy.barcode;
+        text.append(title, code);
+        label.append(qr, text);
+        return label;
+    }
+    function renderSheets() {
+        sheets.replaceChildren();
+        const offset = Number(startPosition.value) - 1;
+        const slots = Array(offset).fill(null).concat(copies);
+        const sheetCount = Math.max(1, Math.ceil(slots.length / 21));
+        for (let page = 0; page < sheetCount; page++) {
+            const sheet = document.createElement('div');
+            sheet.className = 'library-label-sheet';
+            for (let i = 0; i < 21; i++) {
+                const copy = slots[page * 21 + i];
+                const slot = copy ? makeLabel(copy) : document.createElement('div');
+                if (!copy) slot.className = 'library-sheet-label library-sheet-label-empty';
+                sheet.appendChild(slot);
+            }
+            sheets.appendChild(sheet);
+        }
+    }
+    startPosition.addEventListener('change', () => { if (ready) renderSheets(); });
     let ready = false;
     try {
-        for (const copy of copies) grid.appendChild(LibraryQr.createLabel(copy));
+        renderSheets();
         ready = true;
-        feedback.textContent = copies.length ? 'QR-codes klaar om te downloaden of af te drukken.' : 'Geen exemplaren gevonden.';
+        feedback.textContent = copies.length ? 'Etiketten klaar: ' + copies.length + ' exemplaren op ' + sheets.children.length + ' A4-vel(len).' : 'Geen exemplaren gevonden.';
     } catch (error) {
         feedback.textContent = 'QR-codes genereren is mislukt: ' + error.message;
     }
