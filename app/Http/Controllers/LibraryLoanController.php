@@ -87,7 +87,7 @@ class LibraryLoanController extends Controller
 
         $staffMember = $borrowerType === 'personeel' && ctype_digit((string) $staffId)
             ? DB::table('users')->where('id', (int) $staffId)->where('schoolid', 1)
-                ->where('allowed_login', 1)
+                
                 ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
                 ->select('id', 'voornaam', 'name', 'smartschool_gebruikersnaam')->first()
             : null;
@@ -121,7 +121,7 @@ class LibraryLoanController extends Controller
         $q = trim((string) $request->query('q', ''));
         if (mb_strlen($q) < 2 || mb_strlen($q) > 100) return response()->json([]);
         $term = '%'.addcslashes($q, '%_\\').'%';
-        $people = DB::table('users')->where('schoolid', 1)->where('allowed_login', 1)
+        $people = DB::table('users')->where('schoolid', 1)
             ->where(function ($query) {
                 $query->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
             })
@@ -191,11 +191,11 @@ class LibraryLoanController extends Controller
                 }
             } else {
                 $staff = DB::table('users')->where('id', $staffId)->where('schoolid', 1)
-                    ->where('allowed_login', 1)
+                    
                     ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
                     ->lockForUpdate()->first();
                 if (! $staff) {
-                    throw ValidationException::withMessages(['medewerker' => 'Selecteer eerst een actieve medewerker met aanmeldtoegang.']);
+                    throw ValidationException::withMessages(['medewerker' => 'Selecteer eerst een actieve medewerker.']);
                 }
             }
 
