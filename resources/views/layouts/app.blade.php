@@ -58,7 +58,7 @@
                                 <a href="{{ route('meldingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.index') ? 'is-active' : '' }}">Alle meldingen</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.create'))
-                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.create') || request()->routeIs('meldingen.store') ? 'is-active' : '' }}">Nieuwe melding</a>
+                                <a href="{{ route('meldingen.select-student') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.select-student') || request()->routeIs('meldingen.create') ? 'is-active' : '' }}">Nieuwe melding</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.reports.view'))
                                 <a href="{{ route('lvs.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.reports.*') ? 'is-active' : '' }}">Klassenraadoverzicht</a>
