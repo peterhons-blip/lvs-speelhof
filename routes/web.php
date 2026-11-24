@@ -197,8 +197,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     )->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');
-        Route::get('/{id}', [LeerlingenController::class, 'show'])->whereNumber('id')
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.view')->name('show');
+        Route::get('/{id}', [LeerlingenController::class, 'show'])->whereNumber('id')->name('show');
     });
 
     Route::prefix('meldingen')->name('meldingen.')->group(function () {
