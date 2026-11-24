@@ -61,32 +61,24 @@ class LibraryLoanNotifier
 
         if ($inserted !== 1) return false;
 
+        $defaults = self::defaultTemplates();
+        $template = $defaults[$type];
+        if (\Illuminate\Support\Facades\Schema::hasTable('library_message_templates')) {
+            $custom = DB::table('library_message_templates')->where('type', $type)->first();
+            if ($custom) $template = ['subject' => $custom->subject, 'body' => $custom->body];
+        }
+
         $date = \Illuminate\Support\Carbon::parse($loan->due_date)->format('d/m/Y');
-        $subject = match ($type) {
-            'confirmation' => 'Bibliotheek: bevestiging uitlening',
-            'before_due' => 'Bibliotheek: herinnering inleverdatum',
-            'due_today' => 'Bibliotheek: vandaag boek inleveren',
-            'manual' => 'Bibliotheek: herinnering boek terugbrengen',
-            'returned' => 'Bibliotheek: bevestiging inlevering',
-        };
+        $replacements = [
+            '{voornaam}' => $firstName,
+            '{boek}' => (string) $loan->title,
+            '{exemplaarcode}' => (string) $loan->barcode,
+            '{inleverdatum}' => $date,
+        ];
+        $subject = strtr($template['subject'], $replacements);
+        // Plain-text templates, never trust content as HTML. Convert newlines after escaping.
+        $message = nl2br(e(strtr($template['body'], $replacements)));
 
-        $intro = match ($type) {
-            'confirmation' => 'Je hebt een boek uitgeleend in de schoolbibliotheek.',
-            'before_due' => 'Je uitleentermijn loopt binnenkort af.',
-            'due_today' => 'Vandaag is de uiterste inleverdatum van je boek.',
-            'manual' => 'Dit is een herinnering om je boek tijdig terug te brengen.',
-            'returned' => 'Bedankt! Je hebt dit boek teruggebracht naar de schoolbibliotheek.',
-        };
-
-        $message = '<p>Beste '.e($firstName).',</p>'
-            .'<p>'.e($intro).'</p>'
-            .'<p><strong>Boek:</strong> '.e($loan->title).'<br>'
-            .'<strong>Barcode:</strong> '.e($loan->barcode).'<br>'
-            .'<strong>Uiterste inleverdatum:</strong> '.e($date).'</p>'
-            .($type === 'returned'
-                ? '<p>Deze uitlening is afgesloten. Heb je vragen? Contacteer het bibliotheekteam.</p>'
-                : '<p>Breng het boek tijdig terug naar de schoolbibliotheek. Heb je vragen? Contacteer het bibliotheekteam.</p>')
-            .'<p>Met vriendelijke groeten<br>De schoolbibliotheek</p>';
 
         try {
             // Always send library messages under the dedicated Smartschool 'bib' account.
@@ -118,4 +110,42 @@ class LibraryLoanNotifier
             return false;
         }
     }
+    public static function defaultTemplates(): array
+    {
+        $base = "Beste {voornaam},\\n\\n";
+        $details = "Boek: {boek}\\nExemplaarcode: {exemplaarcode}\\nUiterste inleverdatum: {inleverdatum}\\n\\n";
+        $footer = "Met vriendelijke groeten\\nDe schoolbibliotheek";
+        return [
+            'confirmation' => [
+                'label' => 'Bij uitlening',
+                'subject' => 'Bibliotheek: bevestiging uitlening',
+                'body' => $base."Je hebt een boek uitgeleend in de schoolbibliotheek.\\n\\n".$details.
+                    "Breng het boek tijdig terug naar de schoolbibliotheek.\\n\\n".$footer,
+            ],
+            'before_due' => [
+                'label' => 'Herinnering vooraf',
+                'subject' => 'Bibliotheek: herinnering inleverdatum',
+                'body' => $base."Je uitleentermijn loopt binnenkort af.\\n\\n".$details.
+                    "Breng het boek tijdig terug naar de schoolbibliotheek.\\n\\n".$footer,
+            ],
+            'due_today' => [
+                'label' => 'Op de inleverdatum',
+                'subject' => 'Bibliotheek: vandaag boek inleveren',
+                'body' => $base."Vandaag is de uiterste inleverdatum van je boek.\\n\\n".$details.
+                    "Breng het boek terug naar de schoolbibliotheek.\\n\\n".$footer,
+            ],
+            'manual' => [
+                'label' => 'Handmatige herinnering',
+                'subject' => 'Bibliotheek: herinnering boek terugbrengen',
+                'body' => $base."Dit is een herinnering om je boek terug te brengen.\\n\\n".$details.$footer,
+            ],
+            'returned' => [
+                'label' => 'Bij terugbrengen',
+                'subject' => 'Bibliotheek: bevestiging inlevering',
+                'body' => $base."Bedankt! Je hebt dit boek teruggebracht naar de schoolbibliotheek.\\n\\n".
+                    "Boek: {boek}\\nExemplaarcode: {exemplaarcode}\\n\\n".$footer,
+            ],
+        ];
+    }
+
 }
