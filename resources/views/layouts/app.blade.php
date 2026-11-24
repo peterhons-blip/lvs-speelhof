@@ -106,6 +106,9 @@
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
                             <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
                             @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
+                            <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
+                            @endif
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
                             <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
                             @endif
