@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (! Schema::hasColumn('library_copies', 'qr_generated_at')) {
+            Schema::table('library_copies', function (Blueprint $table) {
+                $table->timestamp('qr_generated_at')->nullable();
+            });
+        }
         if (! Schema::hasColumn('library_copies', 'qr_printed_at')) {
             Schema::table('library_copies', function (Blueprint $table) {
                 $table->timestamp('qr_printed_at')->nullable();
@@ -22,7 +27,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('library_copies', function (Blueprint $table) {
-            $table->dropColumn(['qr_printed_at', 'qr_printed_by']);
+            $table->dropColumn(['qr_generated_at', 'qr_printed_at', 'qr_printed_by']);
         });
     }
 };
