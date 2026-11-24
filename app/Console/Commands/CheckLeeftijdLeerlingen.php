@@ -335,7 +335,8 @@ class CheckLeeftijdLeerlingen extends Command
             }
 
             // 2a) Smartschool-overzicht per school (fail-safe)
-            if (count($ontvangersSs) > 0 && count($payload) > 0) {
+            if ($warningSettings['adult_overview_smartschool_enabled'] === '1'
+                && count($ontvangersSs) > 0 && count($payload) > 0) {
                 try {
                     $bodyOverzicht = view($viewOverzicht, [
                         'school'  => $school,
@@ -343,21 +344,16 @@ class CheckLeeftijdLeerlingen extends Command
                     ])->render();
 
                     foreach ($ontvangersSs as $ontvanger) {
-                        try {
-                            $ss->sendMessage(
-                                $ontvanger,
-                                $onderwerpOverzichtSs,
-                                $bodyOverzicht,
-                                $senderCoAccounts,
-                                false,
-                                0
-                            );
-                            Log::info("VANDAAG: Smartschool-overzicht verzonden naar {$ontvanger} (school={$school->id})");
-                            $this->info("Smartschool-overzicht verzonden naar {$ontvanger}");
-                        } catch (\SoapFault $e) {
-                            Log::error("VANDAAG: SS-overzicht mislukt naar {$ontvanger} (school={$school->id}): " . $e->getMessage());
-                            $this->error("SS-overzicht mislukt naar {$ontvanger}: " . $e->getMessage());
-                        }
+                        $senderOverview = trim((string) $warningSettings['adult_overview_sender'])
+                            ?: $senderCoAccounts;
+                        $overviewKey = 'overview_ss_'.substr(hash('sha256', mb_strtolower($ontvanger)), 0, 32);
+                        $ok = $actionLog->run((int) $school->id, 0,
+                            now('Europe/Brussels')->toDateString(), $overviewKey, $ontvanger,
+                            function () use ($ss, $ontvanger, $onderwerpOverzichtSs, $bodyOverzicht, $senderOverview) {
+                                $ss->sendMessage($ontvanger, $onderwerpOverzichtSs,
+                                    $bodyOverzicht, $senderOverview, false, 0);
+                            });
+                        if (! $ok) $this->warn('Smartschool-overzicht niet bevestigd: '.$ontvanger);
                     }
                 } catch (\Throwable $e) {
                     Log::error("VANDAAG: SS-overzicht crash (school={$school->id}): " . get_class($e) . " - " . $e->getMessage());
@@ -366,18 +362,23 @@ class CheckLeeftijdLeerlingen extends Command
             }
 
             // 2b) Overzichtsmail per school (fail-safe)
-            if (count($ontvangersMail) > 0) {
-                try {
-                    Mail::to($ontvangersMail)->send(new LeerlingenWorden18($payload));
-                    Log::info("Mail verzonden voor school {$school->schoolnaam} naar: " . implode(', ', $ontvangersMail));
-                    $this->info("Mail verzonden voor {$school->schoolnaam}.");
-                } catch (\Throwable $e) {
-                    Log::error(
-                        "MAIL FOUT (school={$school->schoolnaam}, id={$school->id}) naar [" . implode(', ', $ontvangersMail) . "]: "
-                        . get_class($e) . " - " . $e->getMessage()
-                    );
-                    $this->error("MAIL FOUT voor {$school->schoolnaam}: " . $e->getMessage());
-                    $this->warn("Command gaat verder (Smartschool acties zijn uitgevoerd).");
+            if ($warningSettings['adult_overview_email_enabled'] === '1' && count($ontvangersMail) > 0) {
+                $subjectEmail = trim((string) $warningSettings['adult_overview_email_subject']);
+                // Keep the existing template/subject when the setting is empty.
+                $mailDate = now('Europe/Brussels')->toDateString();
+                foreach ($ontvangersMail as $ontvanger) {
+                    if (! filter_var($ontvanger, FILTER_VALIDATE_EMAIL)) {
+                        $this->warn('Ongeldig overzichtsmailadres: '.$ontvanger);
+                        continue;
+                    }
+                    $actionKey = 'overview_email_'.substr(hash('sha256', mb_strtolower($ontvanger)), 0, 30);
+                    $ok = $actionLog->run((int) $school->id, 0, $mailDate,
+                        $actionKey, $ontvanger, function () use ($ontvanger, $payload, $subjectEmail) {
+                            $mail = new LeerlingenWorden18($payload);
+                            if ($subjectEmail !== '') $mail->subject($subjectEmail);
+                            Mail::to($ontvanger)->send($mail);
+                        });
+                    if (! $ok) $this->warn('E-mailoverzicht niet bevestigd: '.$ontvanger);
                 }
             }
         }
