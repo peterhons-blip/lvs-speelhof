@@ -23,6 +23,7 @@ class CheckLeeftijdLeerlingen extends Command
         $this->info('Check gestart…');
 
         $warningSettings = app(\App\Services\BirthdaySettings::class)->all();
+        $actionLog = app(\App\Services\Birthday18Actions::class);
         $isTest = $this->option('test') === true;
         $testSsOverzichtOnly = $this->option('test-ss-overzicht') === true;
         $useDummy = $this->option('dummy') === true;
@@ -81,13 +82,18 @@ class CheckLeeftijdLeerlingen extends Command
             return self::SUCCESS;
         }
 
+        if (! \Illuminate\Support\Facades\Schema::hasTable('birthday_18_actions')) {
+            $this->error('De veilige 18-jarigenactielog ontbreekt. Voer eerst de gerichte 18-jarigenmigratie uit.');
+            return self::FAILURE;
+        }
+
         // Onderwerpen
         $onderwerpVooraf = str_replace('{dagen}', (string) $warningDays,
             (string) ($warningSettings['warning_subject']
                 ?? 'Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld'));
-        $onderwerpVandaagCo    = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
-        $onderwerpSecretariaat = "Uitnodiging: even langs bij het leerlingensecretariaat";
-        $onderwerpOverzichtSs  = "Overzicht: leerlingen vandaag 18";
+        $onderwerpVandaagCo = $warningSettings['adult_subject_student'];
+        $onderwerpSecretariaat = $warningSettings['adult_subject_secretariat'];
+        $onderwerpOverzichtSs = $warningSettings['adult_overview_smartschool_subject'];
 
         /**
          * 1) VOORAF (7 dagen): berichten naar leerling + coaccounts
@@ -136,82 +142,50 @@ class CheckLeeftijdLeerlingen extends Command
                     continue;
                 }
 
-                // 1A: naar leerling (hoofdaccount)
-                if ($warningSettings['warning_student'] === '1') try {
-                    $bodyLeerling = view($viewVoorafLeerling, [
-                        'voornaam' => $leerling->voornaam,
-                        'naam'     => $leerling->naam,
-                        'school'   => $school,
-                        'beleid'   => $beleid,
-                    ])->render();
-
-                    if (trim((string) ($warningSettings['warning_body_student'] ?? '')) !== '') {
-                        $bodyLeerling = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
-                            $warningSettings['warning_body_student'],
-                            ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
-                                'school' => $school->schoolnaam, 'dagen' => $warningDays]
-                        )));
-                    }
-
-                    if ($warningDays !== 7 && trim((string) ($warningSettings['warning_body_student'] ?? '')) === '') {
-                        $bodyLeerling = str_replace(['Binnen een week', 'binnen een week'], ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $bodyLeerling);
-                    }
-
-                    $ss->sendMessage(
-                        $leerling->gebruikersnaam,
-                        $onderwerpVooraf,
-                        $bodyLeerling,
-                        $senderSecretariaat,
-                        false,
-                        0
-                    );
-
-                    Log::info("VOORAF: bericht naar leerling {$leerling->gebruikersnaam} | sender={$senderSecretariaat}");
-                } catch (\SoapFault $e) {
-                    Log::error("VOORAF: fout bij bericht naar leerling {$leerling->gebruikersnaam}: " . $e->getMessage());
-                    $this->error("VOORAF: fout bij leerling {$leerling->gebruikersnaam}: " . $e->getMessage());
+                $targetDate = $leerling->geboortedatum->copy()->addYears(18)->toDateString();
+                $studentData = ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                    'school' => $school->schoolnaam, 'dagen' => $warningDays];
+                if ($warningSettings['warning_student'] === '1') {
+                    $sent = $actionLog->run((int) $school->id, (int) $leerling->id, $targetDate,
+                        'advance_student', (string) $leerling->gebruikersnaam,
+                        function () use ($ss, $leerling, $viewVoorafLeerling, $school, $beleid,
+                            $warningSettings, $warningDays, $studentData, $onderwerpVooraf, $senderSecretariaat) {
+                            $body = view($viewVoorafLeerling, [
+                                'voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                                'school' => $school, 'beleid' => $beleid,
+                            ])->render();
+                            if (trim((string) $warningSettings['warning_body_student']) !== '') {
+                                $body = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
+                                    $warningSettings['warning_body_student'], $studentData)));
+                            } elseif ($warningDays !== 7) {
+                                $body = str_replace(['Binnen een week', 'binnen een week'],
+                                    ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $body);
+                            }
+                            $ss->sendMessage($leerling->gebruikersnaam, $onderwerpVooraf,
+                                $body, $senderSecretariaat, false, 0);
+                        });
+                    if (! $sent) $this->warn('Voorafbericht leerling nog niet bevestigd: '.$leerling->gebruikersnaam);
                 }
-
-                // 1B: naar co-accounts (1..6)
-                if ($warningSettings['warning_coaccounts'] === '1') try {
-                    $bodyCo = view($viewVoorafCo, [
-                        'voornaam' => $leerling->voornaam,
-                        'naam'     => $leerling->naam,
-                        'school'   => $school,
-                        'beleid'   => $beleid,
+                if ($warningSettings['warning_coaccounts'] === '1') {
+                    $coBody = view($viewVoorafCo, [
+                        'voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                        'school' => $school, 'beleid' => $beleid,
                     ])->render();
-
-                    if (trim((string) ($warningSettings['warning_body_coaccount'] ?? '')) !== '') {
-                        $bodyCo = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
-                            $warningSettings['warning_body_coaccount'],
-                            ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
-                                'school' => $school->schoolnaam, 'dagen' => $warningDays]
-                        )));
+                    if (trim((string) $warningSettings['warning_body_coaccount']) !== '') {
+                        $coBody = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
+                            $warningSettings['warning_body_coaccount'], $studentData)));
+                    } elseif ($warningDays !== 7) {
+                        $coBody = str_replace(['Binnen een week', 'binnen een week'],
+                            ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $coBody);
                     }
-
-                    if ($warningDays !== 7 && trim((string) ($warningSettings['warning_body_coaccount'] ?? '')) === '') {
-                        $bodyCo = str_replace(['Binnen een week', 'binnen een week'],
-                            ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $bodyCo);
-                    }
-
                     for ($i = 1; $i <= 6; $i++) {
-                        try {
-                            $ss->sendMessage(
-                                $leerling->gebruikersnaam,
-                                $onderwerpVooraf,
-                                $bodyCo,
-                                $senderSecretariaat,
-                                false,
-                                $i
-                            );
-                            Log::info("VOORAF: bericht naar co-account {$i} van {$leerling->gebruikersnaam}");
-                        } catch (\SoapFault $e) {
-                            Log::info("VOORAF: co-account {$i} niet bereikbaar voor {$leerling->gebruikersnaam}: " . $e->getMessage());
-                        }
+                        $actionLog->run((int) $school->id, (int) $leerling->id, $targetDate,
+                            'advance_coaccount_'.$i, $leerling->gebruikersnaam.' (co-account '.$i.')',
+                            function () use ($ss, $leerling, $onderwerpVooraf, $coBody, $senderSecretariaat, $i) {
+                                $ss->sendMessage($leerling->gebruikersnaam, $onderwerpVooraf,
+                                    $coBody, $senderSecretariaat, false, $i);
+                            });
                     }
-                } catch (\Throwable $e) {
-                    Log::error("VOORAF: fout bij co-account fase voor {$leerling->gebruikersnaam}: " . $e->getMessage());
-                    $this->error("VOORAF: fout bij co-accounts {$leerling->gebruikersnaam}: " . $e->getMessage());
                 }
             }
         }
