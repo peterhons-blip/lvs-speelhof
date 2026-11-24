@@ -62,6 +62,9 @@
                                         <div class="melding-datum">
                                             <strong>Gebeurd op {{ optional($melding->gebeurdop)->format('d/m/Y') ?? '—' }}</strong><br>
                                             <small>Ingegeven op {{ optional($melding->created_at)->format('d/m/Y H:i') ?? '—' }}</small>
+                                            @if($melding->auteur_gebruikersnaam ?? null)
+                                                <br><small>Door {{ $melding->auteur_gebruikersnaam }}</small>
+                                            @endif
                                         </div>
                                         <div class="melding-badges">
                                             <span class="badge badge-soort">{{ optional($melding->soort)->naam ?? '—' }}</span>
