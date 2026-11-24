@@ -52,6 +52,7 @@
             <form method="get" action="{{ route('bibliotheek.books.qr-labels') }}" class="library-loan-filters">
                 @if($search !== '')<input type="hidden" name="q" value="{{ $search }}">@endif
                 @if($bookId !== null)<input type="hidden" name="book" value="{{ $bookId }}">@endif
+                @if($copyId !== null)<input type="hidden" name="copy" value="{{ $copyId }}">@endif
                 <div class="library-field">
                     <label for="qr-status-filter">QR-etiketstatus</label>
                     <select id="qr-status-filter" name="qr_status">
