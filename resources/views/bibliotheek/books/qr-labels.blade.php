@@ -57,6 +57,8 @@
                     <label for="qr-status-filter">QR-etiketstatus</label>
                     <select id="qr-status-filter" name="qr_status">
                         <option value="all" @selected($qrStatus === 'all')>Alle exemplaren</option>
+                        <option value="not_generated" @selected($qrStatus === 'not_generated')>QR-code nog niet gemaakt</option>
+                        <option value="generated_unprinted" @selected($qrStatus === 'generated_unprinted')>QR gemaakt, etiket niet bevestigd</option>
                         <option value="unprinted" @selected($qrStatus === 'unprinted')>Nog geen etiket bevestigd</option>
                         <option value="printed" @selected($qrStatus === 'printed')>Etiket reeds bevestigd</option>
                     </select>
