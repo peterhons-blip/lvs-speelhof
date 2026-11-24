@@ -280,12 +280,22 @@ class CheckLeeftijdLeerlingen extends Command
                 $vars = ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
                     'school' => $school->schoolnaam];
                 if ($username !== '') {
-                    // PRIVACY FIRST: never make co-account deactivation depend on sending a message.
-                    $coaccountsUit = $actionLog->run($schoolId, $studentId, $actionDate,
-                        'disable_coaccounts', $username,
-                        fn () => $ss->disableCoAccounts($username));
-                    if (! $coaccountsUit) {
-                        $this->error('Controle co-accounts vereist: '.$username.' (zie actiehistoriek).');
+                    // Privacy toggle is independent of messages, and defaults to ON.
+                    // Pausing is deliberately visible and NEVER recorded as a successful deactivation.
+                    if (($warningSettings['adult_disable_coaccounts'] ?? '1') === '1') {
+                        $coaccountsUit = $actionLog->run($schoolId, $studentId, $actionDate,
+                            'disable_coaccounts', $username,
+                            fn () => $ss->disableCoAccounts($username));
+                        if (! $coaccountsUit) {
+                            $this->error('Controle co-accounts vereist: '.$username.' (zie actiehistoriek).');
+                        }
+                    } else {
+                        $this->warn('CO-ACCOUNTS NIET UITGESCHAKELD: automatisering gepauzeerd voor '.$username.'. Handmatige opvolging noodzakelijk.');
+                        Log::warning('18-jarigen: uitschakelen co-accounts bewust gepauzeerd', [
+                            'student_id' => $studentId, 'school_id' => $schoolId, 'gebruikersnaam' => $username,
+                        ]);
+                        $actionLog->flag($schoolId, $studentId, $actionDate,
+                            'disable_paused', 'Automatische uitschakeling uitgeschakeld via beheer; handmatige opvolging vereist.');
                     }
 
                     // Do not claim deactivation succeeded if Smartschool reported partial failure.
