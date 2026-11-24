@@ -21,6 +21,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view');
 
+    Route::get('/bibliotheek/smartschool-berichten', [\App\Http\Controllers\LibraryMessageController::class, 'index'])
+        ->name('bibliotheek.messages.index')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+    Route::post('/bibliotheek/smartschool-berichten', [\App\Http\Controllers\LibraryMessageController::class, 'update'])
+        ->name('bibliotheek.messages.update')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
