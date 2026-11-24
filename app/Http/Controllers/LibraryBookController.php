@@ -37,9 +37,9 @@ class LibraryBookController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
         $bookId = $request->query('book');
-        if ($bookId !== null && (! ctype_digit((string) $bookId) || (int) $bookId < 1)) {
-            abort(404);
-        }
+        $mode = (string) $request->query('select', 'all');
+        if (! in_array($mode, ['all', 'latest5', 'selected'], true)) $mode = 'all';
+        if ($bookId !== null && (! ctype_digit((string) $bookId) || (int) $bookId < 1)) abort(404);
 
         $query = DB::table('library_copies as copies')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id');
@@ -54,11 +54,17 @@ class LibraryBookController extends Controller
             });
         }
 
-        // Bound memory/browser work. Additional batches can be exported by filtering.
+        if ($mode === 'latest5') {
+            $query->orderByDesc('copies.created_at')->orderByDesc('copies.id');
+        } else {
+            $query->orderBy('books.title')->orderBy('copies.barcode');
+        }
+
         $total = (clone $query)->count();
-        $copies = $query->orderBy('books.title')->orderBy('copies.barcode')
-            ->limit(500)->get(['copies.barcode', 'books.title']);
-        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId'));
+        $copies = $query->limit($mode === 'latest5' ? 5 : 500)
+            ->get(['copies.id', 'copies.barcode', 'books.title', 'copies.created_at']);
+
+        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'mode'));
     }
 
     public function create(): View
