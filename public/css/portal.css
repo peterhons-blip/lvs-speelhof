@@ -861,3 +861,49 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-sent-note { margin-top:18px; line-height:1.55; }
 @media(max-width:1100px){ .portal-sent-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } .portal-sent-filters .portal-sent-search { grid-column:span 2; } }
 @media(max-width:650px){ .portal-sent-filters { grid-template-columns:minmax(0,1fr); } .portal-sent-filters .portal-sent-search { grid-column:auto; } }
+
+
+/* LVS dashboard / meldingenoverzicht / klassenraadoverzicht - november 2026 */
+.lvs-dashboard-page,.lvs-notifications-page,.lvs-reports-page{max-width:1480px}
+.lvs-dashboard-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px}
+.lvs-stat-card{display:flex;flex-direction:column;gap:7px;padding:22px;min-width:0}
+.lvs-stat-value{font-size:clamp(1.8rem,3vw,2.6rem);font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--portal-ink,#122b40)}
+.lvs-stat-card strong{font-size:1rem;line-height:1.3}
+.lvs-stat-card small{font-size:.83rem;color:var(--portal-muted,#657787);line-height:1.5}
+.lvs-dashboard-quick-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:22px 0}
+.lvs-dashboard-action{display:flex;flex-direction:column;gap:9px;padding:22px;text-decoration:none;color:inherit;min-height:152px;transition:transform .15s ease,box-shadow .15s ease}
+.lvs-dashboard-action:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(12,36,56,.09)}
+.lvs-dashboard-action strong{font-size:1.06rem}
+.lvs-dashboard-action small{line-height:1.5;color:var(--portal-muted,#657787)}
+.lvs-dashboard-action-icon{font-size:1.65rem;color:var(--portal-accent,#117b49)}
+.lvs-dashboard-columns,.lvs-reports-overview{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+.lvs-dashboard-columns .lvs-panel,.lvs-reports-overview .lvs-panel{min-width:0;padding:22px}
+.lvs-dashboard-recent{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--portal-border,#e2e8ef);text-decoration:none;color:inherit}
+.lvs-dashboard-recent:last-child{border-bottom:0}
+.lvs-dashboard-recent span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lvs-dashboard-recent small{color:var(--portal-muted,#657787);line-height:1.4}
+.lvs-dashboard-recent time{flex:0 0 auto;font-size:.82rem;color:var(--portal-muted,#657787)}
+.lvs-dashboard-category{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--portal-border,#e2e8ef);text-decoration:none;color:inherit}
+.lvs-dashboard-category:last-of-type{border-bottom:0}
+.lvs-dashboard-category strong{min-width:32px;border-radius:16px;padding:4px 8px;background:var(--portal-surface-soft,#f0f5f5);font-variant-numeric:tabular-nums;text-align:center}
+.lvs-report-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:14px;margin-top:12px}
+.lvs-report-filters .library-field{min-width:0}
+.lvs-report-filters input,.lvs-report-filters select{width:100%;box-sizing:border-box}
+.lvs-report-filter-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lvs-notifications-table{min-width:1000px}
+.lvs-notifications-table td{vertical-align:top}
+.lvs-notification-comment{min-width:200px;max-width:410px;white-space:pre-wrap;overflow-wrap:anywhere}
+.lvs-pagination{display:flex;gap:18px;align-items:center;justify-content:center;padding:20px 0}
+.lvs-pagination a{text-decoration:underline}
+.lvs-category-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:16px}
+.lvs-category-group{border:1px solid var(--portal-border,#e2e8ef);background:var(--portal-surface-soft,#f8fafb);border-radius:14px;padding:18px;min-width:0}
+.lvs-category-group .meldingen-list{margin-top:12px}
+.lvs-category-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lvs-category-title h3{font-size:1.05rem;margin:0}
+.lvs-category-group .melding-row{background:#fff;border-radius:10px;margin-top:10px;padding:14px}
+.lvs-future-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:14px 0}
+.lvs-future-roles>div{padding:14px;border:1px solid var(--portal-border,#e2e8ef);border-radius:10px;display:flex;flex-direction:column;gap:6px}
+.lvs-future-roles small{line-height:1.5;color:var(--portal-muted,#657787)}
+@media(max-width:1150px){.lvs-dashboard-stats,.lvs-dashboard-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.lvs-dashboard-columns,.lvs-reports-overview,.lvs-category-groups{grid-template-columns:minmax(0,1fr)}.lvs-report-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.lvs-dashboard-stats,.lvs-dashboard-quick-links,.lvs-report-filters,.lvs-future-roles{grid-template-columns:minmax(0,1fr)}.lvs-dashboard-recent{align-items:flex-start;flex-direction:column}}
