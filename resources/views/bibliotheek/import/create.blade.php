@@ -26,7 +26,7 @@
             <label for="isbns">ISBN-nummers</label>
             <textarea id="isbns" name="isbns" rows="12" maxlength="15000" required placeholder="9780747532699&#10;9789026127267">{{ old('isbns') }}</textarea>
         </div>
-        <p class="library-help">Elk ISBN wordt gecontroleerd. Open Library levert de boekgegevens. Bestaande ISBN's worden overgeslagen; een nieuw boek krijgt automatisch één exemplaar en een unieke barcode. De geïmporteerde gegevens kun je achteraf wijzigen.</p>
+        <p class="library-help">Elk ISBN wordt gecontroleerd. Open Library levert de boekgegevens. Elk ingevoerd ISBN staat voor één fysiek exemplaar. Als het ISBN al in de catalogus staat, wordt een nieuw exemplaar met unieke barcode toegevoegd. Herhaal een ISBN om meerdere exemplaren te importeren. De geïmporteerde gegevens kun je achteraf wijzigen.</p>
         <button class="library-button library-button-primary" type="submit">Import starten</button>
     </form>
 </main>

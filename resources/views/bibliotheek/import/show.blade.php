@@ -12,7 +12,7 @@
 <main class="library-page">
     <div class="library-page-head">
         <div><p class="portal-eyebrow">BIBLIOTHEEK / ISBN-IMPORT</p><h1>Importoverzicht</h1>
-        <p>{{ $batch->total }} unieke ISBN-nummers ingevoerd. De verwerking verloopt via de bibliotheekwachtrij.</p></div>
+        <p>{{ $batch->total }} exemplaren ingevoerd (herhaalde ISBN's tellen mee). De verwerking verloopt via de bibliotheekwachtrij.</p></div>
         <div class="library-form-actions" style="margin:0">
             <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.history') }}">Importhistoriek</a>
             <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.import.create') }}">Nieuwe import</a>
@@ -21,7 +21,14 @@
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     <section class="library-form-card">
         <h2>Voortgang</h2>
-        <p id="import-progress" role="status">Wachten: {{ $counts['wachten'] ?? 0 }} · Toegevoegd: {{ $counts['toegevoegd'] ?? 0 }} · Dubbel: {{ $counts['dubbel'] ?? 0 }} · Niet gevonden: {{ $counts['niet_gevonden'] ?? 0 }} · Fouten: {{ $counts['fout'] ?? 0 }}</p>
+        @if(($counts['wachten'] ?? 0) > 0)
+            <form action="{{ route('bibliotheek.books.import.stop', $batch->id) }}" method="post"
+                onsubmit="return confirm('De nog wachtende exemplaren stoppen? Reeds toegevoegde exemplaren blijven bestaan.');">
+                @csrf
+                <button class="library-button library-button-secondary" type="submit">Import stoppen</button>
+            </form>
+        @endif
+        <p id="import-progress" role="status">Wachten: {{ $counts['wachten'] ?? 0 }} · Toegevoegd: {{ $counts['toegevoegd'] ?? 0 }} · Extra exemplaren: {{ $counts['exemplaar'] ?? 0 }} · Gestopt: {{ $counts['gestopt'] ?? 0 }} · Dubbel (oude import): {{ $counts['dubbel'] ?? 0 }} · Niet gevonden: {{ $counts['niet_gevonden'] ?? 0 }} · Fouten: {{ $counts['fout'] ?? 0 }}</p>
         <p class="library-help">Je kunt deze pagina sluiten: een actieve Laravel queue-worker verwerkt de lijst verder. Als de teller blijft wachten, moet de bibliotheek-worker gestart worden.</p>
         <button class="library-button library-button-secondary" type="button" onclick="window.location.reload()">Overzicht vernieuwen</button>
     </section>
@@ -53,7 +60,7 @@
             if (!response.ok) return;
             const data = await response.json();
             const count = data.counts || {};
-            progress.textContent = 'Wachten: ' + (count.wachten || 0) + ' · Toegevoegd: ' + (count.toegevoegd || 0) + ' · Dubbel: ' + (count.dubbel || 0) + ' · Niet gevonden: ' + (count.niet_gevonden || 0) + ' · Fouten: ' + (count.fout || 0);
+            progress.textContent = 'Wachten: ' + (count.wachten || 0) + ' · Toegevoegd: ' + (count.toegevoegd || 0) + ' · Extra exemplaren: ' + (count.exemplaar || 0) + ' · Gestopt: ' + (count.gestopt || 0) + ' · Dubbel (oude import): ' + (count.dubbel || 0) + ' · Niet gevonden: ' + (count.niet_gevonden || 0) + ' · Fouten: ' + (count.fout || 0);
             if (!data.pending) { clearInterval(timer); window.location.reload(); }
         } catch { /* handmatig vernieuwen blijft mogelijk */ }
     }, 5000);

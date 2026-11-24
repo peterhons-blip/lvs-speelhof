@@ -44,6 +44,8 @@
                                 $waiting = (int) $batch->waiting;
                                 $added = (int) $batch->added;
                                 $duplicates = (int) $batch->duplicates;
+                                $copies = (int) $batch->copies;
+                                $stopped = (int) $batch->stopped;
                                 $notFound = (int) $batch->not_found;
                                 $errors = (int) $batch->errors;
                                 $processed = (int) $batch->total - $waiting;
@@ -56,11 +58,14 @@
                                         <span class="library-pill library-import-pending">Bezig / wachtend</span>
                                         <div class="library-import-subtext">{{ $processed }} van {{ $batch->total }} verwerkt</div>
                                     @else
-                                        <span class="library-pill">Afgerond</span>
+                                        <span class="library-pill">{{ $stopped ? 'Gestopt / afgerond' : 'Afgerond' }}</span>
                                     @endif
                                 </td>
                                 <td>
-                                    {{ $added }} toegevoegd · {{ $duplicates }} dubbel
+                                    {{ $added }} nieuwe titels · {{ $copies }} extra exemplaren
+                                    @if($duplicates || $stopped)
+                                        <div class="library-import-subtext">{{ $duplicates }} dubbel (oude imports) · {{ $stopped }} gestopt</div>
+                                    @endif
                                     @if($notFound || $errors)
                                         <div class="library-import-subtext">{{ $notFound }} niet gevonden · {{ $errors }} fouten</div>
                                     @endif

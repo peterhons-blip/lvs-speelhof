@@ -15,7 +15,7 @@
         <div>
             <p class="portal-eyebrow">BIBLIOTHEEK / UITLEENBEHEER</p>
             <h1>Boeken uitlenen</h1>
-            <p>Identificeer de leerling, scan één of meer boeken en bevestig de uitlening.</p>
+            <p>Kies een leerling of personeelslid, scan één of meer boeken en bevestig de uitlening.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.index') }}">Terug naar uitleningen</a>
     </div>
@@ -32,9 +32,17 @@
         <section class="library-checkout-card">
             <div class="library-checkout-section-head">
                 <span class="library-checkout-step">1</span>
-                <div><h2>Leerling identificeren</h2><p>Scan de Smartschool-kaart of zoek een leerling op naam of gebruikersnaam.</p></div>
+                <div><h2>Ontlener identificeren</h2><p>Kies een leerling of personeelslid en zoek op naam of Smartschool-gebruikersnaam.</p></div>
             </div>
             <div class="library-checkout-section-body">
+                <div class="library-field" style="margin-bottom:1rem">
+                    <label for="borrower-type">Type ontlener</label>
+                    <select id="borrower-type" name="ontlener_type">
+                        <option value="leerling" @selected(old('ontlener_type', $borrowerType) === 'leerling')>Leerling</option>
+                        <option value="personeel" @selected(old('ontlener_type', $borrowerType) === 'personeel')>Personeelslid</option>
+                    </select>
+                </div>
+                <div id="student-selector">
                 <div class="library-checkout-grid">
                     <div class="library-field">
                         <label for="student-card-scan">Smartschool-kaart / scanwaarde</label>
@@ -59,6 +67,21 @@
                 </div>
 
                 <input type="hidden" id="selected-student-username" name="leerling" value="{{ old('leerling', $username) }}">
+                </div>
+                <div id="staff-selector" hidden>
+                    <div class="library-field">
+                        <label for="staff-name-search">Personeelslid zoeken</label>
+                        <input id="staff-name-search" type="search" placeholder="Naam of Smartschool-gebruikersnaam" autocomplete="off">
+                        <div id="staff-search-results" class="library-checkout-results" role="status"></div>
+                    </div>
+                    <div id="staff-feedback" class="library-checkout-feedback" aria-live="polite" hidden></div>
+                    <div id="staff-selected" class="library-checkout-selected" hidden>
+                        <span class="library-checkout-avatar" aria-hidden="true">✓</span>
+                        <div><strong id="staff-selected-name"></strong><small id="staff-selected-username"></small></div>
+                        <button type="button" id="staff-clear" class="library-button library-button-secondary">Wijzigen</button>
+                    </div>
+                    <input type="hidden" id="selected-staff-id" name="medewerker" value="{{ old('medewerker', $staffMember?->id) }}">
+                </div>
             </div>
         </section>
 
@@ -87,7 +110,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p id="checkout-limit" class="library-checkout-caption">Maximaal {{ $maxLoans }} openstaande uitleningen per leerling, inclusief eerder uitgeleende boeken.</p>
+                <p id="checkout-limit" class="library-checkout-caption">Maximaal {{ $maxLoans }} openstaande uitleningen per ontlener, inclusief eerder uitgeleende boeken.</p>
             </div>
         </section>
 
@@ -112,7 +135,7 @@
         </section>
 
         <div class="library-checkout-actions">
-            <span>Controleer de leerling en de gekozen exemplaren voor je registreert.</span>
+            <span>Controleer de ontlener en de gekozen exemplaren voor je registreert.</span>
             <button type="submit" id="checkout-submit" class="library-button library-button-primary" disabled>Uitlening registreren</button>
         </div>
     </form>
@@ -122,6 +145,16 @@
 @push('scripts')
 <script>
 (() => {
+    const borrowerType = document.getElementById('borrower-type');
+    const studentSelector = document.getElementById('student-selector');
+    const staffSelector = document.getElementById('staff-selector');
+    const staffSearch = document.getElementById('staff-name-search');
+    const staffList = document.getElementById('staff-search-results');
+    const staffId = document.getElementById('selected-staff-id');
+    const staffSelected = document.getElementById('staff-selected');
+    const staffName = document.getElementById('staff-selected-name');
+    const staffUsername = document.getElementById('staff-selected-username');
+    const staffFeedback = document.getElementById('staff-feedback');
     const studentSearch = document.getElementById('student-name-search');
     const studentList = document.getElementById('student-search-results');
     const studentUsername = document.getElementById('selected-student-username');
@@ -141,15 +174,18 @@
     const maxLoans = @json($maxLoans);
     const endpoints = {
         students: @json(route('bibliotheek.loans.students')),
+        staff: @json(route('bibliotheek.loans.staff')),
         scan: @json(route('bibliotheek.loans.student-scan')),
         copy: @json(route('bibliotheek.loans.copy-scan'))
     };
     const initialStudent = @json($leerling);
+    const initialStaff = @json($staffMember);
     const initialCopy = @json($copy);
     const oldBarcodes = @json(old('barcodes', []));
     let books = [];
     let learner = null;
     let studentLookupSeq = 0;
+    let staffLookupSeq = 0;
     let bookBusy = false;
 
     function feedback(element, message, isError = false) {
@@ -158,7 +194,8 @@
         element.classList.toggle('is-error', isError);
     }
     function updateSubmit() {
-        submit.disabled = !(studentUsername.value && books.length && Number(term.value) >= 1 && Number(term.value) <= 365);
+        const hasBorrower = borrowerType.value === 'personeel' ? !!staffId.value : !!studentUsername.value;
+        submit.disabled = !(hasBorrower && books.length && Number(term.value) >= 1 && Number(term.value) <= 365);
     }
     function selectStudent(person) {
         learner = person;
@@ -179,6 +216,78 @@
         updateSubmit();
         studentSearch.focus();
     }
+    function updateBorrowerType() {
+        const staffMode = borrowerType.value === 'personeel';
+        studentSelector.hidden = staffMode;
+        staffSelector.hidden = !staffMode;
+        studentUsername.disabled = staffMode;
+        staffId.disabled = !staffMode;
+        updateSubmit();
+    }
+    function selectStaff(person) {
+        staffId.value = person.id;
+        staffName.textContent = [person.voornaam, person.name].filter(Boolean).join(' ');
+        staffUsername.textContent = person.smartschool_gebruikersnaam || '';
+        staffSelected.hidden = false;
+        staffList.replaceChildren();
+        staffSearch.value = '';
+        feedback(staffFeedback, '');
+        updateSubmit();
+    }
+    function clearStaff() {
+        staffId.value = '';
+        staffSelected.hidden = true;
+        staffList.replaceChildren();
+        staffSearch.focus();
+        updateSubmit();
+    }
+    staffSearch.addEventListener('input', async () => {
+        const q = staffSearch.value.trim();
+        const seq = ++staffLookupSeq;
+        staffList.replaceChildren();
+        if (q.length < 2) return;
+        try {
+            const response = await fetch(endpoints.staff + '?q=' + encodeURIComponent(q), {
+                headers: {Accept: 'application/json'}
+            });
+            if (!response.ok) {
+                feedback(staffFeedback, 'Personeelsleden zoeken is momenteel niet beschikbaar.', true);
+                return;
+            }
+            const people = await response.json();
+            if (seq !== staffLookupSeq) return;
+            if (!people.length) {
+                const empty = document.createElement('p');
+                empty.className = 'library-help';
+                empty.textContent = 'Geen actieve personeelsleden gevonden.';
+                staffList.appendChild(empty);
+            }
+            for (const person of people) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'library-checkout-result';
+                button.textContent = [person.voornaam, person.name].filter(Boolean).join(' ') +
+                    ' · ' + (person.smartschool_gebruikersnaam || '');
+                button.addEventListener('click', () => {
+                    selectStaff(person);
+                    bookInput.focus();
+                });
+                staffList.appendChild(button);
+            }
+        } catch {
+            feedback(staffFeedback, 'Personeelsleden zoeken is momenteel niet beschikbaar.', true);
+        }
+    });
+    document.getElementById('staff-clear').addEventListener('click', clearStaff);
+    borrowerType.addEventListener('change', () => {
+        // An in-flight result from the other borrower type must not overwrite the selection.
+        ++studentLookupSeq;
+        ++staffLookupSeq;
+        studentList.replaceChildren();
+        staffList.replaceChildren();
+        updateBorrowerType();
+    });
+
     async function lookupStudent() {
         const code = studentScan.value.trim();
         if (!code) return;
@@ -328,10 +437,12 @@
     }
     term.addEventListener('input', updateDate);
     document.getElementById('library-checkout-form').addEventListener('submit', e => {
-        if (!studentUsername.value || !books.length) e.preventDefault();
+        if (!books.length || (borrowerType.value === 'personeel' ? !staffId.value : !studentUsername.value)) e.preventDefault();
         else submit.disabled = true;
     });
     if (initialStudent) selectStudent(initialStudent);
+    if (initialStaff) selectStaff(initialStaff);
+    updateBorrowerType();
     renderBooks();
     updateDate();
     (async () => {

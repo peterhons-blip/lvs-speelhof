@@ -32,8 +32,11 @@ class LibraryLoanController extends Controller
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id')
             ->leftJoin('leerlingen as leerlingen', 'leerlingen.id', '=', 'loans.leerling_id')
+            ->leftJoin('users as staff', 'staff.id', '=', 'loans.staff_user_id')
             ->select('loans.*', 'copies.barcode', 'books.title',
-                'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam');
+                'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam',
+                'staff.voornaam as staff_voornaam', 'staff.name as staff_naam',
+                'staff.smartschool_gebruikersnaam as staff_gebruikersnaam');
 
         if ($mode === 'open') $query->whereNull('loans.returned_at');
         if ($mode === 'overdue') $query->whereNull('loans.returned_at')->where('loans.due_date', '<', now()->toDateString());
@@ -45,7 +48,10 @@ class LibraryLoanController extends Controller
                     ->orWhere('books.title', 'like', "%{$search}%")
                     ->orWhere('leerlingen.naam', 'like', "%{$search}%")
                     ->orWhere('leerlingen.voornaam', 'like', "%{$search}%")
-                    ->orWhere('leerlingen.gebruikersnaam', 'like', "%{$search}%");
+                    ->orWhere('leerlingen.gebruikersnaam', 'like', "%{$search}%")
+                    ->orWhere('staff.voornaam', 'like', "%{$search}%")
+                    ->orWhere('staff.name', 'like', "%{$search}%")
+                    ->orWhere('staff.smartschool_gebruikersnaam', 'like', "%{$search}%");
             });
         }
 
@@ -65,6 +71,8 @@ class LibraryLoanController extends Controller
     {
         $barcode = trim((string) $request->query('barcode', ''));
         $username = trim((string) $request->query('leerling', ''));
+        $borrowerType = $request->query('ontlener_type') === 'personeel' ? 'personeel' : 'leerling';
+        $staffId = $request->query('medewerker');
         $loanDays = $this->setting('loan_days', 21);
         $maxLoans = $this->setting('max_loans', 3);
 
@@ -77,7 +85,14 @@ class LibraryLoanController extends Controller
             ->where('active', 1)->where('gebruikersnaam', $username)
             ->select('id', 'voornaam', 'naam', 'gebruikersnaam')->first() : null;
 
-        return view('bibliotheek.loans.create', compact('barcode', 'username', 'copy', 'leerling', 'loanDays', 'maxLoans'));
+        $staffMember = $borrowerType === 'personeel' && ctype_digit((string) $staffId)
+            ? DB::table('users')->where('id', (int) $staffId)->where('schoolid', 1)
+                
+                ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+                ->select('id', 'voornaam', 'name', 'smartschool_gebruikersnaam')->first()
+            : null;
+        return view('bibliotheek.loans.create', compact('barcode', 'username', 'copy', 'leerling',
+            'loanDays', 'maxLoans', 'borrowerType', 'staffMember'));
     }
 
     public function lookupStudent(Request $request): \Illuminate\Http\JsonResponse
@@ -98,6 +113,26 @@ class LibraryLoanController extends Controller
         }
         if (! $student) return response()->json(['message' => 'Geen actieve leerling gevonden voor deze scanwaarde. Controleer of de Smartschool-scancodes gesynchroniseerd zijn.'], 404);
         return response()->json(['student' => $student]);
+    }
+
+    public function staff(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeOperator($request);
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2 || mb_strlen($q) > 100) return response()->json([]);
+        $term = '%'.addcslashes($q, '%_\\').'%';
+        $people = DB::table('users')->where('schoolid', 1)
+            ->where(function ($query) {
+                $query->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
+            })
+            ->where(function ($query) use ($term) {
+                $query->where('voornaam', 'like', $term)
+                    ->orWhere('name', 'like', $term)
+                    ->orWhere('smartschool_gebruikersnaam', 'like', $term);
+            })
+            ->orderBy('name')->orderBy('voornaam')->limit(15)
+            ->get(['id', 'voornaam', 'name', 'smartschool_gebruikersnaam']);
+        return response()->json($people);
     }
 
     public function lookupCopy(Request $request): \Illuminate\Http\JsonResponse
@@ -125,7 +160,9 @@ class LibraryLoanController extends Controller
     {
         $this->authorizeOperator($request);
         $data = $request->validate([
-            'leerling' => ['required', 'string', 'max:200'],
+            'ontlener_type' => ['required', 'in:leerling,personeel'],
+            'leerling' => ['required_if:ontlener_type,leerling', 'nullable', 'string', 'max:200'],
+            'medewerker' => ['required_if:ontlener_type,personeel', 'nullable', 'integer', 'min:1'],
             'barcodes' => ['required', 'array', 'min:1', 'max:30'],
             'barcodes.*' => ['required', 'string', 'max:60'],
             'loan_days' => ['required', 'integer', 'min:1', 'max:365'],
@@ -137,23 +174,38 @@ class LibraryLoanController extends Controller
         }
         // Stable lock order reduces contention and deadlock risk when scans are processed concurrently.
         sort($barcodes, SORT_STRING);
-        $learnerUsername = trim($data['leerling']);
+        $learnerUsername = trim((string) ($data['leerling'] ?? ''));
+        $borrowerType = $data['ontlener_type'];
+        $staffId = (int) ($data['medewerker'] ?? 0);
         $today = CarbonImmutable::today('Europe/Brussels');
 
-        $loanIds = DB::transaction(function () use ($barcodes, $learnerUsername, $today, $data, $request) {
-            $student = DB::table('leerlingen')
-                ->where('gebruikersnaam', $learnerUsername)->where('active', 1)
-                ->lockForUpdate()->first();
-            if (! $student) {
-                throw ValidationException::withMessages(['leerling' => 'Selecteer eerst een actieve leerling.']);
+        $loanIds = DB::transaction(function () use ($barcodes, $learnerUsername, $borrowerType, $staffId, $today, $data, $request) {
+            $student = null;
+            $staff = null;
+            if ($borrowerType === 'leerling') {
+                $student = DB::table('leerlingen')
+                    ->where('gebruikersnaam', $learnerUsername)->where('active', 1)
+                    ->lockForUpdate()->first();
+                if (! $student) {
+                    throw ValidationException::withMessages(['leerling' => 'Selecteer eerst een actieve leerling.']);
+                }
+            } else {
+                $staff = DB::table('users')->where('id', $staffId)->where('schoolid', 1)
+                    
+                    ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+                    ->lockForUpdate()->first();
+                if (! $staff) {
+                    throw ValidationException::withMessages(['medewerker' => 'Selecteer eerst een actieve medewerker.']);
+                }
             }
 
             $open = DB::table('library_loans')
-                ->where('leerling_id', $student->id)->whereNull('returned_at')->count();
+                ->where($student ? 'leerling_id' : 'staff_user_id', $student ? $student->id : $staff->id)
+                ->whereNull('returned_at')->count();
             $maxLoans = $this->setting('max_loans', 3);
             if ($open + count($barcodes) > $maxLoans) {
                 throw ValidationException::withMessages(['barcodes' =>
-                    "Deze leerling heeft al {$open} openstaande uitlening(en). Maximaal {$maxLoans} boeken tegelijk."]);
+                    "Deze ontlener heeft al {$open} openstaande uitlening(en). Maximaal {$maxLoans} boeken tegelijk."]);
             }
 
             $ids = [];
@@ -168,7 +220,8 @@ class LibraryLoanController extends Controller
 
                 $id = DB::table('library_loans')->insertGetId([
                     'copy_id' => $copy->id,
-                    'leerling_id' => $student->id,
+                    'leerling_id' => $student?->id,
+                    'staff_user_id' => $staff?->id,
                     'registered_by' => $this->username($request),
                     'loan_date' => $today->toDateString(),
                     'due_date' => $today->addDays((int) $data['loan_days'])->toDateString(),

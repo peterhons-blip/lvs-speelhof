@@ -29,13 +29,27 @@ class LibraryLoanNotifier
         $loan = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id')
-            ->join('leerlingen as leerlingen', 'leerlingen.id', '=', 'loans.leerling_id')
+            ->leftJoin('leerlingen as leerlingen', 'leerlingen.id', '=', 'loans.leerling_id')
+            ->leftJoin('users as staff', 'staff.id', '=', 'loans.staff_user_id')
             ->select('loans.*', 'books.title', 'copies.barcode',
                 'leerlingen.gebruikersnaam', 'leerlingen.voornaam', 'leerlingen.naam',
-                'leerlingen.active', 'leerlingen.schoolid')
+                'leerlingen.active', 'leerlingen.schoolid',
+                'staff.smartschool_gebruikersnaam as staff_username',
+                'staff.voornaam as staff_voornaam', 'staff.name as staff_naam',
+                'staff.schoolid as staff_schoolid', 'staff.smartschool_active as staff_active')
             ->where('loans.id', $loanId)->first();
 
-        if (! $loan || ! $loan->gebruikersnaam || (int) $loan->active !== 1) return false;
+        if (! $loan) return false;
+        $isStaff = $loan->staff_user_id !== null;
+        $recipient = $isStaff ? (string) ($loan->staff_username ?? '') : (string) ($loan->gebruikersnaam ?? '');
+        $firstName = $isStaff ? (string) ($loan->staff_voornaam ?? '') : (string) ($loan->voornaam ?? '');
+        $schoolId = $isStaff ? $loan->staff_schoolid : $loan->schoolid;
+        if ($recipient === '' || ! $schoolId) return false;
+        if ($isStaff) {
+            if ($loan->staff_active !== null && (int) $loan->staff_active === 0) return false;
+        } elseif ((int) $loan->active !== 1) {
+            return false;
+        }
         if ($type !== 'confirmation' && $loan->returned_at !== null) return false;
         if ($type !== 'confirmation' && $loan->due_date < $scheduledFor) return false;
 
@@ -59,7 +73,7 @@ class LibraryLoanNotifier
             'due_today' => 'Vandaag is de uiterste inleverdatum van je boek.',
         };
 
-        $message = '<p>Beste '.e($loan->voornaam).',</p>'
+        $message = '<p>Beste '.e($firstName).',</p>'
             .'<p>'.e($intro).'</p>'
             .'<p><strong>Boek:</strong> '.e($loan->title).'<br>'
             .'<strong>Barcode:</strong> '.e($loan->barcode).'<br>'
@@ -72,12 +86,12 @@ class LibraryLoanNotifier
             if ($sender === '') $sender = 'bib';
 
             // School-specific SOAP endpoint when configured. No co-account messages.
-            $school = DB::table('scholen')->where('id', $loan->schoolid)->first();
+            $school = DB::table('scholen')->where('id', $schoolId)->first();
             if (! $school || empty($school->smartschool_wsdl) || empty($school->smartschool_accesscode)) {
-                throw new \RuntimeException('Smartschool-webservices ontbreken voor de school van deze leerling.');
+                throw new \RuntimeException('Smartschool-webservices ontbreken voor de school van deze ontlener.');
             }
             $ss = new SmartschoolSoap($school->smartschool_wsdl, $school->smartschool_accesscode);
-            $ss->sendMessage($loan->gebruikersnaam, $subject, $message, $sender, false, 0);
+            $ss->sendMessage($recipient, $subject, $message, $sender, false, 0);
 
             DB::table('library_loan_notifications')
                 ->where('loan_id', $loanId)->where('type', $type)->where('scheduled_for', $scheduledFor)
