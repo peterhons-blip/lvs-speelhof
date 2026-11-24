@@ -472,15 +472,7 @@ class LibraryLoanController extends Controller
             'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
             'reminder_days_before' => ['required', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['required', 'in:0,1'],
-            'smartschool_enabled' => ['required', 'in:0,1'],
         ]);
-
-        // Changing outbound messages requires a stronger permission than ordinary settings.
-        $oldEnabled = DB::table('library_settings')->where('key', 'smartschool_enabled')->value('value') ?? '0';
-        if ($values['smartschool_enabled'] !== $oldEnabled) {
-            app(\App\Services\LibraryAccess::class)
-                ->requirePermission($request, 'bibliotheek.messages.manage');
-        }
 
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(
