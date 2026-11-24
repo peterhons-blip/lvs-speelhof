@@ -12,8 +12,11 @@ return [
     'lvs' => [
         'label' => 'Leerlingenvolgsysteem',
         'permissions' => [
-            'lvs.view' => 'Leerlingenoverzicht bekijken',
-            'lvs.meldingen.create' => 'Meldingen toevoegen',
+            'lvs.view' => 'Leerlingenoverzicht en leerlingdossiers openen',
+            'lvs.dashboard.view' => 'LVS-dashboard en statistieken bekijken',
+            'lvs.meldingen.view' => 'Alle meldingen en details bekijken',
+            'lvs.meldingen.create' => 'Gedragsmeldingen registreren',
+            'lvs.reports.view' => 'Klassenraadoverzicht en tellingen bekijken',
             'lvs.settings.manage' => 'LVS-instellingen beheren (toekomstige module)',
         ],
     ],
