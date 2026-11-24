@@ -22,13 +22,63 @@ class BirthdaySettingsController extends Controller
             $previewDate = now('Europe/Brussels')->toDateString();
         }
         $preview = $birthdaySettings->preview($previewDate, $settings);
+        $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount']);
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools'));
+    }
+
+
+    /**
+     * 18-year overview recipients are already read directly from scholen
+     * by CheckLeeftijdLeerlingen. Update that existing source of truth.
+     */
+    public function updateOverviewRecipients(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $data = $request->validate([
+            'school_id' => ['required', 'integer', 'min:1'],
+            'overview_smartschool' => ['nullable', 'string', 'max:3000'],
+            'overview_email' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $normalize = static function (?string $raw, bool $email): string {
+            $items = preg_split('/[;,\\r\\n]+/', (string) $raw, -1, PREG_SPLIT_NO_EMPTY);
+            $items = array_values(array_unique(array_filter(array_map('trim', $items))));
+            foreach ($items as $item) {
+                if ($email) {
+                    if (! filter_var($item, FILTER_VALIDATE_EMAIL)) {
+                        throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                            'overview_email' => 'Ongeldig e-mailadres: '.$item,
+                        ]);
+                    }
+                } elseif (! preg_match('/^[a-zA-Z0-9._-]{2,120}$/', $item)) {
+                    throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                        'overview_smartschool' => 'Ongeldige Smartschool-gebruikersnaam: '.$item,
+                    ]);
+                }
+            }
+            return implode('; ', $items);
+        };
+
+        $smartschool = $normalize($data['overview_smartschool'] ?? '', false);
+        $emails = $normalize($data['overview_email'] ?? '', true);
+
+        $updated = DB::table('scholen')->where('id', $data['school_id'])
+            ->update([
+                'ontvangers_overzicht_18_ssaccount' => $smartschool,
+                'ontvangers_overzicht_18' => $emails,
+            ]);
+        if (! $updated && ! DB::table('scholen')->where('id', $data['school_id'])->exists()) {
+            return back()->withErrors(['school_id' => 'School niet gevonden.']);
+        }
+
+        return redirect()->route('beheer.birthdays.index', ['overzicht_school' => $data['school_id']])
+            ->with('success', 'Ontvangers van het 18-jarigenoverzicht opgeslagen voor de geselecteerde school.');
     }
 
     public function update(Request $request, LibraryAccess $access, BirthdaySettings $birthdaySettings): RedirectResponse
