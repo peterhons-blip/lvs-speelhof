@@ -61,14 +61,14 @@
                 <tbody>
                     @foreach($book->copies as $copy)
                         <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td>
-                            <td>{{ $copy->qr_printed_at ? 'Bevestigd' : 'Nog niet' }}</td>
+                            <td>{{ $copy->qr_printed_at ? 'Etiket bevestigd' : ($copy->qr_generated_at ? 'QR gemaakt' : 'Nog niet gemaakt') }}</td>
                             <td>{{ $copy->notes ?: '—' }}</td><td>
                             <div class="library-copy-actions">
                                 @if($copy->status === 'beschikbaar')
                                     <a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
                                 @endif
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['copy' => $copy->id]) }}">Etiket afdrukken</a>
-                                <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
+                                <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" data-copy-id="{{ $copy->id }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
                                 @if($copy->status === 'beschikbaar')
                                     <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
@@ -108,6 +108,12 @@ document.querySelectorAll('.library-single-qr').forEach(button => button.addEven
     try {
         const code = button.dataset.barcode;
         LibraryQr.download(LibraryQr.dataUrl(code), 'QR-' + LibraryQr.safeName(code) + '.png');
+        fetch(@json(route('bibliotheek.books.qr-generated')), {
+            method: 'POST',
+            headers: {'Content-Type':'application/json', 'Accept':'application/json', 'X-CSRF-TOKEN': @json(csrf_token())},
+            body: JSON.stringify({copies: [Number(button.dataset.copyId)]})
+        }).catch(() => {});
+
     } catch (error) {
         alert('QR-code genereren is mislukt: ' + error.message);
     }
