@@ -136,11 +136,8 @@
     <section class="library-form-card library-birthday-warning">
         <h2>Waarschuwing vóór de 18e verjaardag</h2>
         <p class="library-help">De aparte 18-jarigentaak kan de leerling en de gekoppelde ouder-/voogdaccounts vooraf via Smartschool waarschuwen. De co-accounts worden op de 18e verjaardag volgens de bestaande procedure uitgeschakeld. Deze instellingen regelen <strong>alleen de voorafgaande waarschuwing</strong>, niet de verplichte opvolging op de verjaardag zelf.</p>
-        <form method="post" action="{{ route('beheer.birthdays.update') }}" id="warning-form" class="library-form">
+        <form method="post" action="{{ route('beheer.birthdays.warning.update') }}" id="warning-form" class="library-form">
             @csrf
-            @foreach(['enabled','students_enabled','staff_enabled','smartschool_students','smartschool_staff','email_students','email_staff','school_id','sender','subject_students','subject_staff','body_students','body_staff'] as $key)
-                <input type="hidden" name="{{ $key }}" value="{{ $settings[$key] }}">
-            @endforeach
             <div class="library-form-grid">
                 @foreach([
                     'warning_enabled' => 'Waarschuwingen vooraf inschakelen',
