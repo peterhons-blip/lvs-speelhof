@@ -27,6 +27,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/bibliotheek/smartschool-berichten', [\App\Http\Controllers\LibraryMessageController::class, 'update'])
         ->name('bibliotheek.messages.update')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+    Route::get('/bibliotheek/rapportages', [\App\Http\Controllers\LibraryReportController::class, 'index'])
+        ->name('bibliotheek.reports.index')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
+    Route::get('/bibliotheek/rapportages/export', [\App\Http\Controllers\LibraryReportController::class, 'export'])
+        ->name('bibliotheek.reports.export')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
@@ -61,6 +67,10 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
         Route::get('/qr-labels', [\App\Http\Controllers\LibraryBookController::class, 'qrLabels'])
             ->name('qr-labels')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
+        Route::post('/qr-labels/status', [\App\Http\Controllers\LibraryBookController::class, 'confirmQrPrinted'])
+            ->name('qr-status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+        Route::post('/qr-labels/generated', [\App\Http\Controllers\LibraryBookController::class, 'recordQrGenerated'])
+            ->name('qr-generated')->middleware(['throttle:30,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage']);
         Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');

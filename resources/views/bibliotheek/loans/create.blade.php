@@ -203,6 +203,7 @@
     let learner = null;
     let studentLookupSeq = 0;
     let staffLookupSeq = 0;
+    let staffSearchTimer = null;
     let bookBusy = false;
     let bookSearchSeq = 0;
     let copySearchSeq = 0;
@@ -260,42 +261,53 @@
         staffSearch.focus();
         updateSubmit();
     }
-    staffSearch.addEventListener('input', async () => {
+    staffSearch.addEventListener('input', () => {
         const q = staffSearch.value.trim();
         const seq = ++staffLookupSeq;
+        window.clearTimeout(staffSearchTimer);
         staffList.replaceChildren();
+        feedback(staffFeedback, '');
         if (q.length < 2) return;
-        try {
-            const response = await fetch(endpoints.staff + '?q=' + encodeURIComponent(q), {
-                headers: {Accept: 'application/json'}
-            });
-            if (!response.ok) {
-                feedback(staffFeedback, 'Personeelsleden zoeken is momenteel niet beschikbaar.', true);
-                return;
-            }
-            const people = await response.json();
-            if (seq !== staffLookupSeq) return;
-            if (!people.length) {
-                const empty = document.createElement('p');
-                empty.className = 'library-help';
-                empty.textContent = 'Geen actieve personeelsleden gevonden.';
-                staffList.appendChild(empty);
-            }
-            for (const person of people) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'library-checkout-result';
-                button.textContent = [person.voornaam, person.name].filter(Boolean).join(' ') +
-                    ' · ' + (person.smartschool_gebruikersnaam || '');
-                button.addEventListener('click', () => {
-                    selectStaff(person);
-                    bookInput.focus();
+        staffSearchTimer = window.setTimeout(async () => {
+            try {
+                const response = await fetch(endpoints.staff + '?q=' + encodeURIComponent(q), {
+                    headers: {Accept: 'application/json'}
                 });
-                staffList.appendChild(button);
+                if (seq !== staffLookupSeq) return;
+                if (!response.ok) {
+                    const message = response.status === 429
+                        ? 'Te veel zoekopdrachten. Probeer over enkele seconden opnieuw.'
+                        : response.status === 403
+                        ? 'Je hebt geen rechten om personeelsleden te zoeken.'
+                        : 'Personeelsleden zoeken is momenteel niet beschikbaar (HTTP ' + response.status + ').';
+                    feedback(staffFeedback, message, true);
+                    return;
+                }
+                const people = await response.json();
+                if (seq !== staffLookupSeq) return;
+                feedback(staffFeedback, '');
+                if (!people.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'library-help';
+                    empty.textContent = 'Geen actieve personeelsleden gevonden.';
+                    staffList.appendChild(empty);
+                }
+                for (const person of people) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'library-checkout-result';
+                    button.textContent = [person.voornaam, person.name].filter(Boolean).join(' ') +
+                        ' · ' + (person.smartschool_gebruikersnaam || '');
+                    button.addEventListener('click', () => {
+                        selectStaff(person);
+                        bookInput.focus();
+                    });
+                    staffList.appendChild(button);
+                }
+            } catch {
+                if (seq === staffLookupSeq) feedback(staffFeedback, 'Netwerkfout bij personeel zoeken.', true);
             }
-        } catch {
-            feedback(staffFeedback, 'Personeelsleden zoeken is momenteel niet beschikbaar.', true);
-        }
+        }, 300);
     });
     document.getElementById('staff-clear').addEventListener('click', clearStaff);
     borrowerType.addEventListener('change', () => {

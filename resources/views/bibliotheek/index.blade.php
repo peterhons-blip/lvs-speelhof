@@ -61,6 +61,14 @@
                     <span class="portal-library-feature-state">QR-codes maken →</span>
                 </a>
             @endif
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
+                <a href="{{ route('bibliotheek.reports.index') }}" class="portal-library-feature portal-library-feature-active">
+                    <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
+                    <h2>Rapportages</h2>
+                    <p>Voorraad, uitleningen per periode, populaire boeken, QR-status en export naar CSV.</p>
+                    <span class="portal-library-feature-state">Rapportages bekijken →</span>
+                </a>
+            @endif
             <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">⚙</span>
                 <h2>Uitleeninstellingen</h2>

@@ -120,18 +120,33 @@ class LibraryLoanController extends Controller
         $this->authorizeOperator($request);
         $q = trim((string) $request->query('q', ''));
         if (mb_strlen($q) < 2 || mb_strlen($q) > 100) return response()->json([]);
+
+        // Legacy installations do not necessarily expose every optional profile column.
+        $schema = \App\Support\LegacyDatabaseSchema::class;
         $term = '%'.addcslashes($q, '%_\\').'%';
-        $people = DB::table('users')->where('schoolid', 1)
-            ->where(function ($query) {
-                $query->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
+        $query = DB::table('users')->where('schoolid', 1)
+            ->where(function ($filter) {
+                $filter->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
             })
-            ->where(function ($query) use ($term) {
-                $query->where('voornaam', 'like', $term)
-                    ->orWhere('name', 'like', $term)
+            ->where(function ($filter) use ($term, $schema) {
+                $filter->where('name', 'like', $term)
                     ->orWhere('smartschool_gebruikersnaam', 'like', $term);
+                if ($schema::hasColumn('users', 'voornaam')) {
+                    $filter->orWhere('voornaam', 'like', $term);
+                }
             })
-            ->orderBy('name')->orderBy('voornaam')->limit(15)
-            ->get(['id', 'voornaam', 'name', 'smartschool_gebruikersnaam']);
+            ->orderBy('name')->limit(15);
+
+        $fields = ['id', 'name', 'smartschool_gebruikersnaam'];
+        if ($schema::hasColumn('users', 'voornaam')) $fields[] = 'voornaam';
+        $people = $query->get($fields)->map(function ($person) {
+            return [
+                'id' => $person->id,
+                'name' => $person->name,
+                'voornaam' => $person->voornaam ?? '',
+                'smartschool_gebruikersnaam' => $person->smartschool_gebruikersnaam,
+            ];
+        });
         return response()->json($people);
     }
 
