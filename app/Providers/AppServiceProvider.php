@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
             $senderAddress = $sender !== [] ? $sender[0]->getAddress() : null;
             $subject = $message->getSubject();
             $log = app(SentItemLog::class);
+            $source = $log->sourceFromStack();
+            if ($source === 'LVS') $source = 'LVS e-mail';
             $recipients = [
                 'to' => $message->getTo(),
                 'cc' => $message->getCc(),
@@ -43,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
             foreach ($recipients as $type => $addresses) {
                 foreach ($addresses as $address) {
                     $log->record('email', $address->getAddress(), $senderAddress,
-                        $subject, 'sent', $log->sourceFromStack() === 'LVS' ? 'LVS e-mail' : $log->sourceFromStack(), null, null, $type);
+                        $subject, 'sent', $source, null, null, $type);
                 }
             }
         });
