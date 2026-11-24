@@ -288,7 +288,8 @@ class CheckLeeftijdLeerlingen extends Command
                         $this->error('Controle co-accounts vereist: '.$username.' (zie actiehistoriek).');
                     }
 
-                    if ($warningSettings['adult_student_notice'] === '1') {
+                    // Do not claim deactivation succeeded if Smartschool reported partial failure.
+                    if ($coaccountsUit && $warningSettings['adult_student_notice'] === '1') {
                         $sender = trim((string) $warningSettings['adult_sender_student']) ?: $senderCoAccounts;
                         $berichtCoVerzonden = $actionLog->run($schoolId, $studentId, $dateOfBirth,
                             'adult_student_notice', $username,
