@@ -106,6 +106,33 @@ class BirthdaySettingsController extends Controller
             ->with('success', 'Ontvangers van het 18-jarigenoverzicht opgeslagen voor de geselecteerde school.');
     }
 
+    public function updateWarning(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $data = $request->validate([
+            'warning_enabled' => ['required', 'in:0,1'],
+            'warning_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'warning_student' => ['required', 'in:0,1'],
+            'warning_coaccounts' => ['required', 'in:0,1'],
+            'warning_sender' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
+            'warning_subject' => ['required', 'string', 'max:200'],
+            'warning_body_student' => ['nullable', 'string', 'max:5000'],
+            'warning_body_coaccount' => ['nullable', 'string', 'max:5000'],
+        ]);
+        if (! Schema::hasTable('birthday_settings')) {
+            return back()->withErrors(['database' => 'Voer eerst de verjaardagsmigratie uit.']);
+        }
+        DB::transaction(function () use ($data) {
+            foreach ($data as $key => $value) {
+                DB::table('birthday_settings')->updateOrInsert(
+                    ['setting_key' => $key], ['setting_value' => trim((string) ($value ?? ''))]
+                );
+            }
+        });
+        return redirect()->route('beheer.birthdays.index')
+            ->with('success', 'Waarschuwingen voor 18-jarigen opgeslagen.');
+    }
+
     public function update(Request $request, LibraryAccess $access, BirthdaySettings $birthdaySettings): RedirectResponse
     {
         $access->requirePermission($request, 'beheer.birthdays.manage');
@@ -119,14 +146,6 @@ class BirthdaySettingsController extends Controller
             'email_staff' => ['required', 'in:0,1'],
             'school_id' => ['required', 'integer', 'min:0', 'max:999999'],
             'sender' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
-            'warning_enabled' => ['required', 'in:0,1'],
-            'warning_days' => ['required', 'integer', 'min:1', 'max:30'],
-            'warning_student' => ['required', 'in:0,1'],
-            'warning_coaccounts' => ['required', 'in:0,1'],
-            'warning_sender' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
-            'warning_subject' => ['required', 'string', 'max:200'],
-            'warning_body_student' => ['nullable', 'string', 'max:5000'],
-            'warning_body_coaccount' => ['nullable', 'string', 'max:5000'],
             'subject_students' => ['required', 'string', 'max:200'],
             'subject_staff' => ['required', 'string', 'max:200'],
             'body_students' => ['required', 'string', 'max:4000'],
