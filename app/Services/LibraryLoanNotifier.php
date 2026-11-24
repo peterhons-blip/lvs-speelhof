@@ -112,38 +112,38 @@ class LibraryLoanNotifier
     }
     public static function defaultTemplates(): array
     {
-        $base = "Beste {voornaam},\\n\\n";
-        $details = "Boek: {boek}\\nExemplaarcode: {exemplaarcode}\\nUiterste inleverdatum: {inleverdatum}\\n\\n";
-        $footer = "Met vriendelijke groeten\\nDe schoolbibliotheek";
+        $base = "Beste {voornaam},\n\n";
+        $details = "Boek: {boek}\nExemplaarcode: {exemplaarcode}\nUiterste inleverdatum: {inleverdatum}\n\n";
+        $footer = "Met vriendelijke groeten\nDe schoolbibliotheek";
         return [
             'confirmation' => [
                 'label' => 'Bij uitlening',
                 'subject' => 'Bibliotheek: bevestiging uitlening',
-                'body' => $base."Je hebt een boek uitgeleend in de schoolbibliotheek.\\n\\n".$details.
-                    "Breng het boek tijdig terug naar de schoolbibliotheek.\\n\\n".$footer,
+                'body' => $base."Je hebt een boek uitgeleend in de schoolbibliotheek.\n\n".$details.
+                    "Breng het boek tijdig terug naar de schoolbibliotheek.\n\n".$footer,
             ],
             'before_due' => [
                 'label' => 'Herinnering vooraf',
                 'subject' => 'Bibliotheek: herinnering inleverdatum',
-                'body' => $base."Je uitleentermijn loopt binnenkort af.\\n\\n".$details.
-                    "Breng het boek tijdig terug naar de schoolbibliotheek.\\n\\n".$footer,
+                'body' => $base."Je uitleentermijn loopt binnenkort af.\n\n".$details.
+                    "Breng het boek tijdig terug naar de schoolbibliotheek.\n\n".$footer,
             ],
             'due_today' => [
                 'label' => 'Op de inleverdatum',
                 'subject' => 'Bibliotheek: vandaag boek inleveren',
-                'body' => $base."Vandaag is de uiterste inleverdatum van je boek.\\n\\n".$details.
-                    "Breng het boek terug naar de schoolbibliotheek.\\n\\n".$footer,
+                'body' => $base."Vandaag is de uiterste inleverdatum van je boek.\n\n".$details.
+                    "Breng het boek terug naar de schoolbibliotheek.\n\n".$footer,
             ],
             'manual' => [
                 'label' => 'Handmatige herinnering',
                 'subject' => 'Bibliotheek: herinnering boek terugbrengen',
-                'body' => $base."Dit is een herinnering om je boek terug te brengen.\\n\\n".$details.$footer,
+                'body' => $base."Dit is een herinnering om je boek terug te brengen.\n\n".$details.$footer,
             ],
             'returned' => [
                 'label' => 'Bij terugbrengen',
                 'subject' => 'Bibliotheek: bevestiging inlevering',
-                'body' => $base."Bedankt! Je hebt dit boek teruggebracht naar de schoolbibliotheek.\\n\\n".
-                    "Boek: {boek}\\nExemplaarcode: {exemplaarcode}\\n\\n".$footer,
+                'body' => $base."Bedankt! Je hebt dit boek teruggebracht naar de schoolbibliotheek.\n\n".
+                    "Boek: {boek}\nExemplaarcode: {exemplaarcode}\n\n".$footer,
             ],
         ];
     }
