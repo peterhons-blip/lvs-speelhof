@@ -92,7 +92,13 @@ class LeerlingenController extends Controller
             abort(404, 'Leerling niet gevonden');
         }
 
-        return view('leerlingen.show', compact('leerling', 'meldingen'));
+        $meldingGroepen = $meldingen->groupBy(fn ($melding) =>
+            $melding->soort?->categorie?->naam ?: 'Overige meldingen'
+        )->sortKeys(SORT_NATURAL | SORT_FLAG_CASE);
+        $canCreate = app(\App\Services\LibraryAccess::class)
+            ->has($request, 'lvs.meldingen.create');
+
+        return view('leerlingen.show', compact('leerling', 'meldingen', 'meldingGroepen', 'canCreate'));
     }
 
     public function verjaardagen()
