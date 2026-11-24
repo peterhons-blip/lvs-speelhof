@@ -14,7 +14,7 @@
 @media print {
     html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: white !important; }
     .portal-topbar, .portal-sidebar, .portal-page-breadcrumb, .library-page-head,
-    .library-qr-toolbar, .library-label-settings, #qr-feedback { display: none !important; }
+    .library-qr-toolbar, .library-label-selection, .library-label-settings, #qr-feedback { display: none !important; }
     .app, .portal-workspace, .portal-content, .library-page, .library-form-card, .library-label-sheets {
         display: block !important; width: 210mm !important; min-width: 0 !important;
         max-width: none !important; height: auto !important; margin: 0 !important;
