@@ -82,6 +82,10 @@ class BirthdaySettingsController extends Controller
             }
             $schoolSmartschoolChoices[$school->id] = $options;
         }
+        $canManagePrivacy = in_array($access->role($request), ['directie', 'ict_coordinator'], true);
+        $privacyAudit = $canManagePrivacy && Schema::hasTable('birthday_18_privacy_audit')
+            ? DB::table('birthday_18_privacy_audit')->orderByDesc('id')->limit(20)->get()
+            : collect();
         $adultDate = (string) $request->query('adult_date', now('Europe/Brussels')->toDateString());
         $adultDateValue = \DateTimeImmutable::createFromFormat('!Y-m-d', $adultDate);
         if (! $adultDateValue || $adultDateValue->format('Y-m-d') !== $adultDate) {
@@ -184,7 +188,7 @@ class BirthdaySettingsController extends Controller
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages', 'canManagePrivacy', 'privacyAudit'));
     }
 
 
@@ -235,6 +239,55 @@ class BirthdaySettingsController extends Controller
 
         return redirect()->route('beheer.birthdays.index', ['overzicht_school' => $data['school_id']])
             ->with('success', 'Ontvangers van het 18-jarigenoverzicht opgeslagen voor de geselecteerde school.');
+    }
+
+    /**
+     * Exceptionally allow the general privacy action to be paused by directie/ICT.
+     * Any change must be explicitly confirmed and recorded.
+     */
+    public function updatePrivacy(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        $role = $access->role($request);
+        abort_unless(in_array($role, ['directie', 'ict_coordinator'], true), 403,
+            'Uitsluitend directie en ICT kunnen de co-accountdeactivatie wijzigen.');
+
+        $data = $request->validate([
+            'adult_disable_coaccounts' => ['required', 'in:0,1'],
+            'reason' => ['required', 'string', 'min:10', 'max:1000'],
+            'confirm' => ['accepted'],
+        ]);
+
+        if (! Schema::hasTable('birthday_settings') || ! Schema::hasTable('birthday_18_privacy_audit')) {
+            return back()->withErrors(['database' => 'Voer eerst de migraties voor verjaardagsinstellingen en privacyaudit uit.']);
+        }
+        $username = $access->username($request);
+        abort_unless($username !== '', 403);
+
+        $changed = false;
+        DB::transaction(function () use ($data, $username, $role, &$changed) {
+            // Serialize edits on the settings row and preserve an auditable change.
+            DB::table('birthday_settings')->updateOrInsert(
+                ['setting_key' => 'adult_disable_coaccounts'], ['setting_value' => '1']
+            );
+            $current = (string) DB::table('birthday_settings')
+                ->where('setting_key', 'adult_disable_coaccounts')->lockForUpdate()
+                ->value('setting_value');
+            $new = $data['adult_disable_coaccounts'];
+            if ($current === $new) return;
+            DB::table('birthday_settings')->where('setting_key', 'adult_disable_coaccounts')
+                ->update(['setting_value' => $new]);
+            DB::table('birthday_18_privacy_audit')->insert([
+                'actor_username' => $username, 'actor_role' => $role,
+                'old_value' => $current, 'new_value' => $new,
+                'reason' => trim($data['reason']), 'created_at' => now(),
+            ]);
+            $changed = true;
+        });
+
+        return redirect()->route('beheer.birthdays.index', ['privacy' => '1'])
+            ->with('success', $changed
+                ? 'Instelling voor automatisch uitschakelen van co-accounts aangepast en geregistreerd.'
+                : 'Geen wijziging: de gekozen instelling was al actief.');
     }
 
     public function updateAdult(Request $request, LibraryAccess $access): RedirectResponse
