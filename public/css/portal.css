@@ -746,3 +746,96 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .library-report-stat { padding:18px; border:1px solid #dbe8ef; border-radius:12px; background:#f8fbfd; }
 .library-report-stat span { display:block; font-size:13px; color:#526d80; margin-bottom:8px; }
 .library-report-stat strong { display:block; font-size:26px; font-weight:750; line-height:1.15; color:var(--portal-navy,#183e59); }
+
+
+/* Verjaardagsbeheer: gescheiden Smartschool- en e-mailkanalen */
+.library-birthday-channels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.library-birthday-channels .library-form-card { min-width:0; margin:0; height:100%; }
+.library-birthday-channel-heading { display:flex; align-items:start; gap:12px; margin-bottom:14px; }
+.library-birthday-channel-heading > span { display:flex; justify-content:center; align-items:center; flex:0 0 42px; height:42px; border-radius:10px; background:#eaf3fa; font-weight:800; font-size:22px; color:#194e73; }
+.library-birthday-channel-heading h2 { margin:0 0 4px; }
+.library-birthday-channel-heading p { margin:0; }
+.library-birthday-explain { margin-top:16px; padding:14px; border-radius:10px; background:#f4f8fb; border:1px solid #dae7ef; font-size:14px; }
+.library-birthday-explain p { margin:8px 0 0; overflow-wrap:anywhere; }
+.library-birthday-preview-form { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin:16px 0; }
+.library-birthday-preview-form .library-field { min-width:190px; }
+@media(max-width:900px) { .library-birthday-channels { grid-template-columns:1fr; } }
+
+
+/* Beheer verjaardagsberichten: leesbare verticale indeling op alle schermen */
+.library-page.library-form-page:has(.library-birthday-channels) { max-width:1100px; }
+.library-birthday-channels { display:flex; flex-direction:column; gap:16px; width:100%; }
+.library-birthday-channels .library-form-card { width:100%; height:auto; min-width:0; margin:0; }
+.library-birthday-channels .library-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+.library-birthday-channels .library-birthday-channel-heading { align-items:center; }
+.library-birthday-channels .library-birthday-explain { max-width:100%; }
+.library-birthday-school { border:1px solid #d9e5ec; border-radius:12px; margin:12px 0; background:var(--portal-card-bg,#fff); overflow:hidden; }
+.library-birthday-school > summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; cursor:pointer; }
+.library-birthday-school > summary span { color:#647b8b; font-size:13px; }
+.library-birthday-school[open] > summary { border-bottom:1px solid #d9e5ec; }
+.library-birthday-overview-form { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; padding:18px 20px; }
+.library-birthday-overview-field { min-width:0; display:flex; flex-direction:column; gap:7px; }
+.library-birthday-overview-field .library-birthday-channel-heading { margin:0 0 6px; }
+.library-birthday-overview-field h3 { margin:0; }
+.library-birthday-overview-field textarea { width:100%; max-width:100%; box-sizing:border-box; border-radius:8px; padding:12px; min-height:88px; resize:vertical; }
+.library-birthday-overview-form > button { justify-self:start; }
+@media(max-width:600px) {
+  .library-birthday-school > summary { flex-wrap:wrap; }
+  .library-birthday-overview-form { padding:14px; }
+  .library-birthday-channels .library-form-grid { grid-template-columns:minmax(0,1fr); }
+}
+
+
+/* Verjaardagsbeheer: consistente verticale ruimte en multi-select voor Smartschool */
+.library-page:has(.library-birthday-warning) > .library-form { display:flex; flex-direction:column; gap:26px; }
+.library-page:has(.library-birthday-warning) > .library-form > .library-form-card,
+.library-page:has(.library-birthday-warning) > .library-form > .library-birthday-channels { margin:0; }
+.library-page:has(.library-birthday-warning) > .library-form > .library-button { align-self:flex-start; margin:4px 0 22px; }
+.library-page:has(.library-birthday-warning) .library-form-card { padding:24px 30px; }
+.library-page:has(.library-birthday-warning) .library-form-card h2 { margin:0 0 16px; line-height:1.3; }
+.library-page:has(.library-birthday-warning) .library-form-card .library-field { margin-bottom:10px; }
+.library-page:has(.library-birthday-warning) .library-form-card .library-field label { display:block; margin-bottom:8px; line-height:1.4; }
+.library-birthday-warning { margin-top:26px; }
+.library-birthday-warning .library-form { display:flex; flex-direction:column; gap:16px; }
+.library-birthday-warning .library-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 22px; }
+.library-birthday-warning .library-wide { grid-column:1 / -1; }
+.library-birthday-warning textarea { width:100%; box-sizing:border-box; min-height:125px; }
+.library-birthday-staff-search { width:100%; box-sizing:border-box; }
+.library-birthday-staff-options { max-height:280px; overflow-y:auto; border:1px solid #d7e4ee; border-radius:10px; background:#fbfdff; padding:8px; display:flex; flex-direction:column; gap:2px; }
+.library-birthday-staff-option { display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:7px; cursor:pointer; line-height:1.35; }
+.library-birthday-staff-option:hover { background:#edf5fb; }
+.library-birthday-staff-option[hidden] { display:none !important; }
+.library-birthday-staff-option input { width:18px; height:18px; flex:0 0 auto; }
+.library-birthday-staff-option span { overflow-wrap:anywhere; font-size:14px; }
+@media(max-width:700px) {
+    .library-page:has(.library-birthday-warning) .library-form-card { padding:18px 16px; }
+    .library-birthday-warning .library-form-grid { grid-template-columns:minmax(0,1fr); }
+}
+
+
+/* Safe, visually isolated message preview on birthday administration */
+.library-birthday-adult .library-form { display:flex; flex-direction:column; gap:18px; }
+.library-birthday-adult .library-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 22px; }
+.library-birthday-adult .library-wide { grid-column:1 / -1; }
+.library-birthday-adult h3 { margin:20px 0 4px; }
+.library-birthday-adult .library-form-grid textarea { box-sizing:border-box; width:100%; min-height:125px; }
+.library-birthday-example { padding:18px 20px; }
+.library-birthday-example > p { margin:0 0 12px; overflow-wrap:anywhere; }
+.library-birthday-example iframe { display:block; width:100%; max-width:100%; min-height:380px; border:1px solid #d7e3ef; border-radius:10px; background:white; }
+.library-birthday-history .library-table-wrap { margin:12px 0 22px; }
+@media(max-width:700px) {
+  .library-birthday-adult .library-form-grid { grid-template-columns:minmax(0,1fr); }
+}
+
+
+/* Restricted automatic deactivation control for 18-year co-accounts */
+.library-birthday-privacy { margin-top:26px; }
+.library-birthday-privacy-alert { padding:16px 18px; background:#fff2e5; border:1px solid #d98b4c; border-radius:10px; color:#713809; line-height:1.5; }
+.library-birthday-privacy-form { display:flex; flex-direction:column; gap:16px; }
+.library-birthday-privacy-form .library-form-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+.library-birthday-privacy-form .library-wide { grid-column:1 / -1; }
+.library-birthday-privacy-form textarea { width:100%; box-sizing:border-box; min-height:80px; }
+.library-birthday-privacy-confirm { display:flex; gap:12px; align-items:flex-start; line-height:1.45; max-width:850px; }
+.library-birthday-privacy-confirm input { flex:0 0 auto; width:18px; height:18px; margin-top:3px; }
+.library-birthday-privacy-form > button { align-self:flex-start; }
+.library-birthday-privacy .library-table-wrap { margin-top:12px; }

@@ -99,6 +99,24 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':beheer.smartschool_test.send', 'throttle:45,1'])
         ->name('beheer.smartschool-test.recipients');
 
+    Route::get('/beheer/verjaardagsberichten', [\App\Http\Controllers\BirthdaySettingsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.index');
+    Route::post('/beheer/verjaardagsberichten', [\App\Http\Controllers\BirthdaySettingsController::class, 'update'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.update');
+    Route::post('/beheer/verjaardagsberichten/coaccounts', [\App\Http\Controllers\BirthdaySettingsController::class, 'updatePrivacy'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.privacy.update');
+    Route::post('/beheer/verjaardagsberichten/vandaag-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateAdult'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.adult.update');
+    Route::post('/beheer/verjaardagsberichten/waarschuwing-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateWarning'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.warning.update');
+    Route::post('/beheer/verjaardagsberichten/overzicht-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateOverviewRecipients'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->name('beheer.birthdays.overview.update');
     Route::get('/beheer', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('beheer.dashboard');
 
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.

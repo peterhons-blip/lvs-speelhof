@@ -37,6 +37,7 @@ class LibraryAccess
         'beheer.staff.manage', 'beheer.students.manage',
         'beheer.smartschool_test.send', 'beheer.student_sync.manage',
         'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
+        'beheer.birthdays.manage',
     ];
 
     public function requireIctManager(Request $request): void

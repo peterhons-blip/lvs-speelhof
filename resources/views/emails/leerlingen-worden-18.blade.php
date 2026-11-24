@@ -66,6 +66,11 @@
                                             <strong>{{ $l['voornaam'] }} {{ $l['naam'] }}</strong>
                                             <span style="color:#666;">
                                               — klas {{ $l['klas'] }}, geboortedatum {{ $l['geboortedatum']->format('d-m-Y') }}
+                                                <span style="display:block;margin-top:6px">
+                                                    Co-accounts uitgeschakeld: <strong>{{ !empty($l['coaccounts_uitgeschakeld']) ? 'JA' : 'NEE / TE CONTROLEREN' }}</strong><br>
+                                                    Bericht over co-accounts: {{ !empty($l['smartschool_bericht_verzonden']) ? 'VERZONDEN' : 'NIET BEVESTIGD' }}<br>
+                                                    Uitnodiging secretariaat: {{ !empty($l['secretariaat_bericht_verzonden']) ? 'VERZONDEN' : 'NIET BEVESTIGD' }}
+                                                </span>
                                             </span>
                                         </td>
                                     </tr>
@@ -78,40 +83,11 @@
                             </p>
                         @endif
 
-                        <!-- ✔ INFOBOX TOEGEVOEGD -->
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
-                            style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:8px; margin:8px 0;">
-                            <tr>
-                                <td style="
-                                    padding:10px 14px 12px 14px;
-                                    font-family:Arial,Helvetica,sans-serif;
-                                    font-size:14px;
-                                    color:#065f46;
-                                    line-height:1.45;
-                                ">
-                                    <div style="margin:0; padding:0;">
-                                        <strong>Automatische acties uitgevoerd</strong><br>
-                                        <span style="margin:0; padding:0;">Voor elke leerling in bovenstaande lijst werd:</span>
-                                    </div>
-
-                                    <!-- UL opnieuw gedefinieerd om alle extra whitespace te voorkomen -->
-                                    <ul style="
-                                        margin:8px 0 0 18px;
-                                        padding:0;
-                                        color:#065f46;
-                                    ">
-                                        <li style="margin:0 0 4px 0; padding:0;">
-                                            een Smartschoolbericht verstuurd om hen te informeren
-                                        </li>
-                                        <li style="margin:0; padding:0;">
-                                            alle co-accounts (ouderaccounts) automatisch uitgeschakeld volgens de regelgeving
-                                        </li>
-                                    </ul>
-                                </td>
-                            </tr>
-                        </table>
-
-
+                        <div style="padding:12px 14px; background:#f2f7fc; border:1px solid #d5e3ef; border-radius:8px; font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.5">
+                            <strong>Opvolging co-accounts</strong><br>
+                            Bovenstaande statussen zijn de resultaten van de afzonderlijke acties.
+                            Bij 'NEE / TE CONTROLEREN' of 'NIET BEVESTIGD' is handmatige opvolging noodzakelijk.
+                        </div>
 
                         <p style="margin:20px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#666;">
                             Deze e-mail is automatisch verstuurd op {{ now('Europe/Brussels')->format('d-m-Y H:i') }}.
