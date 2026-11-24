@@ -14,7 +14,7 @@
 @media print {
     html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: white !important; }
     .portal-topbar, .portal-sidebar, .portal-page-breadcrumb, .library-page-head,
-    .library-qr-toolbar, .library-label-selection, .library-label-settings, #qr-feedback { display: none !important; }
+    .library-qr-toolbar, .library-label-selection, .library-label-settings, #qr-status-form, #qr-feedback { display: none !important; }
     .app, .portal-workspace, .portal-content, .library-page, .library-form-card, .library-label-sheets {
         display: block !important; width: 210mm !important; min-width: 0 !important;
         max-width: none !important; height: auto !important; margin: 0 !important;
@@ -37,6 +37,8 @@
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index', $search ? ['q' => $search] : []) }}">Terug naar catalogus</a>
     </div>
+    @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="library-form-card">
         <div class="library-qr-toolbar">
             <strong id="qr-selection-count">0 geselecteerd</strong>
@@ -50,6 +52,14 @@
             <form method="get" action="{{ route('bibliotheek.books.qr-labels') }}" class="library-loan-filters">
                 @if($search !== '')<input type="hidden" name="q" value="{{ $search }}">@endif
                 @if($bookId !== null)<input type="hidden" name="book" value="{{ $bookId }}">@endif
+                <div class="library-field">
+                    <label for="qr-status-filter">QR-etiketstatus</label>
+                    <select id="qr-status-filter" name="qr_status">
+                        <option value="all" @selected($qrStatus === 'all')>Alle exemplaren</option>
+                        <option value="unprinted" @selected($qrStatus === 'unprinted')>Nog geen etiket bevestigd</option>
+                        <option value="printed" @selected($qrStatus === 'printed')>Etiket reeds bevestigd</option>
+                    </select>
+                </div>
                 <div class="library-field">
                     <label for="qr-selection-mode">Welke exemplaren?</label>
                     <select name="select" id="qr-selection-mode">
@@ -69,11 +79,24 @@
                 @foreach($copies as $copy)
                     <label class="library-qr-choice">
                         <input class="qr-copy-checkbox" type="checkbox" value="{{ $copy->id }}" checked>
-                        <span><strong>{{ $copy->title }}</strong><small>{{ $copy->barcode }}</small></span>
+                        <span><strong>{{ $copy->title }}</strong><small>{{ $copy->barcode }} · {{ $copy->qr_printed_at ? 'Etiket bevestigd' : 'Nog niet bevestigd' }}</small></span>
                     </label>
                 @endforeach
             </div>
         </div>
+        @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.manage'))
+            <form method="post" id="qr-status-form" action="{{ route('bibliotheek.books.qr-status') }}"
+                onsubmit="return confirm('De geselecteerde exemplaren als voorzien van een fysiek QR-etiket markeren (of die status wissen)?');">
+                @csrf
+                <input type="hidden" name="printed" id="qr-printed-value" value="1">
+                <div id="qr-status-fields"></div>
+                <div class="library-qr-toolbar">
+                    <button type="submit" class="library-button library-button-secondary" id="qr-mark-printed">Geselecteerde etiketten als afgedrukt markeren</button>
+                    <button type="submit" class="library-button library-button-secondary" id="qr-clear-printed">QR-status selectie wissen</button>
+                </div>
+                <p class="library-help">Bevestig dit pas nadat je de etiketten echt hebt afgedrukt en aangebracht. Downloaden of de afdrukdialoog openen markeert niets automatisch.</p>
+            </form>
+        @endif
         <div class="library-field library-label-settings">
             <label for="qr-start-position">Eerste etiket op het eerste A4-vel</label>
             <select id="qr-start-position">
@@ -98,6 +121,31 @@
     const copies = @json($copies);
     const checks = Array.from(document.querySelectorAll('.qr-copy-checkbox'));
     const countElement = document.getElementById('qr-selection-count');
+    const statusForm = document.getElementById('qr-status-form');
+    if (statusForm) {
+        document.getElementById('qr-mark-printed').addEventListener('click', () => {
+            document.getElementById('qr-printed-value').value = '1';
+        });
+        document.getElementById('qr-clear-printed').addEventListener('click', () => {
+            document.getElementById('qr-printed-value').value = '0';
+        });
+        statusForm.addEventListener('submit', event => {
+            const selected = selectedCopies();
+            if (!selected.length) {
+                event.preventDefault();
+                return;
+            }
+            const container = document.getElementById('qr-status-fields');
+            container.replaceChildren();
+            for (const copy of selected) {
+                const field = document.createElement('input');
+                field.type = 'hidden';
+                field.name = 'copies[]';
+                field.value = copy.id;
+                container.appendChild(field);
+            }
+        });
+    }
     function selectedCopies() {
         const selectedIds = new Set(checks.filter(box => box.checked).map(box => String(box.value)));
         return copies.filter(copy => selectedIds.has(String(copy.id)));
