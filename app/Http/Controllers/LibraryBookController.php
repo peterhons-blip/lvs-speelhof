@@ -100,13 +100,14 @@ class LibraryBookController extends Controller
         ]);
         $ids = array_map('intval', $data['copies']);
         $printed = $data['printed'] === '1';
-        $count = DB::table('library_copies')->whereIn('id', $ids)
-            ->update([
-                'qr_printed_at' => $printed ? now() : null,
-                'qr_printed_by' => $printed
-                    ? app(\App\Services\LibraryAccess::class)->username($request) : null,
-                'updated_at' => now(),
-            ]);
+        $values = [
+            'qr_printed_at' => $printed ? now() : null,
+            'qr_printed_by' => $printed
+                ? app(\App\Services\LibraryAccess::class)->username($request) : null,
+            'updated_at' => now(),
+        ];
+        if ($printed) $values['qr_generated_at'] = DB::raw('COALESCE(qr_generated_at, CURRENT_TIMESTAMP)');
+        $count = DB::table('library_copies')->whereIn('id', $ids)->update($values);
 
         return back()->with('success', $count.' exemplaren '.($printed
             ? 'gemarkeerd als voorzien van QR-etiket.' : 'opnieuw gemarkeerd als zonder QR-etiket.'));
