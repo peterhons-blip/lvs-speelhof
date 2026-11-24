@@ -185,6 +185,13 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     });
 
     // LVS: all records remain staff-only. Future parent/student access is not active.
+    Route::get('/lvs/opvolging', [\App\Http\Controllers\LvsFollowupsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.view')
+        ->name('lvs.followups.index');
+    Route::post('/lvs/opvolging/{event}/afhandelen', [\App\Http\Controllers\LvsFollowupsController::class, 'resolve'])
+        ->whereNumber('event')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.view')
+        ->name('lvs.followups.resolve');
     Route::get('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
         ->name('lvs.settings.index');
