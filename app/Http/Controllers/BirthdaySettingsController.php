@@ -16,13 +16,19 @@ class BirthdaySettingsController extends Controller
     {
         $access->requirePermission($request, 'beheer.birthdays.manage');
         $settings = $birthdaySettings->all();
+        $previewDate = (string) $request->query('datum', now('Europe/Brussels')->toDateString());
+        $validatedDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $previewDate);
+        if (! $validatedDate || $validatedDate->format('Y-m-d') !== $previewDate) {
+            $previewDate = now('Europe/Brussels')->toDateString();
+        }
+        $preview = $birthdaySettings->preview($previewDate, $settings);
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview'));
     }
 
     public function update(Request $request, LibraryAccess $access, BirthdaySettings $birthdaySettings): RedirectResponse
