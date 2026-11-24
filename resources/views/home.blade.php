@@ -66,7 +66,7 @@
                 <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
                     <span class="portal-module-icon" aria-hidden="true">▤</span>
                     <strong>Bibliotheek</strong>
-                    <span>Boeken en fysieke exemplaren beheren. Uitlenen en herinneringen volgen later.</span>
+                    <span>Boeken, exemplaren, uitleningen, herinneringen, QR-codes en rapportages beheren.</span>
                     <div class="portal-module-stats" aria-label="Bibliotheekstatistieken">
                         <div class="portal-module-stat"><span>Boektitels</span><strong>{{ isset($bibliotheek['boeken']) ? number_format($bibliotheek['boeken'], 0, ',', '.') : '—' }}</strong></div>
                         <div class="portal-module-stat"><span>Exemplaren</span><strong>{{ isset($bibliotheek['exemplaren']) ? number_format($bibliotheek['exemplaren'], 0, ',', '.') : '—' }}</strong></div>
@@ -88,6 +88,16 @@
                     <span class="portal-module-footer">Bekijk de module <span aria-hidden="true">→</span></span>
                 </a>
                 <div class="portal-module portal-module-disabled" aria-disabled="true">
+                    <span class="portal-module-icon" aria-hidden="true">▣</span><span class="portal-module-status">Binnenkort</span>
+                    <strong>Aanvraag bestelling</strong>
+                    <span>Bestellingen aanvragen, laten goedkeuren en opvolgen.</span>
+                </div>
+                <div class="portal-module portal-module-disabled" aria-disabled="true">
+                    <span class="portal-module-icon" aria-hidden="true">◈</span><span class="portal-module-status">Binnenkort</span>
+                    <strong>EDBI-instrument</strong>
+                    <span>Toekomstige module voor het EDBI-instrument.</span>
+                </div>
+                <div class="portal-module portal-module-disabled" aria-disabled="true">
                     <span class="portal-module-icon" aria-hidden="true">▦</span><span class="portal-module-status">Binnenkort</span>
                     <strong>EMA's</strong>
                     <span>Extra-murosactiviteiten aanvragen, goedkeuren en opvolgen.</span>
@@ -106,7 +116,7 @@
 
             <div class="portal-information">
                 <strong>Binnenkort beschikbaar</strong>
-                <span>EMA's, Onboarding personeel en Nascholingen worden later toegevoegd. Je kunt het LVS nu al gebruiken.</span>
+                <span>Aanvraag bestelling, EDBI-instrument, EMA's, Onboarding personeel en Nascholingen worden later toegevoegd.</span>
             </div>
         </main>
     @endif
