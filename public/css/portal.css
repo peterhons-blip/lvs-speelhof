@@ -826,3 +826,16 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 @media(max-width:700px) {
   .library-birthday-adult .library-form-grid { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* Restricted automatic deactivation control for 18-year co-accounts */
+.library-birthday-privacy { margin-top:26px; }
+.library-birthday-privacy-alert { padding:16px 18px; background:#fff2e5; border:1px solid #d98b4c; border-radius:10px; color:#713809; line-height:1.5; }
+.library-birthday-privacy-form { display:flex; flex-direction:column; gap:16px; }
+.library-birthday-privacy-form .library-form-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+.library-birthday-privacy-form .library-wide { grid-column:1 / -1; }
+.library-birthday-privacy-form textarea { width:100%; box-sizing:border-box; min-height:80px; }
+.library-birthday-privacy-confirm { display:flex; gap:12px; align-items:flex-start; line-height:1.45; max-width:850px; }
+.library-birthday-privacy-confirm input { flex:0 0 auto; width:18px; height:18px; margin-top:3px; }
+.library-birthday-privacy-form > button { align-self:flex-start; }
+.library-birthday-privacy .library-table-wrap { margin-top:12px; }
