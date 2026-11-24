@@ -74,8 +74,17 @@
                 <div class="library-field">
                     <label for="sender">Smartschool-afzender</label>
                     <input type="text" id="sender" name="sender" maxlength="120"
-                        value="{{ old('sender', $settings['sender']) }}" placeholder="Automatisch: schoolafzender">
-                    <p class="library-help">Leeg = beleid / afzender van de school. Vul anders de Smartschool-gebruikersnaam van de gewenste afzender in.</p>
+                        value="{{ old('sender', $settings['sender'] !== '' ? $settings['sender'] : $birthdaySenderFallback) }}" placeholder="Leeg = automatische schoolafzender">
+                    <p class="library-help">
+                        @if($birthdaySenderFallback !== '')
+                            Automatische afzender: <strong>{{ $birthdaySenderFallback }}</strong>. De actuele waarde is alvast in het veld gezet; je kunt ze aanpassen.
+                        @else
+                            De automatische afzender verschilt per school. Laat dit veld leeg om de bestaande schoolgebonden accounts te behouden, of selecteer één school en sla dan de gewenste afzender op.
+                            @foreach($birthdaySenders as $schoolId => $senderName)
+                                <span style="display:inline-block;margin-right:10px">School {{ $schoolId }}: <strong>{{ $senderName }}</strong></span>
+                            @endforeach
+                        @endif
+                    </p>
                 </div>
                 <div class="library-birthday-explain">
                     <strong>Welke accounts?</strong>
