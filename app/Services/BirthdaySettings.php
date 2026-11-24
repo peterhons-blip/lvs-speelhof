@@ -133,7 +133,7 @@ class BirthdaySettings
     {
         // No HTML from editable templates; allow only predefined placeholders.
         $replacements = [];
-        foreach (['voornaam', 'naam', 'school', 'leeftijd'] as $key) {
+        foreach (['voornaam', 'naam', 'school', 'leeftijd', 'dagen'] as $key) {
             $replacements['{'.$key.'}'] = (string) ($data[$key] ?? '');
         }
         return strtr($text, $replacements);
