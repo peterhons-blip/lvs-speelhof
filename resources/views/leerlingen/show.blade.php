@@ -78,18 +78,6 @@
                 @endforeach
             </div>
         @endif
-                                <small>Ingegeven op {{ optional($melding->created_at)->format('d/m/Y H:i') ?? '—' }}</small>
-                            </div>
-                            <div class="melding-badges">
-                                <span class="badge badge-cat">{{ optional(optional($melding->soort)->categorie)->naam ?? '—' }}</span>
-                                <span class="badge badge-soort">{{ optional($melding->soort)->naam ?? '—' }}</span>
-                            </div>
-                        </div>
-                        <p class="melding-comment">{{ $melding->comment }}</p>
-                    </article>
-                @endforeach
-            </div>
-        @endif
     </section>
 </main>
 @endsection
