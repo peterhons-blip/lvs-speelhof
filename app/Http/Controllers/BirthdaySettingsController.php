@@ -52,12 +52,12 @@ class BirthdaySettingsController extends Controller
             foreach ($items as $item) {
                 if ($email) {
                     if (! filter_var($item, FILTER_VALIDATE_EMAIL)) {
-                        throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                        throw \Illuminate\Validation\ValidationException::withMessages([
                             'overview_email' => 'Ongeldig e-mailadres: '.$item,
                         ]);
                     }
                 } elseif (! preg_match('/^[a-zA-Z0-9._-]{2,120}$/', $item)) {
-                    throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                    throw \Illuminate\Validation\ValidationException::withMessages([
                         'overview_smartschool' => 'Ongeldige Smartschool-gebruikersnaam: '.$item,
                     ]);
                 }
