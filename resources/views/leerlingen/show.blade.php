@@ -41,6 +41,7 @@
         </dl>
     </section>
 
+    @if($canSeeMeldingen)
     <section class="card lvs-panel lvs-section-gap">
         <div class="lvs-panel-heading">
             <div><p class="portal-eyebrow">OPVOLGING</p><h2>Meldingen</h2></div>
@@ -80,5 +81,6 @@
             </div>
         @endif
     </section>
+    @endif
 </main>
 @endsection
