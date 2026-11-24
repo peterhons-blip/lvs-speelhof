@@ -910,3 +910,42 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 
 .lvs-dashboard-header-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
 @media(max-width:650px){.lvs-dashboard-header-actions{width:100%;justify-content:flex-start}}
+
+
+/* LVS: configurable escalation and manual followup administration */
+.lvs-settings-page,.lvs-followups-page{max-width:1480px}
+.lvs-settings-page .library-form-card,.lvs-followups-page .library-form-card{margin-bottom:18px}
+.lvs-rule-summary{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 0;border-bottom:1px solid #e3e9f0}
+.lvs-rule-summary:last-child{border-bottom:0}
+.lvs-rule-summary>div:first-child{display:flex;flex-direction:column;gap:7px}
+.lvs-rule-summary small{color:#65788d;line-height:1.5}
+.lvs-rule-summary-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.lvs-rule-summary-actions form{margin:0}
+.lvs-rule-state{font-size:.82rem;border:1px solid #d6dee9;border-radius:999px;padding:5px 10px;white-space:nowrap;color:#405875;background:#f4f7fa}
+.lvs-rule-state.is-on{background:#e7f8ef;border-color:#b7e0cd;color:#155d41}
+.lvs-rule-editor{scroll-margin-top:24px}
+.lvs-rule-editor>summary{cursor:pointer;padding:5px 0;font-size:1rem}
+.lvs-rule-form{display:flex;flex-direction:column;gap:19px;margin-top:19px}
+.lvs-rule-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.lvs-rule-fields .library-field{min-width:0}
+.lvs-rule-fields input,.lvs-rule-fields select,.lvs-rule-fields textarea{width:100%;box-sizing:border-box}
+.lvs-rule-title{grid-column:1 / -1}
+.lvs-rule-fields small{display:block;margin-top:5px;color:#65788d;line-height:1.5}
+.lvs-rule-recipients{border:1px solid #dce5ee;border-radius:12px;padding:18px;min-width:0}
+.lvs-rule-recipients legend{font-weight:700;padding:0 8px}
+.lvs-rule-checks{display:flex;flex-wrap:wrap;gap:14px 24px;margin-bottom:18px}
+.lvs-rule-checks label,.lvs-rule-confirm{display:flex;align-items:flex-start;gap:9px;line-height:1.45}
+.lvs-rule-checks input,.lvs-rule-confirm input{flex:0 0 auto;margin-top:4px}
+.lvs-rule-form>button{align-self:flex-start}
+.lvs-followups-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px}
+.lvs-followups-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.lvs-followup-card{border:1px solid #dce5ee;background:#f8fafc;border-radius:13px;padding:20px;min-width:0}
+.lvs-followup-card .lvs-followups-top p{font-size:.82rem;color:#65788d;margin:5px 0 0}
+.lvs-followup-card p{line-height:1.5}
+.lvs-followup-card a{color:#0a7480;text-decoration:none;font-weight:700}
+.lvs-followup-card a:hover{text-decoration:underline}
+.lvs-followup-resolution{display:flex;flex-direction:column;gap:10px}
+.lvs-followup-resolution label{font-weight:650}
+.lvs-followup-resolution textarea{width:100%;box-sizing:border-box;min-height:90px;border:1px solid #c9d6e1;border-radius:10px;padding:12px}
+@media(max-width:850px){.lvs-followups-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:650px){.lvs-rule-fields{grid-template-columns:minmax(0,1fr)}.lvs-rule-title{grid-column:auto}.lvs-rule-summary{flex-direction:column;align-items:stretch}}
