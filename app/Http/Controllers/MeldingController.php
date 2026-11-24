@@ -80,13 +80,16 @@ class MeldingController extends Controller
             $q->orderBy('naam');
         }])->orderBy('naam')->get();
 
-        // Bestaande meldingen van de leerling (nieuw → oud), met soort + categorie
-        $meldingen = Melding::with(['soort.categorie'])
-            ->where('leerlingId', $leerling->id)
-            ->orderByDesc('created_at')
-            ->get();
+        // Incident history is confidential and requires the independent view right.
+        $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
+            ->has(request(), 'lvs.meldingen.view');
+        $meldingen = $canSeeMeldingen
+            ? Melding::with(['soort.categorie'])->where('leerlingId', $leerling->id)
+                ->orderByDesc('created_at')->get()
+            : collect();
 
-        return view('meldingen.add', compact('leerling', 'categorieen', 'meldingen'));
+        return view('meldingen.add', compact('leerling', 'categorieen',
+            'meldingen', 'canSeeMeldingen'));
     }
 
     public function store(Request $request, $id)
@@ -129,7 +132,10 @@ class MeldingController extends Controller
         }
         Melding::create($attributes);
 
-        return redirect("/leerlingen/{$leerling->id}")
-            ->with('success', 'Melding succesvol toegevoegd.');
+        $destination = app(\App\Services\LibraryAccess::class)->has($request, 'lvs.view')
+            ? route('leerlingen.show', $leerling->id)
+            : route('meldingen.select-student');
+
+        return redirect($destination)->with('success', 'Melding succesvol toegevoegd.');
     }
 }
