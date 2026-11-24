@@ -102,13 +102,66 @@ class BirthdaySettingsController extends Controller
                 [$adultDate, $adultDate, $adultDate])
             ->orderBy('naam')->limit(250)
             ->get(['id', 'voornaam', 'naam', 'gebruikersnaam', 'schoolid']);
+        // Read-only message examples with dummy data; never sends or changes accounts.
+        $exampleSchool = \App\Models\School::query()
+            ->when((int) $settings['school_id'] > 0,
+                fn ($query) => $query->whereKey((int) $settings['school_id']))
+            ->first() ?: (object) ['id' => 0, 'schoolnaam' => 'GO! Atheneum Sint-Truiden'];
+        $exampleData = [
+            'voornaam' => 'Voorbeeld', 'naam' => 'Leerling',
+            'school' => $exampleSchool->schoolnaam, 'dagen' => $settings['warning_days'],
+        ];
+        $exampleDefinitions = [
+            ['title' => 'Waarschuwing leerling', 'subject' => $settings['warning_subject'],
+                'override' => 'warning_body_student', 'template' => 'wordt18_vooraf'],
+            ['title' => 'Waarschuwing ouder-/voogdaccount', 'subject' => $settings['warning_subject'],
+                'override' => 'warning_body_coaccount', 'template' => 'wordt18_vooraf_coaccount'],
+            ['title' => 'Bericht op 18e verjaardag', 'subject' => $settings['adult_subject_student'],
+                'override' => 'adult_body_student', 'template' => 'wordt18'],
+            ['title' => 'Uitnodiging secretariaat', 'subject' => $settings['adult_subject_secretariat'],
+                'override' => 'adult_body_secretariat', 'template' => 'wordt18_secretariaat'],
+            ['title' => 'Smartschool-overzicht voor medewerkers', 'subject' => $settings['adult_overview_smartschool_subject'],
+                'override' => '', 'template' => 'overzicht_worden18'],
+        ];
+        $exampleMessages = [];
+        foreach ($exampleDefinitions as $definition) {
+            $message = ['title' => $definition['title'], 'subject' => $definition['subject'], 'html' => ''];
+            try {
+                $custom = $definition['override'] !== '' ? trim((string) $settings[$definition['override']]) : '';
+                if ($custom !== '') {
+                    $message['html'] = nl2br(e($birthdaySettings->render($custom, $exampleData)));
+                } else {
+                    $preferred = 'smartschool.berichten.scholen.'.$exampleSchool->id.'.'.$definition['template'];
+                    $template = view()->exists($preferred)
+                        ? $preferred : 'smartschool.berichten.default.'.$definition['template'];
+                    $payload = [['voornaam' => 'Voorbeeld', 'naam' => 'Leerling',
+                        'klas' => '5A', 'geboortedatum' => now('Europe/Brussels')->subYears(18),
+                        'smartschool_bericht_verzonden' => true,
+                        'coaccounts_uitgeschakeld' => true, 'secretariaat_bericht_verzonden' => true]];
+                    $message['html'] = view($template, [
+                        'voornaam' => 'Voorbeeld', 'naam' => 'Leerling',
+                        'school' => $exampleSchool, 'beleid' => null, 'payload' => $payload,
+                    ])->render();
+                    if (str_starts_with($definition['template'], 'wordt18_vooraf') &&
+                        (int) $settings['warning_days'] !== 7) {
+                        $days = (int) $settings['warning_days'];
+                        $message['html'] = str_replace(['Binnen een week', 'binnen een week'],
+                            ['Binnen '.$days.' dagen', 'binnen '.$days.' dagen'], $message['html']);
+                    }
+                }
+            } catch (\Throwable $error) {
+                $message['html'] = '<p>Voorbeeld kon niet worden geladen.</p>';
+            }
+            $exampleMessages[] = $message;
+        }
+
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages'));
     }
 
 
