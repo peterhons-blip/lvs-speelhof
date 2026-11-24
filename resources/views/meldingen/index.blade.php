@@ -12,7 +12,7 @@
     <div class="library-page-head">
         <div><p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / OPVOLGING</p><h1>Alle meldingen</h1>
         <p>Bekijk en filter geregistreerde meldingen, inclusief datum waarop iets gebeurde en de registratiedatum.</p></div>
-        <a href="{{ route('leerlingen.index') }}" class="library-button library-button-primary">{{ $canCreate ? 'Nieuwe melding via leerling' : 'Leerling zoeken' }}</a>
+        <a href="{{ $canCreate ? route('meldingen.select-student') : route('leerlingen.index') }}" class="library-button library-button-primary">{{ $canCreate ? 'Nieuwe melding' : 'Leerling zoeken' }}</a>
     </div>
 
     <section class="library-form-card">
