@@ -27,7 +27,8 @@ class BirthdaySettings
             'warning_subject' => 'Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld',
             'warning_body_student' => '',
             'warning_body_coaccount' => '',
-            // 18-jarigen: privacyactie blijft verplicht, alleen berichten configureerbaar.
+            // Privacyactie standaard AAN; wijzigen uitsluitend via afgeschermde, geauditeerde route.
+            'adult_disable_coaccounts' => '1',
             'adult_student_notice' => '1',
             'adult_secretariat_notice' => '1',
             'adult_subject_student' => 'Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!',
