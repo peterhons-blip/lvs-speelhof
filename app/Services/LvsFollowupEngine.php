@@ -74,9 +74,19 @@ class LvsFollowupEngine
             $recipients[] = [$username, 0, 'leerling'];
         }
         if ((int) $rule->recipient_parents === 1 && $username !== '') {
-            // Co-accounts are not guaranteed to exist or to remain active; the
-            // API result of each recipient is individually audited.
-            for ($i = 1; $i <= 6; $i++) $recipients[] = [$username, $i, 'ouder/voogd'];
+            // Never contact parent co-accounts after the student turns 18, even
+            // if the privacy deactivation job has not run or has been paused.
+            $isAdult = !empty($student->geboortedatum)
+                && \Illuminate\Support\Carbon::parse($student->geboortedatum)
+                    ->addYears(18)->startOfDay()->lte(now('Europe/Brussels'));
+            if (!$isAdult) {
+                // The API result of each co-account is individually audited.
+                for ($i = 1; $i <= 6; $i++) $recipients[] = [$username, $i, 'ouder/voogd'];
+            } else {
+                $this->record((int) $rule->id, $incident, 'smartschool',
+                    'ouderaccounts niet toegelaten na 18 jaar', 0, 'skipped',
+                    'Leerling is meerderjarig; ouder-/voogdaccounts worden niet automatisch aangeschreven.');
+            }
         }
         if ((int) $rule->recipient_counselor === 1) {
             $recipients[] = [trim((string) $rule->counselor_username), 0, 'leerlingbegeleiding'];
