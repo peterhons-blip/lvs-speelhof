@@ -352,6 +352,7 @@ class LibraryLoanController extends Controller
     public function sendManualReminder(Request $request, int $loan): RedirectResponse
     {
         $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.messages.manage');
         $item = DB::table('library_loans')->where('id', $loan)->first();
         abort_unless($item, 404);
         if ($item->returned_at !== null) {
