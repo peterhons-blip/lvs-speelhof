@@ -22,16 +22,13 @@
     <form method="post" action="{{ route('beheer.birthdays.update') }}" class="library-form">
         @csrf
         <section class="library-form-card">
-            <h2>Verzending en ontvangers</h2>
+            <h2>1. Algemene instellingen</h2>
+            <p class="library-help">Deze instellingen gelden voor beide kanalen. De twee verzendkanalen kun je hieronder apart instellen.</p>
             <div class="library-form-grid">
                 @foreach([
-                    'enabled' => 'Automatische verjaardagsverwerking',
-                    'students_enabled' => 'Leerlingen feliciteren',
-                    'staff_enabled' => 'Personeel feliciteren',
-                    'smartschool_students' => 'Leerlingen: Smartschool-bericht',
-                    'smartschool_staff' => 'Personeel: Smartschool-bericht',
-                    'email_students' => 'Leerlingen: e-mail',
-                    'email_staff' => 'Personeel: e-mail',
+                    'enabled' => 'Automatische verjaardagsberichten actief',
+                    'students_enabled' => 'Leerlingen opnemen',
+                    'staff_enabled' => 'Personeelsleden opnemen',
                 ] as $key => $label)
                     <div class="library-field">
                         <label for="{{ $key }}">{{ $label }}</label>
@@ -42,7 +39,7 @@
                     </div>
                 @endforeach
                 <div class="library-field">
-                    <label for="school_id">School</label>
+                    <label for="school_id">Voor welke school?</label>
                     <select id="school_id" name="school_id">
                         <option value="0" @selected(old('school_id', $settings['school_id']) == 0)>Alle scholen</option>
                         @foreach(\Illuminate\Support\Facades\DB::table('scholen')->orderBy('id')->get(['id','schoolnaam']) as $school)
@@ -50,16 +47,69 @@
                         @endforeach
                     </select>
                 </div>
+            </div>
+            <p class="library-help">De bestaande aparte berichten en co-accountprocedure voor 18-jarige leerlingen blijven behouden. Alleen actieve leerlingen en Smartschool-actieve personeelsleden worden geselecteerd.</p>
+        </section>
+
+        <div class="library-birthday-channels">
+            <section class="library-form-card">
+                <div class="library-birthday-channel-heading"><span aria-hidden="true">✉</span><div>
+                    <h2>2. Smartschool-berichten</h2>
+                    <p class="library-help">De berichten gaan rechtstreeks naar de Smartschool-gebruikersnaam van de jarige, niet naar ouders of co-accounts.</p>
+                </div></div>
+                <div class="library-form-grid">
+                    @foreach([
+                        'smartschool_students' => 'Smartschool-bericht naar jarige leerlingen',
+                        'smartschool_staff' => 'Smartschool-bericht naar jarig personeel',
+                    ] as $key => $label)
+                        <div class="library-field">
+                            <label for="{{ $key }}">{{ $label }}</label>
+                            <select id="{{ $key }}" name="{{ $key }}">
+                                <option value="1" @selected(old($key, $settings[$key]) === '1')>Ja</option>
+                                <option value="0" @selected(old($key, $settings[$key]) === '0')>Nee</option>
+                            </select>
+                        </div>
+                    @endforeach
+                </div>
                 <div class="library-field">
                     <label for="sender">Smartschool-afzender</label>
                     <input type="text" id="sender" name="sender" maxlength="120"
-                        value="{{ old('sender', $settings['sender']) }}" placeholder="Leeg = afzender van de school">
-                    <p class="library-help">Geef een bestaande Smartschool-gebruikersnaam in, of laat leeg om de schoolafzender te gebruiken.</p>
+                        value="{{ old('sender', $settings['sender']) }}" placeholder="Automatisch: schoolafzender">
+                    <p class="library-help">Leeg = beleid / afzender van de school. Vul anders de Smartschool-gebruikersnaam van de gewenste afzender in.</p>
                 </div>
-            </div>
-            <p class="library-help">E-mail gaat rechtstreeks naar het e-mailadres van de leerling of medewerker in de databank. Er worden geen verjaardagsmails naar ouders of co-accounts gestuurd. Voor 18-jarigen blijft de bestaande afzonderlijke procedure van kracht.</p>
-            <p class="library-help"><strong>E-mail staat standaard uit.</strong> Een werkende mailserverconfiguratie is nodig; bij een ontbrekend of ongeldig adres wordt de verzending overgeslagen.</p>
-        </section>
+                <div class="library-birthday-explain">
+                    <strong>Welke accounts?</strong>
+                    <p>Leerlingen: het veld <code>leerlingen.gebruikersnaam</code>. Personeel: <code>users.smartschool_gebruikersnaam</code>.</p>
+                </div>
+            </section>
+
+            <section class="library-form-card">
+                <div class="library-birthday-channel-heading"><span aria-hidden="true">@</span><div>
+                    <h2>3. E-mailberichten</h2>
+                    <p class="library-help">Een afzonderlijke felicitatie per e-mailadres. E-mail staat standaard uit.</p>
+                </div></div>
+                <div class="library-form-grid">
+                    @foreach([
+                        'email_students' => 'E-mail naar jarige leerlingen',
+                        'email_staff' => 'E-mail naar jarig personeel',
+                    ] as $key => $label)
+                        <div class="library-field">
+                            <label for="{{ $key }}">{{ $label }}</label>
+                            <select id="{{ $key }}" name="{{ $key }}">
+                                <option value="1" @selected(old($key, $settings[$key]) === '1')>Ja</option>
+                                <option value="0" @selected(old($key, $settings[$key]) === '0')>Nee</option>
+                            </select>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="library-birthday-explain">
+                    <strong>Welke adressen?</strong>
+                    <p>Leerlingen: <code>leerlingen.e-mailadres</code>. Personeel: <code>users.email</code>. Ontbrekende en ongeldige adressen worden overgeslagen. Ouders en co-accounts krijgen geen verjaardagsmail.</p>
+                    <p><strong>Actieve mailer:</strong> {{ config('mail.default', 'niet ingesteld') }}. Voor echte e-mails moet de mailserver op de server zijn ingesteld.</p>
+                </div>
+            </section>
+        </div>
+
         <section class="library-form-card">
             <h2>Tekst voor leerlingen</h2>
             <div class="library-field"><label for="subject_students">Onderwerp</label>
@@ -83,6 +133,45 @@
         </section>
         <button type="submit" class="library-button library-button-primary">Verjaardagsinstellingen opslaan</button>
     </form>
+    <section class="library-form-card" style="margin-top:20px">
+        <h2>Ontvangers controleren</h2>
+        <p>Bekijk vooraf <strong>wie voor een bepaalde datum een felicitatie zou ontvangen</strong>, met het exacte account en eventuele reden voor overslaan. Dit is alleen een controle; er wordt niets verzonden.</p>
+        <form method="get" action="{{ route('beheer.birthdays.index') }}" class="library-birthday-preview-form">
+            <div class="library-field">
+                <label for="preview-date">Verjaardagsdatum</label>
+                <input type="date" name="datum" id="preview-date" value="{{ $previewDate }}" required>
+            </div>
+            <button class="library-button library-button-secondary" type="submit">Ontvangers bekijken</button>
+        </form>
+        <p class="library-help">
+            {{ $preview['student_count'] }} jarige leerling(en), {{ $preview['staff_count'] }} jarige personeelsleden.
+            Het overzicht gebruikt de <strong>opgeslagen instellingen</strong>. Sla wijzigingen bovenaan eerst op voor je opnieuw controleert.
+        </p>
+        @foreach(['smartschool' => 'Smartschool-berichten', 'email' => 'E-mailberichten'] as $channel => $channelLabel)
+            @php $entries = $preview['rows']->where('channel', $channel); @endphp
+            <h3>{{ $channelLabel }} <small>({{ $entries->where('will_send', true)->count() }} gepland)</small></h3>
+            <div class="library-table-wrap">
+                <table class="library-table">
+                    <thead><tr><th>Naam</th><th>Wie?</th><th>School</th><th>{{ $channel === 'email' ? 'E-mailadres' : 'Smartschool-gebruikersnaam' }}</th><th>Verzendstatus</th></tr></thead>
+                    <tbody>
+                        @forelse($entries as $entry)
+                            <tr>
+                                <td>{{ $entry['name'] }}</td>
+                                <td>{{ $entry['type'] }} ({{ $entry['age'] }} jaar)</td>
+                                <td>{{ $entry['school_id'] ?: '—' }}</td>
+                                <td><code>{{ $entry['target'] !== '' ? $entry['target'] : 'Niet ingevuld' }}</code></td>
+                                <td>{{ $entry['status'] }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5">Geen jarigen voor deze datum gevonden.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+        <p class="library-help">‘Zou verzonden worden’ betekent dat de huidige instellingen en accountgegevens verzending toelaten. Het garandeert niet dat Smartschool of de mailserver het bericht effectief zal bezorgen. Registraties van eerdere pogingen worden meegetoond.</p>
+    </section>
+
     <section class="library-form-card" style="margin-top:20px">
         <h2>Recente verzendingen</h2>
         <div class="library-table-wrap">
