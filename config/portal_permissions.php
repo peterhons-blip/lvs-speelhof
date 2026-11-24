@@ -17,6 +17,7 @@ return [
             'lvs.meldingen.view' => 'Alle meldingen en details bekijken',
             'lvs.meldingen.create' => 'Gedragsmeldingen registreren',
             'lvs.reports.view' => 'Klassenraadoverzicht en tellingen bekijken',
+            'lvs.followups.view' => 'Opvolging en sanctievoorstellen beoordelen en afhandelen',
             'lvs.settings.manage' => 'LVS-opvolgregels, meldingsdrempels en Smartschool-acties beheren',
         ],
     ],
