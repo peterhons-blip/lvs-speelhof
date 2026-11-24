@@ -43,7 +43,7 @@
             <p>{{ number_format($meldingen->total(), 0, ',', '.') }} resultaten. Nieuwste voorvallen eerst.</p></div></div>
         <div class="library-table-wrap">
             <table class="library-table lvs-notifications-table">
-                <thead><tr><th>Gebeurd op</th><th>Ingegeven op</th><th>Leerling</th><th>Klas</th><th>Categorie / soort</th><th>Omschrijving</th></tr></thead>
+                <thead><tr><th>Gebeurd op</th><th>Ingegeven op</th><th>Leerling</th><th>Klas</th><th>Categorie / soort</th><th>Omschrijving</th><th>Ingegeven door</th></tr></thead>
                 <tbody>
                 @forelse($meldingen as $item)
                     <tr>
@@ -53,9 +53,10 @@
                         <td>{{ $item->klasnaam ?: '—' }}</td>
                         <td><span class="badge badge-cat">{{ $item->categorie ?: '—' }}</span><div>{{ $item->soort ?: '—' }}</div></td>
                         <td class="lvs-notification-comment">{{ $item->comment }}</td>
+                        <td>{{ $item->auteur_gebruikersnaam ?? 'Niet geregistreerd' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">Geen meldingen gevonden met deze filters.</td></tr>
+                    <tr><td colspan="7">Geen meldingen gevonden met deze filters.</td></tr>
                 @endforelse
                 </tbody>
             </table>
