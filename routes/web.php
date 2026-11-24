@@ -185,6 +185,16 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     });
 
     // LVS: all records remain staff-only. Future parent/student access is not active.
+    Route::get('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.index');
+    Route::post('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'save'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.save');
+    Route::post('/lvs/instellingen/{rule}/status', [\App\Http\Controllers\LvsSettingsController::class, 'toggle'])
+        ->whereNumber('rule')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.toggle');
     Route::get('/lvs', [\App\Http\Controllers\LvsDashboardController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
         ->name('lvs.dashboard');
