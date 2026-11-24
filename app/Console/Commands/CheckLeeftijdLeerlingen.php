@@ -71,7 +71,7 @@ class CheckLeeftijdLeerlingen extends Command
         // Testmodus: niets verzenden/wijzigen
         if ($isTest) {
             foreach ($leerlingenBinnenWeek18 as $l) {
-                $this->line("TEST (vooraf): {$l->voornaam} {$l->naam} wordt binnen 7 dagen 18 ({$l->geboortedatum?->format('Y-m-d')})");
+                $this->line("TEST (vooraf): {$l->voornaam} {$l->naam} wordt binnen {$warningDays} dagen 18 ({$l->geboortedatum?->format('Y-m-d')})");
             }
             foreach ($leerlingenVandaag18 as $l) {
                 $this->line("TEST (vandaag): {$l->voornaam} {$l->naam} wordt vandaag 18 ({$l->geboortedatum?->format('Y-m-d')})");
@@ -82,8 +82,9 @@ class CheckLeeftijdLeerlingen extends Command
         }
 
         // Onderwerpen
-        $onderwerpVooraf = (string) ($warningSettings['warning_subject']
-            ?? 'Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld');
+        $onderwerpVooraf = str_replace('{dagen}', (string) $warningDays,
+            (string) ($warningSettings['warning_subject']
+                ?? 'Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld'));
         $onderwerpVandaagCo    = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
         $onderwerpSecretariaat = "Uitnodiging: even langs bij het leerlingensecretariaat";
         $onderwerpOverzichtSs  = "Overzicht: leerlingen vandaag 18";
@@ -152,6 +153,10 @@ class CheckLeeftijdLeerlingen extends Command
                         )));
                     }
 
+                    if ($warningDays !== 7 && trim((string) ($warningSettings['warning_body_student'] ?? '')) === '') {
+                        $bodyLeerling = str_replace(['Binnen een week', 'binnen een week'], ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $bodyLeerling);
+                    }
+
                     $ss->sendMessage(
                         $leerling->gebruikersnaam,
                         $onderwerpVooraf,
@@ -182,6 +187,11 @@ class CheckLeeftijdLeerlingen extends Command
                             ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
                                 'school' => $school->schoolnaam, 'dagen' => $warningDays]
                         )));
+                    }
+
+                    if ($warningDays !== 7 && trim((string) ($warningSettings['warning_body_coaccount'] ?? '')) === '') {
+                        $bodyCo = str_replace(['Binnen een week', 'binnen een week'],
+                            ['Binnen '.$warningDays.' dagen', 'binnen '.$warningDays.' dagen'], $bodyCo);
                     }
 
                     for ($i = 1; $i <= 6; $i++) {
