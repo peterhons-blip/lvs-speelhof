@@ -679,3 +679,17 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-management-tile-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.96rem}
 .portal-management-tile-heading span{color:#7294a5}
 .portal-management-tile p,.portal-management-muted{font-size:.86rem;color:#617c90;line-height:1.55;margin:9px 0 0}
+
+
+/* Bibliotheek: reminder action spacing and printable QR inventory labels. */
+.library-reminder-settings-form { display: flex; flex-direction: column; gap: 18px; }
+.library-reminder-actions { display: flex; justify-content: flex-start; margin-top: 8px; }
+.library-reminder-manual { margin-top: 20px; }
+.library-reminder-manual form { margin-top: 16px; }
+.library-qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 14px; margin: 20px 0; }
+.library-qr-label { border: 1px solid #dce4ed; background: white; padding: 14px; text-align: center; border-radius: 8px; break-inside: avoid; }
+.library-qr-label img { width: 155px; height: 155px; max-width: 100%; display: block; margin: 8px auto; image-rendering: pixelated; }
+.library-qr-label strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.library-qr-label small { display: block; margin-top: 6px; font-size: 11px; overflow-wrap: anywhere; }
+.library-qr-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+@media print { .library-qr-toolbar, .library-page-head, nav, header, footer, aside { display: none !important; } .library-qr-grid { grid-template-columns: repeat(4, 1fr); } .library-qr-label { border: 1px solid #bbb; } }
