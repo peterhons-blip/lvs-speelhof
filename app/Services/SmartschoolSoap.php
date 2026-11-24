@@ -88,6 +88,7 @@ class SmartschoolSoap
      */
     public function disableCoAccounts(string $userIdentifier): void
     {
+        $failures = [];
         for ($i = 1; $i <= 6; $i++) {
             try {
                 $this->client->saveUserParameter(
@@ -98,7 +99,11 @@ class SmartschoolSoap
                 );
             } catch (SoapFault $e) {
                 Log::error("Fout bij uitschakelen co-account {$i} voor {$userIdentifier}: " . $e->getMessage());
+                $failures[] = (string) $i;
             }
+        }
+        if ($failures !== []) {
+            throw new \RuntimeException('Niet alle co-accounts konden uitgeschakeld worden (nummers '.implode(', ', $failures).'). Handmatige controle vereist.');
         }
     }
 
