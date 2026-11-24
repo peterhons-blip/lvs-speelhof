@@ -402,6 +402,7 @@
                 @endforelse
             </tbody>
         </table></div>
+        <p class="library-help"><strong>Veilige controle:</strong> <code>php artisan leerlingen:check-18 --test</code> verstuurt niets en schakelt geen accounts uit. Gebruik niet <code>--test-ss-overzicht</code> voor een verzendvrije test: die optie verstuurt echte Smartschool-berichten.</p>
         <p class="library-help">Maximaal 250 records per overzicht. Oudere uitvoeringen van vóór de invoering van deze log verschijnen hier niet.</p>
     </section>
 
