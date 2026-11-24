@@ -12,7 +12,7 @@
     <div class="library-page-head">
         <div><p class="portal-eyebrow">LVS / OPVOLGING</p><h1>Klassenraadoverzicht</h1><p>Een voorbereidende telling van meldingen per klas en categorie. Geen automatische sancties of meldingen naar ouders.</p></div>
         <div class="lvs-dashboard-header-actions">
-            <a href="{{ route('meldingen.index') }}" class="library-button library-button-secondary">Alle meldingen</a>
+            @if($canSeeNotifications)<a href="{{ route('meldingen.index') }}" class="library-button library-button-secondary">Alle meldingen</a>@endif
             <a href="{{ route('lvs.reports.export', ['start' => $start, 'end' => $end, 'klas' => $data['klas'] ?? '']) }}" class="library-button library-button-primary">CSV exporteren</a>
         </div>
     </div>
@@ -45,7 +45,7 @@
                 <thead><tr><th>Leerling</th><th>Klas</th><th>Aantal</th></tr></thead>
                 <tbody>
                     @forelse($topStudents as $student)
-                        <tr><td><a href="{{ route('leerlingen.show', $student->id) }}">{{ $student->voornaam }} {{ $student->naam }}</a></td><td>{{ $student->klasnaam ?: '—' }}</td><td>{{ $student->aantal }}</td></tr>
+                        <tr><td>@if($canSeeStudents && $canSeeNotifications)<a href="{{ route('leerlingen.show', $student->id) }}">{{ $student->voornaam }} {{ $student->naam }}</a>@else{{ $student->voornaam }} {{ $student->naam }}@endif</td><td>{{ $student->klasnaam ?: '—' }}</td><td>{{ $student->aantal }}</td></tr>
                     @empty
                         <tr><td colspan="3">Geen meldingen in deze periode.</td></tr>
                     @endforelse
