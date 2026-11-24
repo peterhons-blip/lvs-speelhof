@@ -46,7 +46,7 @@
 
     <section class="library-form-card">
         <form method="get" class="library-loan-filters">
-            <div class="library-field"><label for="loan-search">Zoeken op leerling, titel of barcode</label>
+            <div class="library-field"><label for="loan-search">Zoeken op ontlener, titel of barcode</label>
                 <input id="loan-search" name="q" value="{{ $search }}" placeholder="Naam, gebruikersnaam, boek of barcode">
             </div>
             <div class="library-field"><label for="loan-filter">Toon</label>
@@ -61,14 +61,19 @@
 
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Leerling</th><th>Boek / exemplaar</th><th>Uitgeleend</th><th>Inleveren voor</th><th>Status</th><th>Acties</th></tr></thead>
+                <thead><tr><th>Ontlener</th><th>Boek / exemplaar</th><th>Uitgeleend</th><th>Inleveren voor</th><th>Status</th><th>Acties</th></tr></thead>
                 <tbody>
                 @forelse($loans as $loan)
                     @php($late = !$loan->returned_at && $loan->due_date < now('Europe/Brussels')->toDateString())
                     <tr>
                         <td>
-                            <strong>{{ trim(($loan->voornaam ?? '').' '.($loan->naam ?? '')) ?: 'Leerling #'.$loan->leerling_id }}</strong>
-                            <div class="library-help">{{ $loan->gebruikersnaam ?: 'Niet beschikbaar' }}</div>
+                            @if($loan->staff_user_id)
+                                <strong>{{ trim(($loan->staff_voornaam ?? '').' '.($loan->staff_naam ?? '')) ?: 'Personeelslid #'.$loan->staff_user_id }}</strong>
+                                <div class="library-help">Personeel · {{ $loan->staff_gebruikersnaam ?: 'Geen gebruikersnaam' }}</div>
+                            @else
+                                <strong>{{ trim(($loan->voornaam ?? '').' '.($loan->naam ?? '')) ?: 'Leerling #'.$loan->leerling_id }}</strong>
+                                <div class="library-help">Leerling · {{ $loan->gebruikersnaam ?: 'Niet beschikbaar' }}</div>
+                            @endif
                         </td>
                         <td><strong>{{ $loan->title }}</strong><div class="library-help">{{ $loan->barcode }}</div></td>
                         <td>{{ \Illuminate\Support\Carbon::parse($loan->loan_date)->format('d/m/Y') }}</td>
