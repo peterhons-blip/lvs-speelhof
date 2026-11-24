@@ -26,50 +26,60 @@ class ImportLibraryIsbn implements ShouldQueue
     public function handle(LibraryIsbnLookup $lookup): void
     {
         $item = DB::table('library_import_items')->where('id', $this->itemId)->first();
-        if (! $item || $item->status !== 'wachten') {
-            return;
-        }
+        if (! $item || $item->status !== 'wachten') return;
 
+        // For an existing book no external ISBN lookup is needed.
+        // Metadata is fetched outside the transaction to keep locks short.
         $isbn = $item->isbn;
-        if (LibraryBook::where('isbn', $isbn)->exists()) {
-            $this->finish('dubbel', 'ISBN staat al in de catalogus.');
-            return;
-        }
+        $metadata = LibraryBook::where('isbn', $isbn)->exists() ? null : $lookup->find($isbn);
 
-        $metadata = $lookup->find($isbn);
-        if (! $metadata) {
-            $this->finish('niet_gevonden', 'Geen boekgegevens gevonden bij Open Library.');
-            return;
-        }
+        // Concurrent jobs may create this book during the lookup; the unique ISBN
+        // constraint is authoritative. Retry once against that existing book.
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            try {
+                $result = DB::transaction(function () use ($isbn, $metadata) {
+                    $pending = DB::table('library_import_items')
+                        ->where('id', $this->itemId)->lockForUpdate()->first();
+                    // Stop action changes waiting items to 'gestopt'. Nothing gets created
+                    // for an item cancelled while an external request was in progress.
+                    if (! $pending || $pending->status !== 'wachten') return 'gestopt';
 
-        try {
-            $created = DB::transaction(function () use ($isbn, $metadata) {
-                if (LibraryBook::where('isbn', $isbn)->exists()) {
-                    return false;
-                }
+                    $book = LibraryBook::where('isbn', $isbn)->first();
+                    $existing = $book !== null;
+                    if (! $book) {
+                        if (! $metadata) {
+                            $this->finish('niet_gevonden', 'Geen boekgegevens gevonden bij Open Library.');
+                            return 'niet_gevonden';
+                        }
+                        $book = LibraryBook::create([
+                            'isbn' => $isbn,
+                            'title' => $metadata['title'],
+                            'subtitle' => $metadata['subtitle'] ?: null,
+                            'authors' => $metadata['authors'] ?: null,
+                            'publisher' => $metadata['publisher'] ?: null,
+                            'published_year' => $metadata['published_year'] ?: null,
+                            'category' => $metadata['category'] ?: null,
+                            'description' => $metadata['description'] ?: null,
+                            'cover_url' => $metadata['cover_url'],
+                        ]);
+                    }
 
-                $book = LibraryBook::create([
-                    'isbn' => $isbn,
-                    'title' => $metadata['title'],
-                    'subtitle' => $metadata['subtitle'] ?: null,
-                    'authors' => $metadata['authors'] ?: null,
-                    'publisher' => $metadata['publisher'] ?: null,
-                    'published_year' => $metadata['published_year'] ?: null,
-                    'category' => $metadata['category'] ?: null,
-                    'description' => $metadata['description'] ?: null,
-                    'cover_url' => $metadata['cover_url'],
-                ]);
-                $book->copies()->create([
-                    'barcode' => LibraryCopy::generateBarcode(),
-                    'condition' => 'goed',
-                ]);
-                return true;
-            });
-
-            $status = $created ? 'toegevoegd' : 'dubbel';
-            $this->finish($status, $status === 'toegevoegd' ? $metadata['title'] : 'ISBN bestaat al.');
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            $this->finish('dubbel', 'ISBN is ondertussen al geregistreerd.');
+                    // Every import line represents one physical copy, even if the
+                    // title/ISBN already exists in the catalog or in this batch.
+                    $book->copies()->create([
+                        'barcode' => LibraryCopy::generateBarcode(),
+                        'condition' => 'goed',
+                    ]);
+                    $this->finish($existing ? 'exemplaar' : 'toegevoegd', $book->title);
+                    return 'done';
+                }, 3);
+                if ($result !== 'gestopt') return;
+                return;
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Another job registered the ISBN at the same moment. Next attempt
+                // uses the existing book and creates only a new physical copy.
+                if ($attempt === 1) throw $e;
+            }
         }
     }
 
@@ -84,7 +94,8 @@ class ImportLibraryIsbn implements ShouldQueue
             ->where('status', 'wachten')
             ->update([
                 'status' => $status,
-                'title' => $status === 'toegevoegd' ? mb_substr($message, 0, 255) : null,
+                'title' => in_array($status, ['toegevoegd', 'exemplaar'], true)
+                    ? mb_substr($message, 0, 255) : null,
                 'message' => mb_substr($message, 0, 255),
                 'updated_at' => now(),
             ]);
