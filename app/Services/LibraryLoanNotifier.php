@@ -24,7 +24,7 @@ class LibraryLoanNotifier
     public function send(int $loanId, string $type, string $scheduledFor): bool
     {
         if (! $this->enabled()) return false;
-        if (! in_array($type, ['confirmation', 'before_due', 'due_today', 'manual', 'returned'], true)) return false;
+        if (! in_array($type, ['confirmation', 'before_due', 'due_today', 'manual', 'returned', 'extended'], true)) return false;
 
         $loan = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
@@ -50,7 +50,7 @@ class LibraryLoanNotifier
         } elseif ((int) $loan->active !== 1) {
             return false;
         }
-        if (in_array($type, ['before_due', 'due_today', 'manual'], true) && $loan->returned_at !== null) return false;
+        if (in_array($type, ['before_due', 'due_today', 'manual', 'extended'], true) && $loan->returned_at !== null) return false;
         if (in_array($type, ['before_due', 'due_today'], true) && $loan->due_date < $scheduledFor) return false;
         if ($type === 'returned' && $loan->returned_at === null) return false;
 
@@ -138,6 +138,12 @@ class LibraryLoanNotifier
                 'label' => 'Handmatige herinnering',
                 'subject' => 'Bibliotheek: herinnering boek terugbrengen',
                 'body' => $base."Dit is een herinnering om je boek terug te brengen.\n\n".$details.$footer,
+            ],
+            'extended' => [
+                'label' => 'Bij verlenging',
+                'subject' => 'Bibliotheek: uitleentermijn verlengd',
+                'body' => $base."Je uitleentermijn is verlengd.\n\n".$details.
+                    "De nieuwe inleverdatum staat hierboven. Breng het boek uiterlijk op die datum terug.\n\n".$footer,
             ],
             'returned' => [
                 'label' => 'Bij terugbrengen',
