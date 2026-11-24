@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\DB;
  */
 class Birthday18Actions
 {
+    public function flag(int $schoolId, int $studentId, string $date, string $action, string $error): void
+    {
+        DB::table('birthday_18_actions')->insertOrIgnore([
+            'school_id' => $schoolId, 'student_id' => $studentId,
+            'target_date' => $date, 'action_key' => $action,
+            'recipient' => null, 'status' => 'failed',
+            'error_message' => mb_substr($error, 0, 1800),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
     public function status(int $schoolId, int $studentId, string $date, string $action): ?string
     {
         return DB::table('birthday_18_actions')
