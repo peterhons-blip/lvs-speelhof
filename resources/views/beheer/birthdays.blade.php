@@ -142,6 +142,60 @@
         </section>
         <button type="submit" class="library-button library-button-primary">Verjaardagsinstellingen opslaan</button>
     </form>
+    <section class="library-form-card library-birthday-privacy" id="coaccounts-beheer">
+        <h2>Automatisch uitschakelen co-accounts op 18 jaar</h2>
+        @if(($settings['adult_disable_coaccounts'] ?? '1') === '1')
+            <p><strong>Huidige status: ingeschakeld.</strong> De cronjob probeert op de 18e verjaardag de ouder-/voogdaccounts automatisch uit te schakelen.</p>
+        @else
+            <p class="library-birthday-privacy-alert" role="alert"><strong>LET OP: automatische uitschakeling staat UIT.</strong> Co-accounts blijven mogelijk toegankelijk. Controleer elke meerderjarige leerling handmatig en schakel co-accounts waar nodig rechtstreeks in Smartschool uit.</p>
+        @endif
+        <p class="library-help">Dit regelt alleen de automatische deactivatie. Waarschuwingsberichten, het secretariaatsbericht en de overzichten hebben afzonderlijke instellingen. Bij pauzering meldt het systeem de actie als handmatig op te volgen.</p>
+        @if($canManagePrivacy)
+            <form method="post" action="{{ route('beheer.birthdays.privacy.update') }}" class="library-form library-birthday-privacy-form">
+                @csrf
+                <div class="library-form-grid">
+                    <div class="library-field">
+                        <label for="adult_disable_coaccounts">Automatisch uitschakelen op de 18e verjaardag</label>
+                        <select id="adult_disable_coaccounts" name="adult_disable_coaccounts" required>
+                            <option value="1" @selected(old('adult_disable_coaccounts', $settings['adult_disable_coaccounts'] ?? '1') === '1')>Ingeschakeld</option>
+                            <option value="0" @selected(old('adult_disable_coaccounts', $settings['adult_disable_coaccounts'] ?? '1') === '0')>Uitgeschakeld — handmatige opvolging noodzakelijk</option>
+                        </select>
+                    </div>
+                    <div class="library-field library-wide">
+                        <label for="privacy_reason">Reden voor deze wijziging (verplicht)</label>
+                        <textarea id="privacy_reason" name="reason" rows="3" maxlength="1000" minlength="10" required
+                            placeholder="Waarom wordt deze instelling gewijzigd?">{{ old('reason') }}</textarea>
+                    </div>
+                </div>
+                <label class="library-birthday-privacy-confirm">
+                    <input type="checkbox" name="confirm" value="1" required>
+                    <span>Ik bevestig dat ik begrijp dat het uitschakelen van deze automatisering extra handmatige opvolging vereist, en dat mijn wijziging geregistreerd wordt.</span>
+                </label>
+                <button type="submit" class="library-button library-button-primary">Instelling opslaan en registreren</button>
+            </form>
+            <h3>Laatste wijzigingen</h3>
+            <div class="library-table-wrap">
+                <table class="library-table">
+                    <thead><tr><th>Wanneer</th><th>Door</th><th>Nieuwe status</th><th>Reden</th></tr></thead>
+                    <tbody>
+                        @forelse($privacyAudit as $entry)
+                            <tr>
+                                <td>{{ $entry->created_at }}</td>
+                                <td>{{ $entry->actor_username }} ({{ $entry->actor_role }})</td>
+                                <td>{{ $entry->new_value === '1' ? 'Ingeschakeld' : 'Uitgeschakeld' }}</td>
+                                <td>{{ $entry->reason }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4">Nog geen wijzigingen geregistreerd.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="library-help">Deze instelling is uitsluitend wijzigbaar door directie en ICT.</p>
+        @endif
+    </section>
+
     <section class="library-form-card library-birthday-warning">
         <h2>Waarschuwing vóór de 18e verjaardag</h2>
         <p class="library-help">De aparte 18-jarigentaak kan de leerling en de gekoppelde ouder-/voogdaccounts vooraf via Smartschool waarschuwen. De co-accounts worden op de 18e verjaardag volgens de bestaande procedure uitgeschakeld. Deze instellingen regelen <strong>alleen de voorafgaande waarschuwing</strong>, niet de verplichte opvolging op de verjaardag zelf.</p>
