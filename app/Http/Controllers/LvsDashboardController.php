@@ -55,10 +55,11 @@ class LvsDashboardController extends Controller
         if (!$canSeeStudents) {
             $stats['students'] = null;
         }
+        $canSeeFollowups = $access->has($request, 'lvs.followups.view');
         $canSeeReports = $access->has($request, 'lvs.reports.view');
         $canCreate = $access->has($request, 'lvs.meldingen.create');
 
         return view('lvs.dashboard', compact('stats', 'categories', 'recent',
-            'canSeeReports', 'canCreate', 'canSeeStudents', 'canSeeNotifications'));
+            'canSeeReports', 'canCreate', 'canSeeStudents', 'canSeeNotifications', 'canSeeFollowups'));
     }
 }
