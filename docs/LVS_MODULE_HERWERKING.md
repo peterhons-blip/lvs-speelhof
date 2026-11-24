@@ -65,14 +65,65 @@ Activatie vergt nog:
   `/smartschool/errorcodes` en `/smartschool/test-user` zijn verwijderd:
   ze waren zonder SSO bereikbaar. Gebruik de afgeschermde Smartschool-testtool onder Beheer.
 
+### Automatische opvolging instellen (nieuwe module)
+
+- **LVS → Instellingen** (`/lvs/instellingen`) is toegankelijk met `lvs.settings.manage`
+  (standaard ICT en directie).
+- De instellingen bestaan uit afzonderlijke, standaard **uitgeschakelde** regels.
+  Een regel combineert het exacte aantal meldingen (1–500), de scope (alle categorieën,
+  één categorie of specifieke soort), een telperiode in dagen (0 = onbeperkt) en een actie.
+  Alle tellingen gebeuren volgens **registratiedatum**, op het moment dat een nieuwe melding
+  in de bestaande `meldingen`-tabel wordt opgeslagen.
+- Voor de vierde, zesde of achtste melding kunnen aparte regels worden gemaakt.
+  De regel wordt alleen getriggerd bij het bereiken van dat aantal, niet opnieuw
+  voor elke volgende melding. Er is geen achteraf-herberekening van oude meldingen.
+- **Opvolging leerlingbegeleiding** of **sanctievoorstel**: er wordt uitsluitend een
+  registratie `pending` gemaakt in `lvs_followup_events`. Het systeem legt nooit
+  een sanctie op. Leerlingbegeleiding/directie kunnen onder **LVS → Opvolging**
+  (`/lvs/opvolging`) de melding behandelen of gemotiveerd afsluiten. De persoon,
+  datum en notitie worden vastgelegd.
+- **Smartschool-bericht**: alleen wanneer een bevoegd beheerder de regel activeert en
+  de automatische verzending expliciet bevestigt. Mogelijke ontvangers zijn de
+  leerling, co-accounts 1–6, een vaste accountnaam voor leerlingbegeleiding en
+  een vaste accountnaam voor de klastitularis. Automatisch bepalen van individuele
+  klastitularissen is bewust nog niet gebouwd; een vaste accountnaam is voorlopig vereist.
+  Onderwerp en tekst zijn instelbaar; placeholders `{voornaam}`, `{naam}`,
+  `{aantal}`, `{categorie}`. De vrije meldingstekst wordt **nooit**
+  automatisch in een Smartschool-bericht gekopieerd.
+  Automatische ouderberichten worden vanaf 18 jaar geblokkeerd.
+  **Let op:** een co-accountnummer is niet per definitie een bestaand, actief of
+  gerechtigd ouderaccount. Activeer zulke verzending pas na controle van de lokale
+  Smartschool-/privacyafspraken.
+- Elke actie krijgt een log per melding, regel en ontvanger. Verzendingen worden
+  *vooraf* geclaimd; mislukte/onzekere calls worden niet zonder controle herhaald.
+  De bestaande centrale verzendhistoriek registreert bovendien Smartschool-calls.
+- Het ontwerpen van regels is onafhankelijk van de cronjob: opvolging gebeurt bij
+  het registreren van een nieuwe melding. Er is dus geen extra cronjob nodig.
+
+**Gerichte derde migratie:**
+
+```powershell
+C:\xampp\php\php.exe artisan migrate --path=database/migrations/2026_11_24_182000_create_lvs_followup_rules.php --force
+```
+
+**Test eerst met uitgeschakelde regels en fictieve data, daarna een ingeschakelde
+niet-verzendende opvolgregel:** maak een regel bij de tweede melding voor
+leerlingbegeleiding, voeg twee meldingen toe aan een testleerling, controleer
+dat er exact één openstaande opvolging verschijnt en dat een derde melding
+niet opnieuw dezelfde regel triggert. Controleer de beperkte toegang en
+het gemotiveerd afhandelen. Smartschool-regels pas met expliciete
+testafspraken en een gecontroleerd doelaccount activeren; dit verstuurt
+echte Smartschool-berichten, **geen simulatie**.
+
 ### Bewust nog niet geactiveerd
 
 - Leerlingenfoto's: toestemming, bron en opslaglocatie nog bepalen.
 - Individuele leesrechten per leerkracht, klastitularis, directie of leerlingbegeleider:
   authenticatie + betrouwbare les-/klasrelaties en beleid nodig.
-- Automatische escalatie vanaf een bepaald aantal meldingen, sancties, Smartschool-
-  berichten, oudermails en geautomatiseerde klassenraadcron: concrete drempels,
-  per-categorieregels en bevoegde verantwoordelijken moeten nog worden afgestemd.
+- Het configureren van drempels en automatische Smartschool-verzending is nu wel
+  beschikbaar, maar staat standaard uit. Schoolbrede sanctiebeslissingen,
+  oudermails, een klastitularis automatisch aan een leerling koppelen en een
+  klassenraadcron zijn nog niet gebouwd.
 - Ouder- en leerlinglogin: voorbereid maar uitgeschakeld.
 
 ### Installatie op Windows/XAMPP
