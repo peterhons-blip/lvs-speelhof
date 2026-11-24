@@ -53,6 +53,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::prefix('bibliotheek/boeken')->name('bibliotheek.books.')->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+        Route::get('/qr-labels', [\App\Http\Controllers\LibraryBookController::class, 'qrLabels'])
+            ->name('qr-labels')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
