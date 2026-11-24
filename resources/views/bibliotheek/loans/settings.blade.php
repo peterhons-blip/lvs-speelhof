@@ -20,7 +20,7 @@
         @csrf
         @foreach([
             'loan_days' => ['Standaard uitleentermijn (dagen)', 21],
-            'max_loans' => ['Maximaal openstaande uitleningen per leerling', 3],
+            'max_loans' => ['Maximaal openstaande uitleningen per ontlener', 3],
             'max_extensions' => ['Maximaal aantal verlengingen', 2],
             'extension_days' => ['Extra dagen per verlenging', 21],
         ] as $key => [$label, $default])
@@ -50,7 +50,7 @@
                 <option value="0" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '0')>Uitgeschakeld (veilig voor testen)</option>
                 <option value="1" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '1')>Ingeschakeld</option>
             </select>
-            <p class="library-help">Afzender: <strong>bib</strong>. Activeren pas wanneer het Smartschool-account bestaat en getest is. Bij ingeschakelde verzending ontvangt de leerling ook een bevestiging na iedere nieuwe uitlening.</p>
+            <p class="library-help">Afzender: <strong>bib</strong>. Activeren pas wanneer het Smartschool-account bestaat en getest is. Bij ingeschakelde verzending krijgen leerlingen en personeelsleden een bevestiging bij uitlening en terugbrengen, automatische herinneringen en eventuele handmatige herinneringen.</p>
         </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
