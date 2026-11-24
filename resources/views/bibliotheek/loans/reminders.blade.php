@@ -15,8 +15,9 @@
         <p>{{ $item->title }} — {{ $item->barcode }}</p></div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.index') }}">Terug naar uitleningen</a>
     </div>
+    @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <form method="post" action="{{ route('bibliotheek.loans.reminders.update', $item->id) }}" class="library-form-card">
+    <form method="post" action="{{ route('bibliotheek.loans.reminders.update', $item->id) }}" class="library-form-card library-reminder-settings-form">
         @csrf
         @method('PUT')
         <div class="library-field">
@@ -39,7 +40,18 @@
                 <option value="0" @selected((string) old('remind_on_due_date', $item->remind_on_due_date) === '0')>Neen</option>
             </select>
         </div>
-        <button type="submit" class="library-button library-button-primary">Opslaan</button>
+        <div class="library-reminder-actions"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
+    @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
+        <section class="library-form-card library-reminder-manual">
+            <h2>Handmatige herinnering</h2>
+            <p>Stuur nu één Smartschool-herinnering naar deze ontlener. Dezelfde herinnering kan maximaal één keer per dag verstuurd worden.</p>
+            <form method="post" action="{{ route('bibliotheek.loans.reminders.send', $item->id) }}"
+                  onsubmit="return confirm('Smartschool-herinnering nu versturen?');">
+                @csrf
+                <button type="submit" class="library-button library-button-secondary">Smartschool-herinnering versturen</button>
+            </form>
+        </section>
+    @endif
 </main>
 @endsection
