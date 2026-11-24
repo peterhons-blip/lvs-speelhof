@@ -693,3 +693,48 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .library-qr-label small { display: block; margin-top: 6px; font-size: 11px; overflow-wrap: anywhere; }
 .library-qr-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
 @media print { .library-qr-toolbar, .library-page-head, nav, header, footer, aside { display: none !important; } .library-qr-grid { grid-template-columns: repeat(4, 1fr); } .library-qr-label { border: 1px solid #bbb; } }
+
+
+/* A4 adhesive label sheets: 63.5 x 38.1 mm, 3 columns x 7 rows, no gaps. */
+.library-label-settings { max-width: 550px; margin-top: 14px; margin-bottom: 14px; }
+.library-label-sheets { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.library-label-sheet {
+    display: grid;
+    grid-template-columns: repeat(3, 63.5mm);
+    grid-template-rows: repeat(7, 38.1mm);
+    width: 210mm;
+    height: 297mm;
+    box-sizing: border-box;
+    padding: 15.15mm 9.75mm;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,.13);
+    flex-shrink: 0;
+}
+.library-sheet-label {
+    box-sizing: border-box;
+    width: 63.5mm;
+    height: 38.1mm;
+    min-width: 0;
+    padding: 3mm;
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    overflow: hidden;
+    border: 1px dashed #d4dde7;
+}
+.library-sheet-label img { width: 24mm; height: 24mm; flex: 0 0 24mm; object-fit: contain; image-rendering: pixelated; }
+.library-sheet-label-text { min-width: 0; display: flex; flex-direction: column; gap: 2mm; overflow: hidden; }
+.library-sheet-label-text strong { font-size: 9pt; font-weight: 650; line-height: 1.13; max-height: 34mm; overflow-wrap: anywhere; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.library-sheet-label-text span { font-size: 7pt; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; }
+.library-sheet-label-empty { border-color: #f0f2f5; }
+@media screen and (max-width: 850px) { .library-label-sheets { overflow-x: auto; max-width: 100%; } }
+@page { size: A4 portrait; margin: 0; }
+@media print {
+    html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: white !important; }
+    .library-page-head, .library-qr-toolbar, .library-label-settings, #qr-feedback, .library-help,
+    header, footer, aside, nav { display: none !important; }
+    .library-page, .library-form-card, .library-label-sheets { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; max-width: none !important; width: 210mm !important; }
+    .library-label-sheet { margin: 0 !important; box-shadow: none !important; break-after: page; page-break-after: always; }
+    .library-label-sheet:last-child { break-after: auto; page-break-after: auto; }
+    .library-sheet-label, .library-sheet-label-empty { border: 0 !important; }
+}
