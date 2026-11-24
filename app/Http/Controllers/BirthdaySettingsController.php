@@ -22,7 +22,19 @@ class BirthdaySettingsController extends Controller
             $previewDate = now('Europe/Brussels')->toDateString();
         }
         $preview = $birthdaySettings->preview($previewDate, $settings);
-        $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount', 'smartschool_verzender_secretariaat', 'smartschool_verzender']);
+        $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount', 'smartschool_verzender_secretariaat', 'smartschool_verzender', 'smartschool_verzender_beleid']);
+        $birthdaySenders = $schools->mapWithKeys(static function ($school) {
+            $resolved = trim((string) ($school->smartschool_verzender_beleid ?? ''))
+                ?: trim((string) ($school->smartschool_verzender ?? ''))
+                ?: config('services.smartschool.sender')
+                ?: env('SMARTSCHOOL_SENDER_USER')
+                ?: 'lvs';
+            return [$school->id => $resolved];
+        });
+        $birthdaySelectedSchool = (int) ($settings['school_id'] ?? 0);
+        $birthdaySenderFallback = $birthdaySelectedSchool > 0
+            ? ($birthdaySenders->get($birthdaySelectedSchool) ?? '')
+            : ($birthdaySenders->unique()->count() === 1 ? (string) $birthdaySenders->first() : '');
         $warningPreviewSchool = $schools->firstWhere('id', (int) ($settings['school_id'] ?? 0));
         $warningSenderFallback = $warningPreviewSchool
             ? (trim((string) $warningPreviewSchool->smartschool_verzender_secretariaat)
@@ -96,7 +108,7 @@ class BirthdaySettingsController extends Controller
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders'));
     }
 
 
