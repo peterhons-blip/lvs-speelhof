@@ -273,7 +273,7 @@ class CheckLeeftijdLeerlingen extends Command
                 $berichtCoVerzonden = false;
                 $coaccountsUit = false;
                 $berichtSecrVerzonden = false;
-                $dateOfBirth = $leerling->geboortedatum->copy()->toDateString();
+                $dateOfBirth = now('Europe/Brussels')->toDateString();
                 $schoolId = (int) $school->id;
                 $studentId = (int) $leerling->id;
                 $username = trim((string) ($leerling->gebruikersnaam ?? ''));
