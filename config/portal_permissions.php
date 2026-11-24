@@ -60,7 +60,7 @@ return [
             'beheer.student_sync.manage' => 'Leerlingensynchronisatie starten',
             'beheer.staff_sync.manage' => 'Personeelssynchronisatie starten',
             'beheer.scheduled_tasks.view' => 'Geplande taken en logs bekijken',
-            'beheer.birthdays.manage' => 'Verjaardagsberichten: ontvangers, kanalen en teksten beheren'
+            'beheer.birthdays.manage' => 'Verjaardagsberichten en 18-jarigen: ontvangers, kanalen, teksten, waarschuwingen en actiehistoriek'
         ],
     ],
 ];
