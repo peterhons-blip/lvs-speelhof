@@ -133,6 +133,58 @@
         </section>
         <button type="submit" class="library-button library-button-primary">Verjaardagsinstellingen opslaan</button>
     </form>
+    <section class="library-form-card library-birthday-warning">
+        <h2>Waarschuwing vóór de 18e verjaardag</h2>
+        <p class="library-help">De aparte 18-jarigentaak kan de leerling en de gekoppelde ouder-/voogdaccounts vooraf via Smartschool waarschuwen. De co-accounts worden op de 18e verjaardag volgens de bestaande procedure uitgeschakeld. Deze instellingen regelen <strong>alleen de voorafgaande waarschuwing</strong>, niet de verplichte opvolging op de verjaardag zelf.</p>
+        <form method="post" action="{{ route('beheer.birthdays.update') }}" id="warning-form" class="library-form">
+            @csrf
+            @foreach(['enabled','students_enabled','staff_enabled','smartschool_students','smartschool_staff','email_students','email_staff','school_id','sender','subject_students','subject_staff','body_students','body_staff'] as $key)
+                <input type="hidden" name="{{ $key }}" value="{{ $settings[$key] }}">
+            @endforeach
+            <div class="library-form-grid">
+                @foreach([
+                    'warning_enabled' => 'Waarschuwingen vooraf inschakelen',
+                    'warning_student' => 'Smartschool-bericht naar leerling',
+                    'warning_coaccounts' => 'Smartschool-bericht naar ouder-/voogdaccounts',
+                ] as $key => $label)
+                    <div class="library-field">
+                        <label for="{{ $key }}">{{ $label }}</label>
+                        <select id="{{ $key }}" name="{{ $key }}">
+                            <option value="1" @selected(old($key, $settings[$key]) === '1')>Ja</option>
+                            <option value="0" @selected(old($key, $settings[$key]) === '0')>Nee</option>
+                        </select>
+                    </div>
+                @endforeach
+                <div class="library-field">
+                    <label for="warning_days">Aantal dagen vooraf</label>
+                    <input type="number" id="warning_days" name="warning_days" min="1" max="30"
+                        value="{{ old('warning_days', $settings['warning_days']) }}" required>
+                    <p class="library-help">Standaard 7 dagen. De taak controleert dagelijks om 01.00 uur.</p>
+                </div>
+                <div class="library-field library-wide">
+                    <label for="warning_sender">Smartschool-afzender waarschuwing</label>
+                    <input id="warning_sender" name="warning_sender" maxlength="120"
+                        value="{{ old('warning_sender', $settings['warning_sender']) }}" placeholder="Automatisch: secretariaatsaccount van de school">
+                </div>
+                <div class="library-field library-wide">
+                    <label for="warning_subject">Onderwerp van de waarschuwing</label>
+                    <input id="warning_subject" name="warning_subject" maxlength="200" required
+                        value="{{ old('warning_subject', $settings['warning_subject']) }}">
+                </div>
+                <div class="library-field library-wide">
+                    <label for="warning_body_student">Berichttekst leerling (optioneel)</label>
+                    <textarea id="warning_body_student" name="warning_body_student" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_student', $settings['warning_body_student']) }}</textarea>
+                </div>
+                <div class="library-field library-wide">
+                    <label for="warning_body_coaccount">Berichttekst ouders/voogden (optioneel)</label>
+                    <textarea id="warning_body_coaccount" name="warning_body_coaccount" rows="6" maxlength="5000" placeholder="Leeg laten = bestaande schooltemplate gebruiken">{{ old('warning_body_coaccount', $settings['warning_body_coaccount']) }}</textarea>
+                </div>
+            </div>
+            <p class="library-help">Beschikbare variabelen voor de aangepaste teksten: <code>{voornaam}</code>, <code>{naam}</code>, <code>{school}</code> en <code>{dagen}</code>. Leeg laten behoudt de bestaande standaard- of schoolteksten. Bij een andere termijn dan 7 dagen wordt de standaardtekst automatisch aangepast.</p>
+            <button type="submit" class="library-button library-button-primary">Waarschuwingsinstellingen opslaan</button>
+        </form>
+    </section>
+
     <section class="library-form-card" style="margin-top:20px">
         <h2>4. Ontvangers van het 18-jarigenoverzicht</h2>
         <p class="library-help">Naast de verjaardagsfelicitaties verstuurt de <strong>aparte 18-jarigentaak</strong> een overzicht naar aangewezen medewerkers. Deze ontvangers zijn <strong>per school</strong> instelbaar en staan los van de berichten die leerlingen zelf krijgen.</p>
