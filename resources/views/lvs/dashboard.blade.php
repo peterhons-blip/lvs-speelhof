@@ -51,6 +51,12 @@
             <span class="lvs-dashboard-action-icon" aria-hidden="true">✦</span><strong>Verjaardagen</strong><small>Leerlingen die binnenkort jarig zijn.</small>
         </a>
         @endif
+        @if($canSeeFollowups)
+            <a href="{{ route('lvs.followups.index') }}" class="card lvs-dashboard-action">
+                <span class="lvs-dashboard-action-icon" aria-hidden="true">◎</span><strong>Opvolging</strong>
+                <small>Signalen en sanctievoorstellen beoordelen.</small>
+            </a>
+        @endif
         @if($canSeeReports)
             <a href="{{ route('lvs.reports.index') }}" class="card lvs-dashboard-action">
                 <span class="lvs-dashboard-action-icon" aria-hidden="true">▥</span><strong>Klassenraadoverzicht</strong><small>Overzicht per klas en categorie, zonder automatische sancties.</small>
