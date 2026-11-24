@@ -111,7 +111,7 @@ class CheckVerjaardagen extends Command
         $sender = trim($settings['sender']);
         if ($sender === '') $sender = trim((string) ($school->smartschool_verzender_beleid ?? ''));
         if ($sender === '') $sender = trim((string) ($school->smartschool_verzender ?? ''));
-        if ($sender === '') $sender = config('services.smartschool.sender') ?: 'lvs';
+        if ($sender === '') $sender = config('services.smartschool.sender') ?: env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
 
         foreach (['smartschool', 'email'] as $channel) {
             if ($settings[$channel.'_'.$suffix] !== '1') continue;
