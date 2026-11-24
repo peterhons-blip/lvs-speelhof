@@ -37,6 +37,8 @@ class LibraryBookController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
         $bookId = $request->query('book');
+        $copyId = $request->query('copy');
+        if ($copyId !== null && (! ctype_digit((string) $copyId) || (int) $copyId < 1)) abort(404);
         $qrStatus = (string) $request->query('qr_status', 'all');
         if (! in_array($qrStatus, ['all', 'unprinted', 'printed'], true)) $qrStatus = 'all';
         $mode = (string) $request->query('select', 'all');
@@ -45,6 +47,9 @@ class LibraryBookController extends Controller
 
         $query = DB::table('library_copies as copies')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id');
+        if ($copyId !== null) {
+            $query->where('copies.id', (int) $copyId);
+        }
         if ($bookId !== null) {
             $query->where('books.id', (int) $bookId);
         } elseif ($search !== '') {
@@ -69,7 +74,7 @@ class LibraryBookController extends Controller
         $copies = $query->limit($mode === 'latest5' ? 5 : 500)
             ->get(['copies.id', 'copies.barcode', 'books.title', 'copies.created_at', 'copies.qr_printed_at']);
 
-        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'mode', 'qrStatus'));
+        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'copyId', 'mode', 'qrStatus'));
     }
 
     public function confirmQrPrinted(Request $request): RedirectResponse
@@ -190,7 +195,9 @@ class LibraryBookController extends Controller
             return $book;
         });
 
-        return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Boek en eerste exemplaar geregistreerd.');
+        return redirect()->route('bibliotheek.books.show', $book)
+            ->with('success', 'Boek en eerste exemplaar geregistreerd.')
+            ->with('new_copy_id', $book->copies()->value('id'));
     }
 
     public function show(LibraryBook $book): View
@@ -271,9 +278,11 @@ class LibraryBookController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ])->validate();
 
-        $book->copies()->create($data);
+        $copy = $book->copies()->create($data);
 
-        return redirect()->route('bibliotheek.books.show', $book)->with('success', 'Extra exemplaar toegevoegd.');
+        return redirect()->route('bibliotheek.books.show', $book)
+            ->with('success', 'Extra exemplaar toegevoegd.')
+            ->with('new_copy_id', $copy->id);
     }
 
     public function editCopy(LibraryBook $book, LibraryCopy $copy): View
