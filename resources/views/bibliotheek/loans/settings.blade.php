@@ -41,19 +41,8 @@
                 <option value="0" @selected(old('remind_on_due_date', $settings['remind_on_due_date'] ?? '1') == '0')>Neen</option>
             </select>
         </div>
-        <div class="library-field">
-            <label for="smartschool_enabled">Smartschool-berichten vanuit bib</label>
-            @if(!app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
-                <input type="hidden" name="smartschool_enabled" value="{{ $settings['smartschool_enabled'] ?? '0' }}">
-            @endif
-            <select id="smartschool_enabled" name="smartschool_enabled" @disabled(!app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))>
-                <option value="0" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '0')>Uitgeschakeld (veilig voor testen)</option>
-                <option value="1" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '1')>Ingeschakeld</option>
-            </select>
-            <p class="library-help">Alle bibliotheekberichten vertrekken vanuit Smartschool-account <strong>bib</strong>. Kies <strong>Ingeschakeld</strong> en sla op om de verzending te activeren. Dan worden uitleningen, terugbrengingen, automatische herinneringen en handmatige herinneringen via dit account verzonden (enkel naar het hoofdaccount).</p>
-        </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
-    <p class="library-help">Instellingen opslaan verstuurt zelf geen berichten. Automatische herinneringen lopen via de Laravel scheduler, maximaal één keer per uitleenmoment.</p>
+    <p class="library-help">De tekst en verzending van Smartschool-berichten beheer je via de aparte tegel Smartschool-berichten. Automatische herinneringen lopen via de Laravel scheduler.</p>
 </main>
 @endsection
