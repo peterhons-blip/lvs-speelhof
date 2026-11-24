@@ -42,7 +42,11 @@ class LvsReportsController extends Controller
 
         $total = $perClass->sum('aantal');
 
-        return view('lvs.reports', compact('data', 'start', 'end', 'perClass', 'topStudents', 'total'));
+        $canSeeNotifications = $access->has($request, 'lvs.meldingen.view');
+        $canSeeStudents = $access->has($request, 'lvs.view');
+
+        return view('lvs.reports', compact('data', 'start', 'end',
+            'perClass', 'topStudents', 'total', 'canSeeNotifications', 'canSeeStudents'));
     }
     public function export(Request $request, LibraryAccess $access): \Symfony\Component\HttpFoundation\StreamedResponse
     {
