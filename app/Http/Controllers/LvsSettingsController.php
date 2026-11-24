@@ -26,8 +26,10 @@ class LvsSettingsController extends Controller
             ->orderByDesc('e.id')->limit(80)->get() : collect();
         $categories = DB::table('meldingscategorien')->orderBy('naam')->get();
         $types = DB::table('meldingssoorten')->orderBy('naam')->get();
+        $staffOptions = $this->activeStaffOptions();
 
-        return view('lvs.settings', compact('ready', 'rules', 'events', 'categories', 'types'));
+
+        return view('lvs.settings', compact('ready', 'rules', 'events', 'categories', 'types', 'staffOptions'));
     }
 
     public function save(Request $request, LibraryAccess $access): RedirectResponse
@@ -67,6 +69,19 @@ class LvsSettingsController extends Controller
         }
 
         if ($data['action'] === 'smartschool') {
+            // Do not trust a submitted username merely because it came from a select.
+            // Enforce current active Smartschool staff accounts on the server as well.
+            $availableUsernames = $this->activeStaffOptions()->pluck('username')->all();
+            foreach (['counselor_username', 'mentor_username'] as $field) {
+                if (($request->boolean($field === 'counselor_username'
+                    ? 'recipient_counselor' : 'recipient_mentor'))
+                    && !in_array(trim((string) ($data[$field] ?? '')), $availableUsernames, true)) {
+                    return back()->withInput()->withErrors([
+                        $field => 'Selecteer een actief personeelslid uit de lijst.',
+                    ]);
+                }
+            }
+
             $anyRecipient = $request->boolean('recipient_student') ||
                 $request->boolean('recipient_parents') ||
                 $request->boolean('recipient_counselor') ||
@@ -150,4 +165,23 @@ class LvsSettingsController extends Controller
         ]);
         return back()->with('success', 'Status van de opvolgregel gewijzigd.');
     }
+    private function activeStaffOptions(): \Illuminate\Support\Collection
+    {
+        return DB::table('users')
+            ->whereNotNull('smartschool_gebruikersnaam')
+            ->where('smartschool_gebruikersnaam', '<>', '')
+            ->where(function ($query) {
+                $query->whereNull('smartschool_active')
+                    ->orWhere('smartschool_active', 1);
+            })
+            ->select('voornaam', 'name', 'smartschool_gebruikersnaam')
+            ->orderBy('name')->orderBy('voornaam')->get()
+            ->map(fn ($staff) => (object) [
+                'username' => trim((string) $staff->smartschool_gebruikersnaam),
+                'label' => trim(($staff->voornaam ?? '').' '.($staff->name ?? ''))
+                    .' ('.$staff->smartschool_gebruikersnaam.')',
+            ])
+            ->unique('username')->values();
+    }
+
 }
