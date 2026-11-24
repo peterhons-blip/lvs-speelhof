@@ -55,6 +55,18 @@ class MeldingController extends Controller
         return view('meldingen.index', compact('meldingen', 'categorieen', 'canCreate', 'data'));
     }
 
+    public function selectStudent(Request $request, \App\Services\LibraryAccess $access)
+    {
+        $access->requirePermission($request, 'lvs.meldingen.create');
+        $leerlingen = \Illuminate\Support\Facades\DB::table('leerlingen as l')
+            ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
+            ->where('l.active', 1)
+            ->selectRaw('l.id, l.voornaam, COALESCE(l.naam, "") AS achternaam, COALESCE(k.klasnaam, "") AS klas')
+            ->orderBy('l.naam')->orderBy('l.voornaam')->get();
+
+        return view('meldingen.select-student', compact('leerlingen'));
+    }
+
     public function create($id)
     {
         try {
