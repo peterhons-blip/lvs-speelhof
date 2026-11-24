@@ -266,9 +266,9 @@ class BirthdaySettingsController extends Controller
         $changed = false;
         DB::transaction(function () use ($data, $username, $role, &$changed) {
             // Serialize edits on the settings row and preserve an auditable change.
-            DB::table('birthday_settings')->updateOrInsert(
-                ['setting_key' => 'adult_disable_coaccounts'], ['setting_value' => '1']
-            );
+            DB::table('birthday_settings')->insertOrIgnore([
+                'setting_key' => 'adult_disable_coaccounts', 'setting_value' => '1',
+            ]);
             $current = (string) DB::table('birthday_settings')
                 ->where('setting_key', 'adult_disable_coaccounts')->lockForUpdate()
                 ->value('setting_value');
