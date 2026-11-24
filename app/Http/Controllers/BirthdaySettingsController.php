@@ -155,6 +155,29 @@ class BirthdaySettingsController extends Controller
             $exampleMessages[] = $message;
         }
 
+        try {
+            $emailSample = [['voornaam' => 'Voorbeeld', 'naam' => 'Leerling',
+                'klas' => '5A', 'geboortedatum' => now('Europe/Brussels')->subYears(18),
+                'smartschool_bericht_verzonden' => true, 'coaccounts_uitgeschakeld' => true,
+                'secretariaat_bericht_verzonden' => true]];
+            $exampleMessages[] = [
+                'title' => 'E-mailoverzicht voor medewerkers',
+                'subject' => trim((string) $settings['adult_overview_email_subject'])
+                    ?: config('app.name').' - Leerlingen die vandaag 18 worden',
+                'html' => view('emails.leerlingen-worden-18', [
+                    'leerlingen' => $emailSample, 'appName' => config('app.name'),
+                    'logoLvsCid' => '', 'logoSchoolCid' => '',
+                ])->render(),
+            ];
+        } catch (\Throwable $error) {
+            $exampleMessages[] = [
+                'title' => 'E-mailoverzicht voor medewerkers',
+                'subject' => trim((string) $settings['adult_overview_email_subject'])
+                    ?: 'Leerlingen die vandaag 18 worden',
+                'html' => '<p>Voorbeeld kon niet worden geladen.</p>',
+            ];
+        }
+
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
