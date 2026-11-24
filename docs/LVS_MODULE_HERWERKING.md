@@ -13,6 +13,7 @@ De dagelijkse leerlingensynchronisatie uit Smartschool en de bestaande SOAP-kopp
 | `/lvs` | `lvs.dashboard` | `lvs.dashboard.view` | Actieve leerlingen, meldingen, meldingen per categorie en recent |
 | `/leerlingen` | `leerlingen.index` | `lvs.view` | Zoek leerlingen op naam of klas |
 | `/leerlingen/{id}` | `leerlingen.show` | `lvs.view` + `lvs.meldingen.view` | Dossier, gegroepeerde meldingen, gebeurtenissen + ingavedatum |
+| `/meldingen/nieuw` | `meldingen.select-student` | `lvs.meldingen.create` | Zoek actieve leerling en open direct het meldingsformulier |
 | `/meldingen` | `meldingen.index` | `lvs.meldingen.view` | Alle meldingen: filters op naam, klas, categorie en datum |
 | `/meldingen/add/{id}` | `meldingen.create` | `lvs.meldingen.create` | Melding met categorie, soort, gebeurtenisdatum en omschrijving |
 | `/lvs/klassenraad` | `lvs.reports.index` | `lvs.reports.view` | On-demand statistiek voor klassenraden zonder automatische sancties |
