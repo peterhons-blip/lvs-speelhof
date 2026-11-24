@@ -273,56 +273,53 @@ class CheckLeeftijdLeerlingen extends Command
                 $berichtCoVerzonden = false;
                 $coaccountsUit = false;
                 $berichtSecrVerzonden = false;
+                $dateOfBirth = $leerling->geboortedatum->copy()->toDateString();
+                $schoolId = (int) $school->id;
+                $studentId = (int) $leerling->id;
+                $username = trim((string) ($leerling->gebruikersnaam ?? ''));
+                $vars = ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                    'school' => $school->schoolnaam];
+                if ($username !== '') {
+                    // PRIVACY FIRST: never make co-account deactivation depend on sending a message.
+                    $coaccountsUit = $actionLog->run($schoolId, $studentId, $dateOfBirth,
+                        'disable_coaccounts', $username,
+                        fn () => $ss->disableCoAccounts($username));
+                    if (! $coaccountsUit) {
+                        $this->error('Controle co-accounts vereist: '.$username.' (zie actiehistoriek).');
+                    }
 
-                if (!empty($leerling->gebruikersnaam)) {
-                    try {
-                        // Bericht 1: uitleg + keuze (coaccounts)
-                        $body1 = view($viewCo, [
-                            'voornaam' => $leerling->voornaam,
-                            'naam'     => $leerling->naam,
-                            'school'   => $school,
-                            'beleid'   => $beleid,
-                        ])->render();
+                    if ($warningSettings['adult_student_notice'] === '1') {
+                        $sender = trim((string) $warningSettings['adult_sender_student']) ?: $senderCoAccounts;
+                        $berichtCoVerzonden = $actionLog->run($schoolId, $studentId, $dateOfBirth,
+                            'adult_student_notice', $username,
+                            function () use ($ss, $username, $viewCo, $leerling, $school, $beleid,
+                                $warningSettings, $vars, $onderwerpVandaagCo, $sender) {
+                                $body = trim((string) $warningSettings['adult_body_student']) !== ''
+                                    ? nl2br(e(app(\App\Services\BirthdaySettings::class)
+                                        ->render($warningSettings['adult_body_student'], $vars)))
+                                    : view($viewCo, ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                                        'school' => $school, 'beleid' => $beleid])->render();
+                                $ss->sendMessage($username, $onderwerpVandaagCo, $body, $sender, false, 0);
+                            });
+                    }
 
-                        $ss->sendMessage(
-                            $leerling->gebruikersnaam,
-                            $onderwerpVandaagCo,
-                            $body1,
-                            $senderCoAccounts,
-                            false,
-                            0
-                        );
-                        $berichtCoVerzonden = true;
-
-                        // Co-accounts uitschakelen
-                        $ss->disableCoAccounts($leerling->gebruikersnaam);
-                        $coaccountsUit = true;
-
-                        // Bericht 2: secretariaat
-                        $body2 = view($viewSecr, [
-                            'voornaam' => $leerling->voornaam,
-                            'naam'     => $leerling->naam,
-                            'school'   => $school,
-                        ])->render();
-
-                        $ss->sendMessage(
-                            $leerling->gebruikersnaam,
-                            $onderwerpSecretariaat,
-                            $body2,
-                            $senderSecretariaat,
-                            false,
-                            0
-                        );
-                        $berichtSecrVerzonden = true;
-
-                        Log::info("VANDAAG: Smartschool OK voor {$leerling->gebruikersnaam} | co-sender={$senderCoAccounts} | secr-sender={$senderSecretariaat}");
-                    } catch (\SoapFault $e) {
-                        Log::error("VANDAAG: Smartschoolactie mislukt voor {$leerling->gebruikersnaam}: " . $e->getMessage());
-                        $this->error("VANDAAG: Smartschoolactie fout voor {$leerling->gebruikersnaam}: " . $e->getMessage());
+                    if ($warningSettings['adult_secretariat_notice'] === '1') {
+                        $sender = trim((string) $warningSettings['adult_sender_secretariat']) ?: $senderSecretariaat;
+                        $berichtSecrVerzonden = $actionLog->run($schoolId, $studentId, $dateOfBirth,
+                            'adult_secretariat_notice', $username,
+                            function () use ($ss, $username, $viewSecr, $leerling, $school,
+                                $warningSettings, $vars, $onderwerpSecretariaat, $sender) {
+                                $body = trim((string) $warningSettings['adult_body_secretariat']) !== ''
+                                    ? nl2br(e(app(\App\Services\BirthdaySettings::class)
+                                        ->render($warningSettings['adult_body_secretariat'], $vars)))
+                                    : view($viewSecr, ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                                        'school' => $school])->render();
+                                $ss->sendMessage($username, $onderwerpSecretariaat, $body, $sender, false, 0);
+                            });
                     }
                 } else {
-                    Log::warning("VANDAAG: Geen Smartschool gebruikersnaam voor leerling id={$leerling->id}");
-                    $this->warn("VANDAAG: Geen Smartschool gebruikersnaam voor {$leerling->voornaam} {$leerling->naam}");
+                    Log::warning('18-jaar: geen Smartschool-gebruikersnaam voor leerling '.$studentId);
+                    $this->error('Handmatige opvolging vereist: ontbrekende gebruikersnaam voor '.$leerling->voornaam.' '.$leerling->naam);
                 }
 
                 $payload[] = [
