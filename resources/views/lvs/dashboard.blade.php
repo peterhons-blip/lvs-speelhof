@@ -15,7 +15,7 @@
             <p>Een centraal overzicht van leerlingen, gedragsmeldingen en de opvolging. Gegevens komen rechtstreeks uit het bestaande LVS.</p>
         </div>
         <div class="lvs-dashboard-header-actions">
-            <a href="{{ route('leerlingen.index') }}" class="library-button library-button-secondary">Leerling zoeken</a>
+            @if($canSeeStudents)<a href="{{ route('leerlingen.index') }}" class="library-button library-button-secondary">Leerling zoeken</a>@endif
             @if($canCreate)<a href="{{ route('meldingen.select-student') }}" class="library-button library-button-primary">+ Nieuwe melding</a>@endif
         </div>
     </div>
@@ -28,7 +28,7 @@
             ['value' => $stats['last_7_days'], 'label' => 'Meldingen laatste 7 dagen', 'hint' => 'Op basis van de datum van het voorval'],
         ] as $stat)
             <div class="card lvs-stat-card">
-                <span class="lvs-stat-value">{{ number_format($stat['value'], 0, ',', '.') }}</span>
+                <span class="lvs-stat-value">{{ $stat['value'] === null ? '—' : number_format($stat['value'], 0, ',', '.') }}</span>
                 <strong>{{ $stat['label'] }}</strong>
                 <small>{{ $stat['hint'] }}</small>
             </div>
@@ -36,15 +36,21 @@
     </section>
 
     <section class="lvs-dashboard-quick-links">
+        @if($canSeeStudents)
         <a href="{{ route('leerlingen.index') }}" class="card lvs-dashboard-action">
             <span class="lvs-dashboard-action-icon" aria-hidden="true">⌕</span><strong>Leerlingen</strong><small>Zoek op naam of klas en open het leerlingdossier.</small>
         </a>
+        @endif
+        @if($canSeeNotifications)
         <a href="{{ route('meldingen.index') }}" class="card lvs-dashboard-action">
             <span class="lvs-dashboard-action-icon" aria-hidden="true">☷</span><strong>Alle meldingen</strong><small>Zoeken, filteren en opvolgen per categorie of datum.</small>
         </a>
+        @endif
+        @if($canSeeStudents)
         <a href="{{ route('leerlingen.verjaardagen') }}" class="card lvs-dashboard-action">
             <span class="lvs-dashboard-action-icon" aria-hidden="true">✦</span><strong>Verjaardagen</strong><small>Leerlingen die binnenkort jarig zijn.</small>
         </a>
+        @endif
         @if($canSeeReports)
             <a href="{{ route('lvs.reports.index') }}" class="card lvs-dashboard-action">
                 <span class="lvs-dashboard-action-icon" aria-hidden="true">▥</span><strong>Klassenraadoverzicht</strong><small>Overzicht per klas en categorie, zonder automatische sancties.</small>
@@ -52,6 +58,7 @@
         @endif
     </section>
 
+    @if($canSeeNotifications)
     <div class="lvs-dashboard-columns">
         <section class="card lvs-panel">
             <div class="lvs-panel-heading lvs-panel-heading-wrap"><h2>Recente meldingen</h2><a class="lvs-inline-link" href="{{ route('meldingen.index') }}">Alle meldingen →</a></div>
@@ -77,5 +84,11 @@
             <p class="lvs-field-help">Deze aantallen zijn informatief. Er worden geen sancties of automatische berichten geactiveerd.</p>
         </section>
     </div>
+    @else
+        <section class="card lvs-panel">
+            <h2>Geen toegang tot meldingsdetails</h2>
+            <p>Je kunt het LVS-dashboard openen, maar je hebt geen recht om meldingen of categorieoverzichten te bekijken. Vraag de ICT-coördinator om je rechten na te kijken.</p>
+        </section>
+    @endif
 </main>
 @endsection
