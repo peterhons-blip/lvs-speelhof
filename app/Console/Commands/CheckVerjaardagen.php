@@ -65,7 +65,7 @@ class CheckVerjaardagen extends Command
         }
 
         if (($only === '' || $only === 'leerlingen') && $settings['students_enabled'] === '1') {
-            $query = Leerling::with('school')->where('active', 1)
+            $query = Leerling::query()->where('active', 1)
                 ->whereMonth('geboortedatum', $today->month)->whereDay('geboortedatum', $today->day);
             if ($schoolFilter > 0) $query->where('schoolid', $schoolFilter);
             foreach ($query->cursor() as $student) {
@@ -80,7 +80,7 @@ class CheckVerjaardagen extends Command
         }
 
         if (($only === '' || $only === 'users') && $settings['staff_enabled'] === '1') {
-            $query = User::with('school')->whereMonth('geboortedatum', $today->month)
+            $query = User::query()->whereMonth('geboortedatum', $today->month)
                 ->whereDay('geboortedatum', $today->day)
                 ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); });
             if ($schoolFilter > 0) $query->where('schoolid', $schoolFilter);
@@ -102,7 +102,7 @@ class CheckVerjaardagen extends Command
         int $schoolId, string $date, Carbon $today, $birthdate, string $first, string $last,
         string $schoolName, string $username, string $email, $school, bool $test, string $override): void
     {
-        $age = $birthdate ? Carbon::parse($birthdate)->diffInYears($today) : null;
+        $age = $birthdate ? (int) Carbon::parse($birthdate)->diffInYears($today) : null;
         if ($age === 18) return; // 18-jarigen: aparte privacy- en co-accountprocedure
         $suffix = $type === 'leerling' ? 'students' : 'staff';
         $vars = ['voornaam' => $first, 'naam' => $last, 'school' => $schoolName, 'leeftijd' => $age ?? ''];
