@@ -303,12 +303,29 @@
 document.querySelectorAll('.library-birthday-staff-search').forEach(search => {
     const container = document.getElementById(search.dataset.list);
     if (!container) return;
-    search.addEventListener('input', () => {
-        const q = search.value.trim().toLocaleLowerCase('nl');
-        container.querySelectorAll('.library-birthday-staff-option').forEach(label => {
-            label.hidden = q !== '' && !label.textContent.toLocaleLowerCase('nl').includes(q);
+
+    const collator = new Intl.Collator('nl-BE', { sensitivity: 'base', numeric: true });
+    const sortedOptions = () => [...container.querySelectorAll('.library-birthday-staff-option')]
+        .sort((a, b) => {
+            const aChecked = a.querySelector('input[type="checkbox"]').checked;
+            const bChecked = b.querySelector('input[type="checkbox"]').checked;
+            if (aChecked !== bChecked) return aChecked ? -1 : 1;
+            return collator.compare(a.querySelector('span').textContent.trim(), b.querySelector('span').textContent.trim());
         });
+
+    const refresh = () => {
+        const query = search.value.trim().toLocaleLowerCase('nl-BE');
+        sortedOptions().forEach(label => {
+            container.appendChild(label);
+            label.hidden = query !== '' && !label.textContent.toLocaleLowerCase('nl-BE').includes(query);
+        });
+    };
+
+    search.addEventListener('input', refresh);
+    container.addEventListener('change', event => {
+        if (event.target.matches('input[type="checkbox"]')) refresh();
     });
+    refresh();
 });
 </script>
 @endpush
