@@ -43,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
             foreach ($recipients as $type => $addresses) {
                 foreach ($addresses as $address) {
                     $log->record('email', $address->getAddress(), $senderAddress,
-                        $subject, 'sent', 'LVS e-mail', null, null, $type);
+                        $subject, 'sent', $log->sourceFromStack() === 'LVS' ? 'LVS e-mail' : $log->sourceFromStack(), null, null, $type);
                 }
             }
         });
