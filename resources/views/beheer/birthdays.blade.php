@@ -134,6 +134,42 @@
         <button type="submit" class="library-button library-button-primary">Verjaardagsinstellingen opslaan</button>
     </form>
     <section class="library-form-card" style="margin-top:20px">
+        <h2>4. Ontvangers van het 18-jarigenoverzicht</h2>
+        <p class="library-help">Naast de verjaardagsfelicitaties verstuurt de <strong>aparte 18-jarigentaak</strong> een overzicht naar aangewezen medewerkers. Deze ontvangers zijn <strong>per school</strong> instelbaar en staan los van de berichten die leerlingen zelf krijgen.</p>
+        @foreach($schools as $school)
+            <details class="library-birthday-school" @if((string) request('overzicht_school') === (string) $school->id) open @endif>
+                <summary><strong>{{ $school->schoolnaam }}</strong> <span>· Ontvangers aanpassen</span></summary>
+                <form method="post" action="{{ route('beheer.birthdays.overview.update') }}" class="library-birthday-overview-form">
+                    @csrf
+                    <input type="hidden" name="school_id" value="{{ $school->id }}">
+                    <div class="library-birthday-overview-field">
+                        <div class="library-birthday-channel-heading">
+                            <span aria-hidden="true">S</span>
+                            <div><h3>Smartschool-overzicht</h3><p class="library-help">Smartschool-gebruikersnamen van medewerkers die het overzicht ontvangen.</p></div>
+                        </div>
+                        <label for="overview-smartschool-{{ $school->id }}">Smartschool-gebruikersnamen</label>
+                        <textarea id="overview-smartschool-{{ $school->id }}" name="overview_smartschool" rows="3" maxlength="3000"
+                            placeholder="bijvoorbeeld: medewerker.een; medewerker.twee">{{ old('school_id') == $school->id ? old('overview_smartschool', $school->ontvangers_overzicht_18_ssaccount) : $school->ontvangers_overzicht_18_ssaccount }}</textarea>
+                        <p class="library-help">Meerdere gebruikersnamen scheiden met een komma, puntkomma of nieuwe regel. Leeg laten = geen Smartschool-overzicht voor deze school.</p>
+                    </div>
+                    <div class="library-birthday-overview-field">
+                        <div class="library-birthday-channel-heading">
+                            <span aria-hidden="true">@</span>
+                            <div><h3>E-mailoverzicht</h3><p class="library-help">E-mailadressen van medewerkers die hetzelfde overzicht ontvangen.</p></div>
+                        </div>
+                        <label for="overview-email-{{ $school->id }}">E-mailadressen</label>
+                        <textarea id="overview-email-{{ $school->id }}" name="overview_email" rows="3" maxlength="3000"
+                            placeholder="bijvoorbeeld: medewerker@school.be; directie@school.be">{{ old('school_id') == $school->id ? old('overview_email', $school->ontvangers_overzicht_18) : $school->ontvangers_overzicht_18 }}</textarea>
+                        <p class="library-help">Meerdere adressen scheiden met een komma, puntkomma of nieuwe regel. Leeg laten = geen e-mailoverzicht voor deze school.</p>
+                    </div>
+                    <button type="submit" class="library-button library-button-primary">Ontvangers voor {{ $school->schoolnaam }} opslaan</button>
+                </form>
+            </details>
+        @endforeach
+        <p class="library-help">De bestaande 18-jarigencontrole gebruikt deze lijsten rechtstreeks. De taak draait om 01.00 uur. Er wordt alleen een Smartschool-overzicht verstuurd wanneer er leerlingen van 18 jaar in het overzicht zitten. Het e-mailoverzicht volgt de bestaande 18-jarigenverwerking. Het opslaan hier verstuurt niets.</p>
+    </section>
+
+    <section class="library-form-card" style="margin-top:20px">
         <h2>Ontvangers controleren</h2>
         <p>Bekijk vooraf <strong>wie voor een bepaalde datum een felicitatie zou ontvangen</strong>, met het exacte account en eventuele reden voor overslaan. Dit is alleen een controle; er wordt niets verzonden.</p>
         <form method="get" action="{{ route('beheer.birthdays.index') }}" class="library-birthday-preview-form">
