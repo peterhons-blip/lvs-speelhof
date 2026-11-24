@@ -9,6 +9,26 @@
     ]])
 @endsection
 @section('content')
+<style>
+@@page { size: A4 portrait; margin: 0; }
+@media print {
+    html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: white !important; }
+    .portal-topbar, .portal-sidebar, .portal-page-breadcrumb, .library-page-head,
+    .library-qr-toolbar, .library-label-settings, #qr-feedback { display: none !important; }
+    .app, .portal-workspace, .portal-content, .library-page, .library-form-card, .library-label-sheets {
+        display: block !important; width: 210mm !important; min-width: 0 !important;
+        max-width: none !important; height: auto !important; margin: 0 !important;
+        padding: 0 !important; border: 0 !important; box-shadow: none !important;
+        background: transparent !important; overflow: visible !important;
+    }
+    .library-label-sheet {
+        margin: 0 !important; box-shadow: none !important;
+        break-after: page; page-break-after: always;
+    }
+    .library-label-sheet:last-child { break-after: auto; page-break-after: auto; }
+    .library-sheet-label, .library-sheet-label-empty { border: 0 !important; }
+}
+</style>
 <main class="library-page">
     <div class="library-page-head">
         <div><p class="portal-eyebrow">BIBLIOTHEEK / INVENTARIS</p>
