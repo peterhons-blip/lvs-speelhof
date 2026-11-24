@@ -183,3 +183,31 @@
   .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading{align-items:flex-start;gap:9px}
   .lvs-overview-grid .lvs-birthday-panel .lvs-panel-heading>a{margin-top:3px}
 }
+
+
+/* LVS: gedeelde rustige kaart- en linkstijl voor nieuwe modulepagina's. */
+.lvs-notifications-page .lvs-notifications-table a,
+.lvs-reports-page .lvs-reports-overview a {
+    color: #0A7480;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 4px;
+    transition: color .15s ease, text-decoration-color .15s ease;
+}
+.lvs-notifications-page .lvs-notifications-table a:hover,
+.lvs-reports-page .lvs-reports-overview a:hover {
+    color: #095c66;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.lvs-notifications-page .lvs-notifications-table a:focus-visible,
+.lvs-reports-page .lvs-reports-overview a:focus-visible {
+    outline: 2px solid var(--portal-magenta);
+    outline-offset: 3px;
+}
+/* De standaard LVS-zoekkaart gebruikt op de selector een ongewenste dikke bovenrand. */
+.lvs-screen .lvs-search-panel {
+    border: 1px solid #E1E8EF;
+    border-radius: 14px;
+    box-shadow: 0 3px 16px rgba(14,38,67,.035);
+}
