@@ -24,7 +24,7 @@ class LibraryLoanNotifier
     public function send(int $loanId, string $type, string $scheduledFor): bool
     {
         if (! $this->enabled()) return false;
-        if (! in_array($type, ['confirmation', 'before_due', 'due_today'], true)) return false;
+        if (! in_array($type, ['confirmation', 'before_due', 'due_today', 'manual', 'returned'], true)) return false;
 
         $loan = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
@@ -50,8 +50,9 @@ class LibraryLoanNotifier
         } elseif ((int) $loan->active !== 1) {
             return false;
         }
-        if ($type !== 'confirmation' && $loan->returned_at !== null) return false;
-        if ($type !== 'confirmation' && $loan->due_date < $scheduledFor) return false;
+        if (in_array($type, ['before_due', 'due_today', 'manual'], true) && $loan->returned_at !== null) return false;
+        if (in_array($type, ['before_due', 'due_today'], true) && $loan->due_date < $scheduledFor) return false;
+        if ($type === 'returned' && $loan->returned_at === null) return false;
 
         $inserted = DB::table('library_loan_notifications')->insertOrIgnore([
             'loan_id' => $loanId, 'type' => $type, 'scheduled_for' => $scheduledFor,
@@ -65,12 +66,16 @@ class LibraryLoanNotifier
             'confirmation' => 'Bibliotheek: bevestiging uitlening',
             'before_due' => 'Bibliotheek: herinnering inleverdatum',
             'due_today' => 'Bibliotheek: vandaag boek inleveren',
+            'manual' => 'Bibliotheek: herinnering boek terugbrengen',
+            'returned' => 'Bibliotheek: bevestiging inlevering',
         };
 
         $intro = match ($type) {
             'confirmation' => 'Je hebt een boek uitgeleend in de schoolbibliotheek.',
             'before_due' => 'Je uitleentermijn loopt binnenkort af.',
             'due_today' => 'Vandaag is de uiterste inleverdatum van je boek.',
+            'manual' => 'Dit is een herinnering om je boek tijdig terug te brengen.',
+            'returned' => 'Bedankt! Je hebt dit boek teruggebracht naar de schoolbibliotheek.',
         };
 
         $message = '<p>Beste '.e($firstName).',</p>'
@@ -78,7 +83,9 @@ class LibraryLoanNotifier
             .'<p><strong>Boek:</strong> '.e($loan->title).'<br>'
             .'<strong>Barcode:</strong> '.e($loan->barcode).'<br>'
             .'<strong>Uiterste inleverdatum:</strong> '.e($date).'</p>'
-            .'<p>Breng het boek tijdig terug naar de schoolbibliotheek. Heb je vragen? Contacteer het bibliotheekteam.</p>'
+            .($type === 'returned'
+                ? '<p>Deze uitlening is afgesloten. Heb je vragen? Contacteer het bibliotheekteam.</p>'
+                : '<p>Breng het boek tijdig terug naar de schoolbibliotheek. Heb je vragen? Contacteer het bibliotheekteam.</p>')
             .'<p>Met vriendelijke groeten<br>De schoolbibliotheek</p>';
 
         try {
