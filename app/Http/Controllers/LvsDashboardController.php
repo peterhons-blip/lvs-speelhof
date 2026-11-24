@@ -13,6 +13,8 @@ class LvsDashboardController extends Controller
     {
         $access->requirePermission($request, 'lvs.dashboard.view');
 
+        $canSeeStudents = $access->has($request, 'lvs.view');
+        $canSeeNotifications = $access->has($request, 'lvs.meldingen.view');
         $today = now('Europe/Brussels');
         $from = $today->copy()->startOfMonth()->toDateString();
         $until = $today->toDateString();
@@ -43,10 +45,20 @@ class LvsDashboardController extends Controller
                 'l.voornaam', 'l.naam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie')
             ->orderByDesc('m.created_at')->limit(8)->get();
 
+        if (!$canSeeNotifications) {
+            $categories = collect();
+            $recent = collect();
+            $stats['notifications'] = null;
+            $stats['this_month'] = null;
+            $stats['last_7_days'] = null;
+        }
+        if (!$canSeeStudents) {
+            $stats['students'] = null;
+        }
         $canSeeReports = $access->has($request, 'lvs.reports.view');
         $canCreate = $access->has($request, 'lvs.meldingen.create');
 
         return view('lvs.dashboard', compact('stats', 'categories', 'recent',
-            'canSeeReports', 'canCreate'));
+            'canSeeReports', 'canCreate', 'canSeeStudents', 'canSeeNotifications'));
     }
 }
