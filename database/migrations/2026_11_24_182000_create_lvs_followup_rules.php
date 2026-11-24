@@ -39,7 +39,7 @@ return new class extends Migration {
             `leerling_id` BIGINT UNSIGNED NOT NULL,
             `action` VARCHAR(30) NOT NULL,
             `recipient` VARCHAR(200) NULL,
-            `coaccount` TINYINT UNSIGNED NULL,
+            `coaccount` TINYINT UNSIGNED NOT NULL DEFAULT 0,
             `status` VARCHAR(25) NOT NULL,
             `error_message` TEXT NULL,
             `created_at` TIMESTAMP NULL,
