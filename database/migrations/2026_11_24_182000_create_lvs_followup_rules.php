@@ -47,6 +47,19 @@ return new class extends Migration {
             UNIQUE KEY `lvs_followup_event_unique` (`rule_id`, `melding_id`, `recipient`, `coaccount`),
             KEY `lvs_followup_event_student` (`leerling_id`, `created_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('portal_role_permissions')) {
+            foreach (['directie', 'leerlingbegeleiding'] as $role) {
+                DB::table('portal_role_permissions')->insertOrIgnore([
+                    'role' => $role, 'permission' => 'lvs.followups.view',
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+            DB::table('portal_role_permissions')->insertOrIgnore([
+                'role' => 'directie', 'permission' => 'lvs.settings.manage',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
     }
 
     public function down(): void
