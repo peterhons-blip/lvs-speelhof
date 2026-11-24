@@ -14,6 +14,7 @@ class LeerlingenWorden18 extends Mailable
 
     /** @var array<array{name:string, geboortedatum:\Illuminate\Support\Carbon}> */
     public array $leerlingen;
+    public ?string $customSubject;
 
     // CIDs die de Blade gebruikt
     public string $logoLvsCid;
@@ -23,9 +24,10 @@ class LeerlingenWorden18 extends Mailable
     private DataPart $lvsPart;
     private DataPart $schoolPart;
 
-    public function __construct(array $leerlingen)
+    public function __construct(array $leerlingen, ?string $customSubject = null)
     {
         $this->leerlingen = $leerlingen;
+        $this->customSubject = $customSubject;
     }
 
     public function build()
@@ -38,7 +40,7 @@ class LeerlingenWorden18 extends Mailable
         $this->logoSchoolCid = 'cid:' . $this->schoolPart->getContentId();
 
         // 2) Geef CIDs mee aan de view (nu zijn ze al bekend)
-        $this->subject(config('app.name') . ' - Leerlingen die vandaag 18 worden – ')
+        $this->subject($this->customSubject ?: (config('app.name') . ' - Leerlingen die vandaag 18 worden – '))
             ->view('emails.leerlingen-worden-18')
             ->with([
                 'appName'       => config('app.name'),
