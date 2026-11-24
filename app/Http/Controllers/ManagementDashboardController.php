@@ -21,6 +21,7 @@ class ManagementDashboardController extends Controller
             ['permission' => 'beheer.smartschool_test.send', 'route' => 'beheer.smartschool-test.create', 'title' => 'Smartschool-testbericht', 'description' => 'Een testbericht via Smartschool versturen.', 'icon' => 'mail'],
             ['permission' => 'beheer.student_sync.manage', 'route' => 'beheer.smartschool-sync.index', 'title' => 'Leerlingensynchronisatie', 'description' => 'Leerlinggegevens handmatig synchroniseren.', 'icon' => 'refresh-cw'],
             ['permission' => 'beheer.staff_sync.manage', 'route' => 'beheer.staff-sync.index', 'title' => 'Personeelssynchronisatie', 'description' => 'Personeelsgegevens handmatig synchroniseren.', 'icon' => 'refresh-cw'],
+            ['permission' => 'beheer.birthdays.manage', 'route' => 'beheer.birthdays.index', 'title' => 'Verjaardagsberichten', 'description' => 'Ontvangers, Smartschool, e-mail en felicitatieteksten instellen.', 'icon' => 'cake'],
             ['permission' => 'beheer.scheduled_tasks.view', 'route' => 'beheer.scheduled-tasks.index', 'title' => 'Geplande taken', 'description' => 'Nachtelijke taken, laatste uitvoeringen en logs bekijken.', 'icon' => 'clock'],
         ];
         $sections = array_values(array_filter($sections,
