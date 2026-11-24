@@ -63,6 +63,9 @@
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.reports.view'))
                                 <a href="{{ route('lvs.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.reports.*') ? 'is-active' : '' }}">Klassenraadoverzicht</a>
                                 @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.settings.manage'))
+                                <a href="{{ route('lvs.settings.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.settings.*') ? 'is-active' : '' }}">Instellingen</a>
+                                @endif
                             </nav>
                         @endif
                     </div>
