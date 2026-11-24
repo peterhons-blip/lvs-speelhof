@@ -50,6 +50,7 @@
             'Beschikbaar' => $stats['available'],
             'Momenteel uitgeleend' => $stats['on_loan'],
             'Momenteel te laat' => $stats['overdue'],
+            'QR-code gemaakt' => $stats['qr_generated'],
             'QR-etiket bevestigd' => $stats['qr_printed'],
             'Uitleningen in selectie' => $stats['period_loans']
         ] as $title => $value)
