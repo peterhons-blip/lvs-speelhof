@@ -351,6 +351,21 @@
         <p class="library-help">‘Zou verzonden worden’ betekent dat de huidige instellingen en accountgegevens verzending toelaten. Het garandeert niet dat Smartschool of de mailserver het bericht effectief zal bezorgen. Registraties van eerdere pogingen worden meegetoond.</p>
     </section>
 
+    <section class="library-form-card library-birthday-samples" style="margin-top:24px">
+        <h2>Voorbeelden van de berichten</h2>
+        <p class="library-help">Hier zie je met fictieve leerlinggegevens hoe de huidige, <strong>opgeslagen</strong> berichten eruitzien. Alleen-lezen: deze voorbeeldweergaven versturen niets en wijzigen geen co-accounts. Sla gewijzigde teksten eerst op.</p>
+        @foreach($exampleMessages as $message)
+            <details class="library-birthday-school">
+                <summary><strong>{{ $message['title'] }}</strong><span>Voorbeeld bekijken</span></summary>
+                <div class="library-birthday-example">
+                    <p><strong>Onderwerp:</strong> {{ $message['subject'] }}</p>
+                    <iframe title="Voorbeeld {{ $message['title'] }}" sandbox="" loading="lazy"
+                        srcdoc="{{ $message['html'] }}"></iframe>
+                </div>
+            </details>
+        @endforeach
+    </section>
+
     <section class="library-form-card library-birthday-history" style="margin-top:24px">
         <h2>Opvolging 18-jarigen</h2>
         <p class="library-help">Bekijk per datum welke leerlingen 18 worden en de afzonderlijke acties. Een mislukte of onzekere actie wordt niet automatisch opnieuw uitgevoerd; controleer zulke gevallen handmatig. Deze pagina verstuurt niets.</p>
