@@ -38,7 +38,6 @@ class LibraryAccess
         'beheer.smartschool_test.send', 'beheer.student_sync.manage',
         'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
         'beheer.sent_items.view',
-        'lvs.dashboard.view', 'lvs.view', 'lvs.meldingen.view', 'lvs.meldingen.create', 'lvs.reports.view',
         'beheer.birthdays.manage',
     ];
 
