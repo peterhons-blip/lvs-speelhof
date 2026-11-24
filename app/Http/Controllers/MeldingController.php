@@ -11,6 +11,47 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class MeldingController extends Controller
 {
+    public function index(Request $request, \App\Services\LibraryAccess $access)
+    {
+        $access->requirePermission($request, 'lvs.meldingen.view');
+        $data = $request->validate([
+            'zoek' => ['nullable', 'string', 'max:100'],
+            'categorie' => ['nullable', 'integer', 'min:1'],
+            'klas' => ['nullable', 'string', 'max:60'],
+            'van' => ['nullable', 'date_format:Y-m-d'],
+            'tot' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:van'],
+        ]);
+
+        $query = \Illuminate\Support\Facades\DB::table('meldingen as m')
+            ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
+            ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
+            ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
+            ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
+            ->select('m.id', 'm.leerlingId', 'm.comment', 'm.gebeurdop', 'm.created_at',
+                'l.naam', 'l.voornaam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie');
+
+        if (!empty($data['categorie'])) $query->where('c.id', $data['categorie']);
+        if (!empty($data['van'])) $query->whereDate('m.gebeurdop', '>=', $data['van']);
+        if (!empty($data['tot'])) $query->whereDate('m.gebeurdop', '<=', $data['tot']);
+        if (!empty($data['klas'])) {
+            $query->where('k.klasnaam', 'like', '%'.addcslashes($data['klas'], '%_\\').'%');
+        }
+        if (!empty($data['zoek'])) {
+            $term = '%'.addcslashes($data['zoek'], '%_\\').'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('l.voornaam', 'like', $term)
+                    ->orWhere('l.naam', 'like', $term)
+                    ->orWhere('l.gebruikersnaam', 'like', $term)
+                    ->orWhere('m.comment', 'like', $term);
+            });
+        }
+        $meldingen = $query->orderByDesc('m.gebeurdop')->orderByDesc('m.id')
+            ->paginate(30)->withQueryString();
+        $categorieen = Meldingscategorie::orderBy('naam')->get();
+        $canCreate = $access->has($request, 'lvs.meldingen.create');
+        return view('meldingen.index', compact('meldingen', 'categorieen', 'canCreate', 'data'));
+    }
+
     public function create($id)
     {
         try {
