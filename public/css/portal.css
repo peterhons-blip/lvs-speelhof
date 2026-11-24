@@ -907,3 +907,6 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 @media(max-width:1150px){.lvs-dashboard-stats,.lvs-dashboard-quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:780px){.lvs-dashboard-columns,.lvs-reports-overview,.lvs-category-groups{grid-template-columns:minmax(0,1fr)}.lvs-report-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:550px){.lvs-dashboard-stats,.lvs-dashboard-quick-links,.lvs-report-filters,.lvs-future-roles{grid-template-columns:minmax(0,1fr)}.lvs-dashboard-recent{align-items:flex-start;flex-direction:column}}
+
+.lvs-dashboard-header-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px}
+@media(max-width:650px){.lvs-dashboard-header-actions{width:100%;justify-content:flex-start}}
