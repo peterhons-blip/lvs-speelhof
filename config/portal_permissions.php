@@ -21,13 +21,13 @@ return [
         'label' => 'Bibliotheek',
         'permissions' => [
             'bibliotheek.view' => 'Bibliotheek openen',
-            'bibliotheek.books.view' => 'Boekencatalogus bekijken',
-            'bibliotheek.books.manage' => 'Boeken en exemplaren wijzigen/verwijderen',
+            'bibliotheek.books.view' => 'Boekencatalogus en QR-codes bekijken',
+            'bibliotheek.books.manage' => 'Boeken en exemplaren beheren, QR-labels bevestigen',
             'bibliotheek.import.manage' => 'Boeken importeren',
-            'bibliotheek.loans.view' => 'Uitleningen bekijken',
+            'bibliotheek.loans.view' => 'Uitleningen en rapportages bekijken, CSV exporteren',
             'bibliotheek.loans.manage' => 'Uitlenen, inleveren, verlengen en individuele herinneringen',
             'bibliotheek.settings.manage' => 'Uitleentermijnen en herinneringsinstellingen wijzigen',
-            'bibliotheek.messages.manage' => 'Smartschool-verzending in- of uitschakelen',
+            'bibliotheek.messages.manage' => 'Smartschool-berichtsjablonen en verzending beheren',
         ],
     ],
     'ema' => [
@@ -52,6 +52,7 @@ return [
             'beheer.student_sync.manage' => 'Leerlingensynchronisatie starten',
             'beheer.staff_sync.manage' => 'Personeelssynchronisatie starten',
             'beheer.scheduled_tasks.view' => 'Geplande taken en logs bekijken',
+            'beheer.birthdays.manage' => 'Verjaardagsberichten: ontvangers, kanalen en teksten beheren'
         ],
     ],
 ];
