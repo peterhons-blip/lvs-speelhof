@@ -327,7 +327,7 @@ class LibraryLoanController extends Controller
     public function returnLoan(int $loan): RedirectResponse
     {
         $this->authorizeOperator(request());
-        return DB::transaction(function () use ($loan) {
+        $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
             if ($item->returned_at !== null) return back()->withErrors(['return' => 'Dit exemplaar is al ingeleverd.']);
@@ -341,8 +341,34 @@ class LibraryLoanController extends Controller
                 'actor' => $this->username(request()), 'details' => null,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            return back()->with('success', 'Exemplaar succesvol ingeleverd.');
+            return true;
         });
+        if ($result instanceof RedirectResponse) return $result;
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'returned', now('Europe/Brussels')->toDateString());
+        return back()->with('success', 'Exemplaar succesvol ingeleverd.'
+            .($sent ? ' Smartschool-bevestiging verzonden.' : ''));
+    }
+
+    public function sendManualReminder(Request $request, int $loan): RedirectResponse
+    {
+        $this->authorizeOperator($request);
+        $item = DB::table('library_loans')->where('id', $loan)->first();
+        abort_unless($item, 404);
+        if ($item->returned_at !== null) {
+            return back()->withErrors(['reminder' => 'Dit boek is al ingeleverd.']);
+        }
+        $today = now('Europe/Brussels')->toDateString();
+        if (DB::table('library_loan_notifications')->where('loan_id', $loan)
+            ->where('type', 'manual')->where('scheduled_for', $today)->exists()) {
+            return back()->withErrors(['reminder' => 'Voor deze uitlening werd vandaag al een handmatige herinnering geregistreerd.']);
+        }
+        if (! app(\App\Services\LibraryLoanNotifier::class)->enabled()) {
+            return back()->withErrors(['reminder' => 'Schakel Smartschool-berichten eerst in bij bibliotheekinstellingen.']);
+        }
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'manual', $today);
+        return $sent
+            ? back()->with('success', 'Smartschool-herinnering verzonden.')
+            : back()->withErrors(['reminder' => 'Het Smartschool-bericht kon niet worden verzonden. Controleer het verzendlog.']);
     }
 
     public function extend(int $loan): RedirectResponse
