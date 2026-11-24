@@ -12,11 +12,12 @@ De dagelijkse leerlingensynchronisatie uit Smartschool en de bestaande SOAP-kopp
 | --- | --- | --- | --- |
 | `/lvs` | `lvs.dashboard` | `lvs.dashboard.view` | Actieve leerlingen, meldingen, meldingen per categorie en recent |
 | `/leerlingen` | `leerlingen.index` | `lvs.view` | Zoek leerlingen op naam of klas |
-| `/leerlingen/{id}` | `leerlingen.show` | `lvs.view` + `lvs.meldingen.view` | Dossier, gegroepeerde meldingen, gebeurtenissen + ingavedatum |
+| `/leerlingen/{id}` | `leerlingen.show` | `lvs.view` | Dossier; meldingen worden alleen geladen met `lvs.meldingen.view` |
 | `/meldingen/nieuw` | `meldingen.select-student` | `lvs.meldingen.create` | Zoek actieve leerling en open direct het meldingsformulier |
 | `/meldingen` | `meldingen.index` | `lvs.meldingen.view` | Alle meldingen: filters op naam, klas, categorie en datum |
 | `/meldingen/add/{id}` | `meldingen.create` | `lvs.meldingen.create` | Melding met categorie, soort, gebeurtenisdatum en omschrijving |
 | `/lvs/klassenraad` | `lvs.reports.index` | `lvs.reports.view` | On-demand statistiek voor klassenraden zonder automatische sancties |
+| `/lvs/klassenraad/export` | `lvs.reports.export` | `lvs.reports.view` | CSV met klassen- en categorietellingen, zonder leerlingcommentaren |
 | `/leerlingen/verjaardagen` | `leerlingen.verjaardagen` | `lvs.view` | Komende verjaardagen |
 
 Alle routes hierboven blijven achter `EnsureSmartschoolAuthenticated`.
@@ -60,6 +61,9 @@ Activatie vergt nog:
   behouden een lege auteur.
 - Klassenraadoverzicht toont tellingen per klas/categorie en leerlingen, maar schrijft
   niets terug naar leerlingen en verstuurt geen berichten.
+- Historische Smartschool-diagnoseroutes `/smartschool/test-bericht`,
+  `/smartschool/errorcodes` en `/smartschool/test-user` zijn verwijderd:
+  ze waren zonder SSO bereikbaar. Gebruik de afgeschermde Smartschool-testtool onder Beheer.
 
 ### Bewust nog niet geactiveerd
 
