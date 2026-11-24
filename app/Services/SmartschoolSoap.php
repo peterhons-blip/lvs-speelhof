@@ -60,13 +60,15 @@ class SmartschoolSoap
         // Coaccount afkappen op 0..6 (fail-safe)
         $coaccount = max(0, min(6, (int) $coaccount));
 
+        $sentItemLog = app(SentItemLog::class);
+        $source = $sentItemLog->sourceFromStack();
         try {
             /**
              * Signature volgens doc:
              * sendMsg(string $accesscode, string $userIdentifier, string $title, string $body,
              *         string $senderIdentifier, mixed $attachments, integer $coaccount, boolean $copyToLVS=false)
              */
-            return $this->client->sendMsg(
+            $response = $this->client->sendMsg(
                 $this->accesscode,
                 $userIdentifier,
                 $title,
@@ -76,7 +78,14 @@ class SmartschoolSoap
                 $coaccount,
                 $copyToLVS
             );
+            // SOAP returning without exception means Smartschool accepted the API call,
+            // not that the end user has read the message.
+            $sentItemLog->record('smartschool', $userIdentifier, $sender, $title,
+                'sent', $source, $coaccount);
+            return $response;
         } catch (SoapFault $e) {
+            $sentItemLog->record('smartschool', $userIdentifier, $sender, $title,
+                'failed', $source, $coaccount, $e->getMessage());
             Log::error("Smartschool sendMsg faalde (user={$userIdentifier}, co={$coaccount}, sender={$sender}): " . $e->getMessage());
             throw $e;
         }

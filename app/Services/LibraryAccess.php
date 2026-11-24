@@ -37,6 +37,7 @@ class LibraryAccess
         'beheer.staff.manage', 'beheer.students.manage',
         'beheer.smartschool_test.send', 'beheer.student_sync.manage',
         'beheer.staff_sync.manage', 'beheer.scheduled_tasks.view',
+        'beheer.sent_items.view',
         'beheer.birthdays.manage',
     ];
 

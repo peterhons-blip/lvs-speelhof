@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=35">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=36">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=4">
 </head>
 <body class="portal-body">
@@ -108,6 +108,9 @@
                             @endif
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
                             <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
+                            @endif
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.sent_items.view'))
+                            <a href="{{ route('beheer.sent-items.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.sent-items.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.sent-items.*')) aria-current="page" @endif>Verzonden items</a>
                             @endif
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
                             <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
