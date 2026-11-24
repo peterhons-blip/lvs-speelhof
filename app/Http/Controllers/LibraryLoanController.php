@@ -327,7 +327,7 @@ class LibraryLoanController extends Controller
     public function returnLoan(int $loan): RedirectResponse
     {
         $this->authorizeOperator(request());
-        return DB::transaction(function () use ($loan) {
+        $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
             if ($item->returned_at !== null) return back()->withErrors(['return' => 'Dit exemplaar is al ingeleverd.']);
@@ -341,14 +341,41 @@ class LibraryLoanController extends Controller
                 'actor' => $this->username(request()), 'details' => null,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            return back()->with('success', 'Exemplaar succesvol ingeleverd.');
+            return true;
         });
+        if ($result instanceof RedirectResponse) return $result;
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'returned', now('Europe/Brussels')->toDateString());
+        return back()->with('success', 'Exemplaar succesvol ingeleverd.'
+            .($sent ? ' Smartschool-bevestiging verzonden.' : ''));
+    }
+
+    public function sendManualReminder(Request $request, int $loan): RedirectResponse
+    {
+        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.messages.manage');
+        $item = DB::table('library_loans')->where('id', $loan)->first();
+        abort_unless($item, 404);
+        if ($item->returned_at !== null) {
+            return back()->withErrors(['reminder' => 'Dit boek is al ingeleverd.']);
+        }
+        $today = now('Europe/Brussels')->toDateString();
+        if (DB::table('library_loan_notifications')->where('loan_id', $loan)
+            ->where('type', 'manual')->where('scheduled_for', $today)->exists()) {
+            return back()->withErrors(['reminder' => 'Voor deze uitlening werd vandaag al een handmatige herinnering geregistreerd.']);
+        }
+        if (! app(\App\Services\LibraryLoanNotifier::class)->enabled()) {
+            return back()->withErrors(['reminder' => 'Schakel Smartschool-berichten eerst in bij bibliotheekinstellingen.']);
+        }
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'manual', $today);
+        return $sent
+            ? back()->with('success', 'Smartschool-herinnering verzonden.')
+            : back()->withErrors(['reminder' => 'Het Smartschool-bericht kon niet worden verzonden. Controleer het verzendlog.']);
     }
 
     public function extend(int $loan): RedirectResponse
     {
         $this->authorizeOperator(request());
-        return DB::transaction(function () use ($loan) {
+        $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
             if ($item->returned_at !== null) return back()->withErrors(['extend' => 'Een ingeleverd boek kan niet verlengd worden.']);
@@ -368,8 +395,12 @@ class LibraryLoanController extends Controller
                 'details' => json_encode(['old_due' => $item->due_date, 'new_due' => $newDue]),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            return back()->with('success', 'Uitleentermijn verlengd.');
+            return $newDue;
         });
+        if ($result instanceof RedirectResponse) return $result;
+        $sent = app(\App\Services\LibraryLoanNotifier::class)->send($loan, 'extended', $result);
+        return back()->with('success', 'Uitleentermijn verlengd.'
+            .($sent ? ' Smartschool-bevestiging verzonden.' : ''));
     }
 
     public function editReminders(int $loan): View
@@ -445,15 +476,7 @@ class LibraryLoanController extends Controller
             'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
             'reminder_days_before' => ['required', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['required', 'in:0,1'],
-            'smartschool_enabled' => ['required', 'in:0,1'],
         ]);
-
-        // Changing outbound messages requires a stronger permission than ordinary settings.
-        $oldEnabled = DB::table('library_settings')->where('key', 'smartschool_enabled')->value('value') ?? '0';
-        if ($values['smartschool_enabled'] !== $oldEnabled) {
-            app(\App\Services\LibraryAccess::class)
-                ->requirePermission($request, 'bibliotheek.messages.manage');
-        }
 
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(

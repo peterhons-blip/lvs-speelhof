@@ -20,6 +20,7 @@
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="library-form-actions">
+        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['book' => $book->id]) }}">Alle QR-codes van dit boek</a>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.edit', $book) }}">Boek bewerken</a>
         @if($book->copies->every(fn ($copy) => $copy->status === 'beschikbaar'))
             <form method="post" action="{{ route('bibliotheek.books.destroy', $book) }}" onsubmit="return confirm('Dit boek en alle bijbehorende exemplaren definitief verwijderen? Dit kan niet ongedaan gemaakt worden.');">
@@ -59,6 +60,7 @@
                                 @if($copy->status === 'beschikbaar')
                                     <a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
                                 @endif
+                                <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
                                 @if($copy->status === 'beschikbaar')
                                     <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
@@ -90,3 +92,17 @@
     </section>
 </main>
 @endsection
+@push('scripts')
+<script src="{{ asset('js/vendor/qrcode.js') }}"></script>
+<script src="{{ asset('js/library-qr.js') }}"></script>
+<script>
+document.querySelectorAll('.library-single-qr').forEach(button => button.addEventListener('click', () => {
+    try {
+        const code = button.dataset.barcode;
+        LibraryQr.download(LibraryQr.dataUrl(code), 'QR-' + LibraryQr.safeName(code) + '.png');
+    } catch (error) {
+        alert('QR-code genereren is mislukt: ' + error.message);
+    }
+}));
+</script>
+@endpush
