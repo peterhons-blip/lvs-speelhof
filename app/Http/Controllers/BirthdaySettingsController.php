@@ -23,13 +23,37 @@ class BirthdaySettingsController extends Controller
         }
         $preview = $birthdaySettings->preview($previewDate, $settings);
         $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount']);
+        $staffOptions = DB::table('users')->whereNotNull('smartschool_gebruikersnaam')
+            ->where('smartschool_gebruikersnaam', '<>', '')
+            ->where(function ($query) {
+                $query->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
+            })
+            ->select('schoolid', 'voornaam', 'name', 'smartschool_gebruikersnaam')
+            ->orderBy('name')->orderBy('voornaam')->get()
+            ->groupBy('schoolid');
+        $schoolSmartschoolChoices = [];
+        foreach ($schools as $school) {
+            $options = collect($staffOptions->get($school->id, collect()))
+                ->mapWithKeys(fn ($person) => [
+                    (string) $person->smartschool_gebruikersnaam =>
+                        trim(($person->voornaam ?? '').' '.($person->name ?? '')).' ('.$person->smartschool_gebruikersnaam.')',
+                ]);
+            $existing = preg_split('/[;,\\r\\n]+/', (string) $school->ontvangers_overzicht_18_ssaccount, -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($existing as $username) {
+                $username = trim($username);
+                if ($username !== '' && ! $options->has($username)) {
+                    $options->put($username, $username.' (bestaande ontvanger, niet in actieve personeelslijst)');
+                }
+            }
+            $schoolSmartschoolChoices[$school->id] = $options;
+        }
         $recent = Schema::hasTable('birthday_deliveries')
             ? DB::table('birthday_deliveries')
                 ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices'));
     }
 
 
@@ -42,7 +66,8 @@ class BirthdaySettingsController extends Controller
         $access->requirePermission($request, 'beheer.birthdays.manage');
         $data = $request->validate([
             'school_id' => ['required', 'integer', 'min:1'],
-            'overview_smartschool' => ['nullable', 'string', 'max:3000'],
+            'overview_smartschool_users' => ['sometimes', 'array', 'max:150'],
+            'overview_smartschool_users.*' => ['string', 'max:120', 'regex:/^[a-zA-Z0-9._-]{2,120}$/'],
             'overview_email' => ['nullable', 'string', 'max:3000'],
         ]);
 
@@ -65,7 +90,7 @@ class BirthdaySettingsController extends Controller
             return implode('; ', $items);
         };
 
-        $smartschool = $normalize($data['overview_smartschool'] ?? '', false);
+        $smartschool = $normalize(implode('; ', $data['overview_smartschool_users'] ?? []), false);
         $emails = $normalize($data['overview_email'] ?? '', true);
 
         $updated = DB::table('scholen')->where('id', $data['school_id'])
