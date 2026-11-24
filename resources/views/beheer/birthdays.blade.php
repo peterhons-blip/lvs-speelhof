@@ -147,10 +147,26 @@
                             <span aria-hidden="true">S</span>
                             <div><h3>Smartschool-overzicht</h3><p class="library-help">Smartschool-gebruikersnamen van medewerkers die het overzicht ontvangen.</p></div>
                         </div>
-                        <label for="overview-smartschool-{{ $school->id }}">Smartschool-gebruikersnamen</label>
-                        <textarea id="overview-smartschool-{{ $school->id }}" name="overview_smartschool" rows="3" maxlength="3000"
-                            placeholder="bijvoorbeeld: medewerker.een; medewerker.twee">{{ old('school_id') == $school->id ? old('overview_smartschool', $school->ontvangers_overzicht_18_ssaccount) : $school->ontvangers_overzicht_18_ssaccount }}</textarea>
-                        <p class="library-help">Meerdere gebruikersnamen scheiden met een komma, puntkomma of nieuwe regel. Leeg laten = geen Smartschool-overzicht voor deze school.</p>
+                        @php
+                            $existingUsers = array_values(array_filter(array_map('trim', preg_split('/[;,\\r\\n]+/', (string) $school->ontvangers_overzicht_18_ssaccount))));
+                            $selectedUsers = old('school_id') == $school->id
+                                ? old('overview_smartschool_users', $existingUsers) : $existingUsers;
+                        @endphp
+                        <label for="account-search-{{ $school->id }}">Zoek personeelslid of Smartschool-gebruikersnaam</label>
+                        <input type="search" id="account-search-{{ $school->id }}" class="library-birthday-staff-search"
+                            data-list="accounts-{{ $school->id }}" placeholder="Zoek op naam of gebruikersnaam..." autocomplete="off">
+                        <div class="library-birthday-staff-options" id="accounts-{{ $school->id }}">
+                            @forelse($schoolSmartschoolChoices[$school->id] ?? [] as $username => $label)
+                                <label class="library-birthday-staff-option">
+                                    <input type="checkbox" name="overview_smartschool_users[]" value="{{ $username }}"
+                                        @checked(in_array($username, $selectedUsers, true))>
+                                    <span>{{ $label }}</span>
+                                </label>
+                            @empty
+                                <p class="library-help">Geen actieve Smartschool-personeelsaccounts gevonden voor deze school.</p>
+                            @endforelse
+                        </div>
+                        <p class="library-help"><strong>Vink de ontvangers aan.</strong> Je kunt zoeken op naam of gebruikersnaam. Reeds ingestelde ontvangers die niet meer in de actieve personeelslijst staan, blijven herkenbaar zodat je ze kunt nakijken.</p>
                     </div>
                     <div class="library-birthday-overview-field">
                         <div class="library-birthday-channel-heading">
@@ -224,4 +240,18 @@
         </div>
     </section>
 </main>
+@push('scripts')
+<script>
+document.querySelectorAll('.library-birthday-staff-search').forEach(search => {
+    const container = document.getElementById(search.dataset.list);
+    if (!container) return;
+    search.addEventListener('input', () => {
+        const q = search.value.trim().toLocaleLowerCase('nl');
+        container.querySelectorAll('.library-birthday-staff-option').forEach(label => {
+            label.hidden = q !== '' && !label.textContent.toLocaleLowerCase('nl').includes(q);
+        });
+    });
+});
+</script>
+@endpush
 @endsection
