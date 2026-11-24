@@ -22,7 +22,30 @@ class BirthdaySettingsController extends Controller
             $previewDate = now('Europe/Brussels')->toDateString();
         }
         $preview = $birthdaySettings->preview($previewDate, $settings);
-        $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount']);
+        $schools = DB::table('scholen')->orderBy('schoolnaam')->get(['id', 'schoolnaam', 'ontvangers_overzicht_18', 'ontvangers_overzicht_18_ssaccount', 'smartschool_verzender_secretariaat', 'smartschool_verzender']);
+        $warningPreviewSchool = $schools->firstWhere('id', (int) ($settings['school_id'] ?? 0));
+        $warningSenderFallback = $warningPreviewSchool
+            ? (trim((string) $warningPreviewSchool->smartschool_verzender_secretariaat)
+                ?: trim((string) $warningPreviewSchool->smartschool_verzender)
+                ?: config('services.smartschool.sender')
+                ?: env('SMARTSCHOOL_SENDER_USER')
+                ?: 'lvs')
+            : null;
+        $warningStudentDefault = "Beste {voornaam} {naam},\n\n"
+            ."Binnen {dagen} dagen word je 18 jaar. 🎉\n\n"
+            ."Vanaf je 18e verjaardag beslis jij zelf wie toegang krijgt tot jouw gegevens in Smartschool. "
+            ."Daarom worden je ouder-/voogdaccounts op je 18e verjaardag uitgeschakeld.\n\n"
+            ."Je ouders of voogd kunnen dan niet meer inloggen via hun account. "
+            ."Als je dat later wenst, kun je toestemming geven om die toegang opnieuw te activeren.\n\n"
+            ."Op je 18e verjaardag krijg je hierover nog een bericht.\n\n"
+            ."Met vriendelijke groeten\n{school}";
+        $warningCoaccountDefault = "Beste ouder/voogd van {voornaam} {naam},\n\n"
+            ."Dit is een automatische melding vanuit {school}.\n\n"
+            ."Binnen {dagen} dagen wordt {voornaam} {naam} 18 jaar. Vanaf dan beslist de leerling "
+            ."zelf wie toegang krijgt tot zijn of haar gegevens in Smartschool.\n\n"
+            ."De ouder-/voogdaccounts worden daarom op de 18e verjaardag uitgeschakeld. "
+            ."Als de leerling nadien toestemming geeft, kan het account opnieuw geactiveerd worden.\n\n"
+            ."Met vriendelijke groeten\n{school}";
         $staffOptions = DB::table('users')->whereNotNull('smartschool_gebruikersnaam')
             ->where('smartschool_gebruikersnaam', '<>', '')
             ->where(function ($query) {
@@ -53,7 +76,7 @@ class BirthdaySettingsController extends Controller
                 ->groupBy('birthday_date', 'channel', 'status')
                 ->orderByDesc('birthday_date')->limit(30)->get() : collect();
 
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices'));
+        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault'));
     }
 
 
