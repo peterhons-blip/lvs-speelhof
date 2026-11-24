@@ -72,9 +72,22 @@ class LibraryBookController extends Controller
 
         $total = (clone $query)->count();
         $copies = $query->limit($mode === 'latest5' ? 5 : 500)
-            ->get(['copies.id', 'copies.barcode', 'books.title', 'copies.created_at', 'copies.qr_printed_at']);
+            ->get(['copies.id', 'copies.barcode', 'books.title', 'copies.created_at', 'copies.qr_printed_at', 'copies.qr_generated_at']);
 
         return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'copyId', 'mode', 'qrStatus'));
+    }
+
+    public function recordQrGenerated(Request $request): JsonResponse
+    {
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        $data = $request->validate([
+            'copies' => ['required', 'array', 'min:1', 'max:500'],
+            'copies.*' => ['required', 'integer', 'min:1', 'distinct'],
+        ]);
+        $count = DB::table('library_copies')->whereIn('id', array_map('intval', $data['copies']))
+            ->whereNull('qr_generated_at')
+            ->update(['qr_generated_at' => now(), 'updated_at' => now()]);
+        return response()->json(['recorded' => $count]);
     }
 
     public function confirmQrPrinted(Request $request): RedirectResponse
@@ -95,7 +108,7 @@ class LibraryBookController extends Controller
                 'updated_at' => now(),
             ]);
 
-        return back()->with('success', $count.' exemplaar/ exemplaren '.($printed
+        return back()->with('success', $count.' exemplaren '.($printed
             ? 'gemarkeerd als voorzien van QR-etiket.' : 'opnieuw gemarkeerd als zonder QR-etiket.'));
     }
 
