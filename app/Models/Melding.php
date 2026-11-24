@@ -12,6 +12,7 @@ class Melding extends Model
         'meldingssoortId',
         'comment',
         'gebeurdop',
+        'auteur_gebruikersnaam',
     ];
 
     protected $casts = [

@@ -51,7 +51,8 @@
 
             <h2 class="portal-section-title">Toepassingen</h2>
             <div class="portal-module-grid">
-                <a class="portal-module portal-module-active" href="{{ route('leerlingen.index') }}">
+                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
+                <a class="portal-module portal-module-active" href="{{ route('lvs.dashboard') }}">
                     <span class="portal-module-icon" aria-hidden="true">◎</span>
                     <strong>LVS</strong>
                     <span>Leerlingen opvolgen, meldingen registreren en leerlinginformatie raadplegen.</span>
@@ -63,6 +64,7 @@
                     </div>
                     <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
                 </a>
+                @endif
                 <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
                     <span class="portal-module-icon" aria-hidden="true">▤</span>
                     <strong>Bibliotheek</strong>

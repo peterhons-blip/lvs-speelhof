@@ -8,6 +8,8 @@
     const resultsHeading = document.getElementById('resultsHeading');
     const resultsCount = document.getElementById('resultsCount');
     const students = Array.isArray(window.LVS_STUDENTS) ? window.LVS_STUDENTS : [];
+    const baseHref = studentGrid?.dataset.linkBase || '/leerlingen/';
+    const linkLabel = studentGrid?.dataset.linkLabel || 'Bekijk leerlinggegevens en meldingen';
 
     if (!qInput || !studentGrid || !infoCard) return;
 
@@ -54,7 +56,7 @@
         const fragment = document.createDocumentFragment();
         found.forEach(student => {
             const link = document.createElement('a');
-            link.href = '/leerlingen/' + encodeURIComponent(student.id);
+            link.href = baseHref + encodeURIComponent(student.id);
             link.className = 'lvs-student-card';
 
             const avatar = document.createElement('span');
@@ -67,7 +69,7 @@
             const name = document.createElement('strong');
             name.textContent = fullName(student);
             const sub = document.createElement('small');
-            sub.textContent = 'Bekijk leerlinggegevens en meldingen';
+            sub.textContent = linkLabel;
             textWrap.append(name, sub);
 
             const right = document.createElement('span');

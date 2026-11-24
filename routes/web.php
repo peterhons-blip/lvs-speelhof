@@ -5,7 +5,6 @@ use App\Http\Controllers\LeerlingenController;
 use App\Http\Controllers\MeldingController;
 use App\Http\Controllers\Auth\SmartschoolController;
 use App\Http\Middleware\EnsureSmartschoolAuthenticated;
-use App\Services\SmartschoolSoap;
 
 
 
@@ -185,69 +184,57 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::post('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'update'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.update');
     });
 
-    Route::prefix('leerlingen')->name('leerlingen.')->group(function () {
+    // LVS: all records remain staff-only. Future parent/student access is not active.
+    Route::get('/lvs/opvolging', [\App\Http\Controllers\LvsFollowupsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.view')
+        ->name('lvs.followups.index');
+    Route::post('/lvs/opvolging/{event}/afhandelen', [\App\Http\Controllers\LvsFollowupsController::class, 'resolve'])
+        ->whereNumber('event')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.view')
+        ->name('lvs.followups.resolve');
+    Route::get('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.index');
+    Route::post('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'save'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.save');
+    Route::post('/lvs/instellingen/{rule}/status', [\App\Http\Controllers\LvsSettingsController::class, 'toggle'])
+        ->whereNumber('rule')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
+        ->name('lvs.settings.toggle');
+    Route::get('/lvs', [\App\Http\Controllers\LvsDashboardController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
+        ->name('lvs.dashboard');
+    Route::get('/lvs/klassenraad/export', [\App\Http\Controllers\LvsReportsController::class, 'export'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
+        ->name('lvs.reports.export');
+    Route::get('/lvs/klassenraad', [\App\Http\Controllers\LvsReportsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
+        ->name('lvs.reports.index');
+
+    Route::prefix('leerlingen')->name('leerlingen.')->middleware(
+        \App\Http\Middleware\RequirePortalPermission::class.':lvs.view'
+    )->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');
         Route::get('/{id}', [LeerlingenController::class, 'show'])->whereNumber('id')->name('show');
     });
 
     Route::prefix('meldingen')->name('meldingen.')->group(function () {
-        Route::get('/add/{id}', [MeldingController::class, 'create'])->whereNumber('id')->name('create');
-        Route::post('/add/{id}', [MeldingController::class, 'store'])->whereNumber('id')->name('store');
+        Route::get('/nieuw', [MeldingController::class, 'selectStudent'])
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('select-student');
+        Route::get('/', [MeldingController::class, 'index'])
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.view')->name('index');
+        Route::get('/add/{id}', [MeldingController::class, 'create'])->whereNumber('id')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('create');
+        Route::post('/add/{id}', [MeldingController::class, 'store'])->whereNumber('id')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('store');
     });
 });
 
-// ===== Test route voor Smartschool bericht =====
-Route::get('/smartschool/test-bericht', function (SmartschoolSoap $smartschool) {
-    $userIdentifier = env('SMARTSCHOOL_TEST_USER');
-
-    if (!$userIdentifier) {
-        return 'SMARTSCHOOL_TEST_USER niet ingesteld in .env';
-    }
-
-    // We gebruiken bewust dezelfde gebruiker als ontvanger én verzender
-    $senderIdentifier = env('SMARTSCHOOL_TEST_SENDER', $userIdentifier);
-
-    $title = 'Testbericht vanuit LVS (met verzender)';
-    $body  = "Dit is een testbericht via Webservices V3.\n"
-           . "Ontvanger en verzender zijn dezelfde gebruiker.\n"
-           . "Verzonden op: " . now()->toDateTimeString();
-
-    try {
-        $result = $smartschool->sendMessage(
-            $userIdentifier,      // ontvanger
-            $title,
-            $body,
-            $senderIdentifier,    // verzender = bestaande gebruiker
-            false                 // copyToLVS
-        );
-
-        return 'Testbericht verstuurd. Antwoord van Smartschool: <pre>' . print_r($result, true) . '</pre>';
-    } catch (\SoapFault $e) {
-        return 'Fout bij versturen naar Smartschool: ' . $e->getMessage();
-    }
-})->name('smartschool.test-bericht');
-
-// ===== Test route voor Smartschool error codes =====
-Route::get('/smartschool/errorcodes', function (SmartschoolSoap $smartschool) {
-    $codes = $smartschool->getErrorCodes();
-
-    echo '<pre>';
-    print_r($codes);
-    echo '</pre>';
-});
-
-// ===== Test route voor Smartschool user details =====
-Route::get('/smartschool/test-user', function (SmartschoolSoap $smartschool) {
-    $id = env('SMARTSCHOOL_TEST_USER');
-
-    try {
-        $res = $smartschool->getUserDetails($id);
-        return '<pre>' . print_r($res, true) . '</pre>';
-    } catch (\SoapFault $e) {
-        return 'Fout bij getUserDetails: ' . $e->getMessage();
-    }
-});
+// Smartschool diagnostics previously exposed GET routes that could send messages
+// or display user details without signing in. These unsafe routes are removed.
+// Use the permission-protected Beheer > Smartschool-testbericht instead.
 
 // Development-only helper: never allow a forged Smartschool identity on production.
 Route::get('/fake-login', function (\Illuminate\Http\Request $request) {

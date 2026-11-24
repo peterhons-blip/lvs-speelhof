@@ -27,6 +27,17 @@
         <p>Open een schoolrol en vink de gewenste rechten aan, inclusief <strong>Bibliotheekrapportages en CSV</strong>, <strong>QR-labelbeheer</strong>, <strong>Smartschool-berichtsjablonen</strong> en <strong>Verjaardagsberichten beheren</strong>. Nieuwe rechten worden niet automatisch aan bestaande rollen toegekend. <strong>Niet aangevinkt = geen toegang.</strong></p>
     </div>
 
+    <section class="library-form-card lvs-future-access-notice" style="margin-bottom:22px">
+        <h2>LVS-toegang: voorbereiding ouders en leerlingen</h2>
+        <p><strong>Nog niet actief.</strong> Het systeem is voorbereid op een gecontroleerde koppeling van een ouder-/voogdaccount of leerlingaccount aan uitsluitend de juiste leerling.
+            De toegang staat standaard uit. Er zijn geen aanmeldroutes, zichtbare leerlingdossiers of automatisch toegekende rechten voor deze accounttypes.</p>
+        <div class="lvs-future-roles">
+            <div><strong>Leerling</strong><small>Toekomstig: alleen het eigen dossier, na verificatie en expliciete goedkeuring.</small></div>
+            <div><strong>Ouder / voogd</strong><small>Toekomstig: alleen gekoppelde leerlingen, rekening houdend met leeftijd, toestemming en wettelijke toegangsrechten.</small></div>
+        </div>
+        <p class="library-help">Bij activatie moeten we eerst de Smartschool-identiteitscontrole, koppeling van co-accounts, toestemming vanaf 18 jaar en zichtbaarheid van gevoelige meldingen uitwerken. Deze rollen kunnen daarom nog niet worden aangevinkt.</p>
+    </section>
+
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
         <details class="portal-role-panel portal-role-panel-ict">
             <summary class="portal-role-summary">

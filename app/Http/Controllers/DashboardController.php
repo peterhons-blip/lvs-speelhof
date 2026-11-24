@@ -17,7 +17,8 @@ class DashboardController extends Controller
 
         $lvs = ['leerlingen' => null, 'meldingen' => null, 'meldingen_maand' => null, 'jarig_vandaag' => null];
 
-        if (Schema::hasTable('leerlingen')) {
+        $canSeeLvs = app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view');
+        if ($canSeeLvs && Schema::hasTable('leerlingen')) {
             $lvs['leerlingen'] = DB::table('leerlingen')->where('active', 1)->count();
             $lvs['jarig_vandaag'] = DB::table('leerlingen')
                 ->where('active', 1)->whereNotNull('geboortedatum')
@@ -25,7 +26,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        if (Schema::hasTable('meldingen')) {
+        if ($canSeeLvs && Schema::hasTable('meldingen')) {
             $lvs['meldingen'] = DB::table('meldingen')->count();
             $lvs['meldingen_maand'] = DB::table('meldingen')
                 ->whereBetween('gebeurdop', [

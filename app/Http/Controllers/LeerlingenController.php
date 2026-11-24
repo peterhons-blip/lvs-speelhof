@@ -83,16 +83,26 @@ class LeerlingenController extends Controller
                 ->where('active', 1)
                 ->findOrFail($id);
 
-            $meldingen = Melding::with(['soort.categorie'])
-                ->where('leerlingId', $leerling->id)
-                ->orderByDesc('created_at')
-                ->get();
+            $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
+                ->has($request, 'lvs.meldingen.view');
+            $meldingen = $canSeeMeldingen
+                ? Melding::with(['soort.categorie'])
+                    ->where('leerlingId', $leerling->id)
+                    ->orderByDesc('created_at')->get()
+                : collect();
 
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
 
-        return view('leerlingen.show', compact('leerling', 'meldingen'));
+        $meldingGroepen = $meldingen->groupBy(fn ($melding) =>
+            $melding->soort?->categorie?->naam ?: 'Overige meldingen'
+        )->sortKeys(SORT_NATURAL | SORT_FLAG_CASE);
+        $canCreate = app(\App\Services\LibraryAccess::class)
+            ->has($request, 'lvs.meldingen.create');
+
+        return view('leerlingen.show', compact('leerling', 'meldingen', 'meldingGroepen',
+            'canCreate', 'canSeeMeldingen'));
     }
 
     public function verjaardagen()

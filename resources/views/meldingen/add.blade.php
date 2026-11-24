@@ -5,7 +5,8 @@
 @section('breadcrumbs')
 @include('partials.breadcrumbs', ['items' => [
             ['label' => 'Dashboard', 'url' => route('home')],
-            ['label' => 'LVS', 'url' => route('leerlingen.index')],
+            ['label' => 'LVS', 'url' => route('lvs.dashboard')],
+            ['label' => 'Leerlingen', 'url' => route('leerlingen.index')],
             ['label' => $leerling->voornaam . ' ' . $leerling->achternaam, 'url' => route('leerlingen.show', $leerling->id)],
             ['label' => 'Nieuwe melding'],
         ]])
@@ -99,7 +100,8 @@
             </form>
         </div>
 
-        {{-- 3️⃣ Bestaande meldingen (overzicht) --}}
+        {{-- Bestaande meldingen: uitsluitend voor rollen met leesrecht. --}}
+        @if($canSeeMeldingen)
         <div class="card lvs-panel lvs-section-gap">
             <h2>Meldingen voor deze leerling</h2>
 
@@ -136,8 +138,9 @@
             @endif
         </div>
 
+        @endif
         <br>
-        <a href="{{ url('/leerlingen/' . $leerling->id) }}" class="lvs-link-button lvs-link-button-subtle">← Terug naar leerling</a>
+        <a href="{{ route('meldingen.select-student') }}" class="lvs-link-button lvs-link-button-subtle">← Terug naar leerlingen kiezen</a>
     </main>
 
     {{-- 4️⃣ JavaScript – filter soorten op gekozen categorie --}}

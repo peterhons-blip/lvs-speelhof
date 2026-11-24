@@ -11,10 +11,66 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class MeldingController extends Controller
 {
+    public function index(Request $request, \App\Services\LibraryAccess $access)
+    {
+        $access->requirePermission($request, 'lvs.meldingen.view');
+        $data = $request->validate([
+            'zoek' => ['nullable', 'string', 'max:100'],
+            'categorie' => ['nullable', 'integer', 'min:1'],
+            'klas' => ['nullable', 'string', 'max:60'],
+            'van' => ['nullable', 'date_format:Y-m-d'],
+            'tot' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:van'],
+        ]);
+
+        $query = \Illuminate\Support\Facades\DB::table('meldingen as m')
+            ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
+            ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
+            ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
+            ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
+            ->select('m.id', 'm.leerlingId', 'm.comment', 'm.gebeurdop', 'm.created_at',
+                'l.naam', 'l.voornaam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie');
+
+        if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
+            $query->addSelect('m.auteur_gebruikersnaam');
+        }
+        if (!empty($data['categorie'])) $query->where('c.id', $data['categorie']);
+        if (!empty($data['van'])) $query->whereDate('m.gebeurdop', '>=', $data['van']);
+        if (!empty($data['tot'])) $query->whereDate('m.gebeurdop', '<=', $data['tot']);
+        if (!empty($data['klas'])) {
+            $query->where('k.klasnaam', 'like', '%'.addcslashes($data['klas'], '%_\\').'%');
+        }
+        if (!empty($data['zoek'])) {
+            $term = '%'.addcslashes($data['zoek'], '%_\\').'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('l.voornaam', 'like', $term)
+                    ->orWhere('l.naam', 'like', $term)
+                    ->orWhere('l.gebruikersnaam', 'like', $term)
+                    ->orWhere('m.comment', 'like', $term);
+            });
+        }
+        $meldingen = $query->orderByDesc('m.gebeurdop')->orderByDesc('m.id')
+            ->paginate(30)->withQueryString();
+        $categorieen = Meldingscategorie::orderBy('naam')->get();
+        $canCreate = $access->has($request, 'lvs.meldingen.create');
+        return view('meldingen.index', compact('meldingen', 'categorieen', 'canCreate', 'data'));
+    }
+
+    public function selectStudent(Request $request, \App\Services\LibraryAccess $access)
+    {
+        $access->requirePermission($request, 'lvs.meldingen.create');
+        $leerlingen = \Illuminate\Support\Facades\DB::table('leerlingen as l')
+            ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
+            ->where('l.active', 1)
+            ->selectRaw('l.id, l.voornaam, COALESCE(l.naam, "") AS achternaam, COALESCE(k.klasnaam, "") AS klas')
+            ->orderBy('l.naam')->orderBy('l.voornaam')->get();
+
+        return view('meldingen.select-student', compact('leerlingen'));
+    }
+
     public function create($id)
     {
         try {
-            $leerling = Leerling::with('klas')->findOrFail($id);
+            $leerling = Leerling::with('klas')->where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
@@ -24,19 +80,22 @@ class MeldingController extends Controller
             $q->orderBy('naam');
         }])->orderBy('naam')->get();
 
-        // Bestaande meldingen van de leerling (nieuw → oud), met soort + categorie
-        $meldingen = Melding::with(['soort.categorie'])
-            ->where('leerlingId', $leerling->id)
-            ->orderByDesc('created_at')
-            ->get();
+        // Incident history is confidential and requires the independent view right.
+        $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
+            ->has(request(), 'lvs.meldingen.view');
+        $meldingen = $canSeeMeldingen
+            ? Melding::with(['soort.categorie'])->where('leerlingId', $leerling->id)
+                ->orderByDesc('created_at')->get()
+            : collect();
 
-        return view('meldingen.add', compact('leerling', 'categorieen', 'meldingen'));
+        return view('meldingen.add', compact('leerling', 'categorieen',
+            'meldingen', 'canSeeMeldingen'));
     }
 
     public function store(Request $request, $id)
     {
         try {
-            $leerling = Leerling::findOrFail($id);
+            $leerling = Leerling::where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
@@ -59,14 +118,25 @@ class MeldingController extends Controller
                 ->withInput();
         }
 
-        Melding::create([
-            'leerlingId'       => $leerling->id,
-            'meldingssoortId'  => $soort->id,
-            'comment'          => $validated['comment'],
-            'gebeurdop'        => $validated['gebeurdop'],
-        ]);
+        $attributes = [
+            'leerlingId' => $leerling->id,
+            'meldingssoortId' => $soort->id,
+            'comment' => $validated['comment'],
+            'gebeurdop' => $validated['gebeurdop'],
+        ];
+        // Author comes only from trusted Smartschool session, never from the form.
+        // Legacy DB remains operational before optional author migration is installed.
+        if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
+            $attributes['auteur_gebruikersnaam'] =
+                app(\App\Services\LibraryAccess::class)->username($request);
+        }
+        $saved = Melding::create($attributes);
+        app(\App\Services\LvsFollowupEngine::class)->evaluate($saved);
 
-        return redirect("/leerlingen/{$leerling->id}")
-            ->with('success', 'Melding succesvol toegevoegd.');
+        $destination = app(\App\Services\LibraryAccess::class)->has($request, 'lvs.view')
+            ? route('leerlingen.show', $leerling->id)
+            : route('meldingen.select-student');
+
+        return redirect($destination)->with('success', 'Melding succesvol toegevoegd.');
     }
 }

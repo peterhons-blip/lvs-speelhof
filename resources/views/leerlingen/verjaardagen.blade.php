@@ -5,7 +5,7 @@
 @section('breadcrumbs')
 @include('partials.breadcrumbs', ['items' => [
         ['label' => 'Dashboard', 'url' => route('home')],
-        ['label' => 'LVS', 'url' => route('leerlingen.index')],
+        ['label' => 'LVS', 'url' => route('lvs.dashboard')],
         ['label' => 'Verjaardagen'],
     ]])
 @endsection
