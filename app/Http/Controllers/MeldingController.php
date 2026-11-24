@@ -55,7 +55,7 @@ class MeldingController extends Controller
     public function create($id)
     {
         try {
-            $leerling = Leerling::with('klas')->findOrFail($id);
+            $leerling = Leerling::with('klas')->where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
@@ -77,7 +77,7 @@ class MeldingController extends Controller
     public function store(Request $request, $id)
     {
         try {
-            $leerling = Leerling::findOrFail($id);
+            $leerling = Leerling::where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
@@ -100,12 +100,19 @@ class MeldingController extends Controller
                 ->withInput();
         }
 
-        Melding::create([
-            'leerlingId'       => $leerling->id,
-            'meldingssoortId'  => $soort->id,
-            'comment'          => $validated['comment'],
-            'gebeurdop'        => $validated['gebeurdop'],
-        ]);
+        $attributes = [
+            'leerlingId' => $leerling->id,
+            'meldingssoortId' => $soort->id,
+            'comment' => $validated['comment'],
+            'gebeurdop' => $validated['gebeurdop'],
+        ];
+        // Author comes only from trusted Smartschool session, never from the form.
+        // Legacy DB remains operational before optional author migration is installed.
+        if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
+            $attributes['auteur_gebruikersnaam'] =
+                app(\App\Services\LibraryAccess::class)->username($request);
+        }
+        Melding::create($attributes);
 
         return redirect("/leerlingen/{$leerling->id}")
             ->with('success', 'Melding succesvol toegevoegd.');
