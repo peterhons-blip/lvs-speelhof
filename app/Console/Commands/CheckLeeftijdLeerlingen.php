@@ -374,9 +374,7 @@ class CheckLeeftijdLeerlingen extends Command
                     $actionKey = 'overview_email_'.substr(hash('sha256', mb_strtolower($ontvanger)), 0, 30);
                     $ok = $actionLog->run((int) $school->id, 0, $mailDate,
                         $actionKey, $ontvanger, function () use ($ontvanger, $payload, $subjectEmail) {
-                            $mail = new LeerlingenWorden18($payload);
-                            if ($subjectEmail !== '') $mail->subject($subjectEmail);
-                            Mail::to($ontvanger)->send($mail);
+                            Mail::to($ontvanger)->send(new LeerlingenWorden18($payload, $subjectEmail));
                         });
                     if (! $ok) $this->warn('E-mailoverzicht niet bevestigd: '.$ontvanger);
                 }
