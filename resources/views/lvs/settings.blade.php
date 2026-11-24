@@ -7,6 +7,32 @@
     ['label' => 'Instellingen'],
 ]])
 @endsection
+@push('scripts')
+<script>
+document.querySelectorAll('.lvs-staff-search').forEach(search => {
+    const select = document.getElementById(search.dataset.target);
+    if (!select) return;
+    const options = Array.from(select.options).map(option => ({
+        value: option.value, text: option.textContent.trim(),
+        disabled: option.disabled,
+    }));
+    const keepSelection = () => select.value;
+    search.addEventListener('input', () => {
+        const current = keepSelection();
+        const term = search.value.trim().toLocaleLowerCase('nl-BE');
+        const filtered = options.filter(option =>
+            !option.value || option.value === current ||
+            option.text.toLocaleLowerCase('nl-BE').includes(term));
+        select.replaceChildren(...filtered.map(option => {
+            const item = new Option(option.text, option.value,
+                false, option.value === current);
+            item.disabled = option.disabled;
+            return item;
+        }));
+    });
+});
+</script>
+@endpush
 @section('content')
 <main class="library-page lvs-settings-page">
     <div class="library-page-head">
@@ -31,7 +57,7 @@
             De telling is gebaseerd op <strong>registratiedatum</strong>, niet op de datum waarop het voorval gebeurde.</p>
             <p><strong>Veilige werking:</strong> nieuwe regels zijn standaard uitgeschakeld. Bij een voorstel tot sanctie wordt alleen een dossier voor handmatige opvolging aangemaakt; er wordt geen sanctie opgelegd.
             Smartschool-berichten worden uitsluitend automatisch aangeboden bij geactiveerde regels met expliciet bevestigde ontvangers en tekst. De omschrijving van het voorval wordt niet automatisch meegezonden.</p>
-            <p class="library-help">Ouder-/voogdberichten worden afzonderlijk aan co-accounts 1 t/m 6 aangeboden. Een account hoeft niet te bestaan of actief te zijn; controleer de verzendstatus en de privacy-/toestemmingssituatie vóór activeren. Voor leerlingbegeleiding en klastitularis is voorlopig een vaste Smartschool-gebruikersnaam per regel vereist.</p>
+            <p class="library-help">Ouder-/voogdberichten worden afzonderlijk aan co-accounts 1 t/m 6 aangeboden. Een account hoeft niet te bestaan of actief te zijn; controleer de verzendstatus en de privacy-/toestemmingssituatie vóór activeren. Voor leerlingbegeleiding en klastitularis kies je hieronder een actief personeelslid uit een doorzoekbare lijst. Een gekozen klastitularis is voorlopig een vaste ontvanger voor de hele regel, niet automatisch de klastitularis van iedere leerling.</p>
         </section>
 
         <section class="library-form-card">
@@ -117,10 +143,34 @@
                             @endforeach
                         </div>
                         <div class="lvs-rule-fields">
-                            <div class="library-field"><label>Smartschool-account leerlingbegeleiding</label>
-                                <input name="counselor_username" maxlength="120" value="{{ $rule->counselor_username ?? '' }}" placeholder="Vaste gebruikersnaam"></div>
-                            <div class="library-field"><label>Smartschool-account klastitularis</label>
-                                <input name="mentor_username" maxlength="120" value="{{ $rule->mentor_username ?? '' }}" placeholder="Vaste gebruikersnaam"></div>
+                            @foreach([
+                                'counselor_username' => 'Ontvanger leerlingbegeleiding',
+                                'mentor_username' => 'Ontvanger klastitularis',
+                            ] as $field => $caption)
+                                @php($fieldId = $field.'-'.($rule->id ?? 'new'))
+                                @php($selectedUsername = $rule ? (string) ($rule->$field ?? '') : '')
+                                <div class="library-field lvs-staff-chooser">
+                                    <label for="{{ $fieldId }}">{{ $caption }}</label>
+                                    <input type="search" class="lvs-staff-search" data-target="{{ $fieldId }}"
+                                        placeholder="Zoek personeelslid op naam of gebruikersnaam" autocomplete="off"
+                                        aria-label="Zoek {{ strtolower($caption) }}">
+                                    <select id="{{ $fieldId }}" name="{{ $field }}">
+                                        <option value="">Selecteer een personeelslid</option>
+                                        @if($selectedUsername !== '' && !$staffOptions->contains('username', $selectedUsername))
+                                            <option value="{{ $selectedUsername }}" selected disabled>
+                                                {{ $selectedUsername }} (niet meer actief: kies een ander personeelslid)
+                                            </option>
+                                        @endif
+                                        @foreach($staffOptions as $staff)
+                                            <option value="{{ $staff->username }}" @selected($selectedUsername === $staff->username)>
+                                                {{ $staff->label }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small>Deze vaste ontvanger krijgt het bericht voor elke leerling die deze regel activeert.
+                                        Voor de echte klastitularis per leerling is later een koppeling met de les- of klasgegevens nodig.</small>
+                                </div>
+                            @endforeach
                             <div class="library-field"><label>Smartschool-afzender</label>
                                 <input name="sender_username" maxlength="120" value="{{ $rule->sender_username ?? '' }}" placeholder="Leeg = lvs"></div>
                             <div class="library-field"><label>Onderwerp</label>
