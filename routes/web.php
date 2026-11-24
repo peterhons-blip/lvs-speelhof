@@ -27,6 +27,13 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('student-scan');
         Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('copy-scan');
+        Route::get('/boeken-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'searchBooks'])
+            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])
+            ->name('books-search');
+        Route::get('/boeken/{book}/beschikbare-exemplaren', [\App\Http\Controllers\LibraryLoanController::class, 'availableCopies'])
+            ->whereNumber('book')
+            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])
+            ->name('available-copies');
         Route::post('/inleveren-met-barcode', [\App\Http\Controllers\LibraryLoanController::class, 'returnByBarcode'])->name('return-barcode')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::get('/personeel-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'staff'])
