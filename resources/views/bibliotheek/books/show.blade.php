@@ -17,7 +17,12 @@
         <div><p class="portal-eyebrow">BIBLIOTHEEK / BOEKENCATALOGUS</p><h1 id="book-title">{{ $book->title }}</h1><p>{{ $book->authors ?: 'Auteur onbekend' }}</p></div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Terug naar catalogus</a>
     </div>
-    @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
+    @if(session('success'))<div class="library-message" role="status">
+        {{ session('success') }}
+        @if(session('new_copy_id'))
+            <a class="library-button library-button-primary" style="margin-left:12px" href="{{ route('bibliotheek.books.qr-labels', ['copy' => session('new_copy_id')]) }}">QR-etiket voor nieuw exemplaar maken</a>
+        @endif
+    </div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="library-form-actions">
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['book' => $book->id]) }}">Alle QR-codes van dit boek</a>
@@ -52,14 +57,17 @@
         <h2>Fysieke exemplaren ({{ $book->copies->count() }})</h2>
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>Opmerking</th><th>Actie</th></tr></thead>
+                <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>QR-etiket</th><th>Opmerking</th><th>Actie</th></tr></thead>
                 <tbody>
                     @foreach($book->copies as $copy)
-                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td><td>{{ $copy->notes ?: '—' }}</td><td>
+                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td>
+                            <td>{{ $copy->qr_printed_at ? 'Bevestigd' : 'Nog niet' }}</td>
+                            <td>{{ $copy->notes ?: '—' }}</td><td>
                             <div class="library-copy-actions">
                                 @if($copy->status === 'beschikbaar')
                                     <a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
                                 @endif
+                                <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['copy' => $copy->id]) }}">Etiket afdrukken</a>
                                 <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
                                 @if($copy->status === 'beschikbaar')
