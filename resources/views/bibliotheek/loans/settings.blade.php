@@ -50,7 +50,7 @@
                 <option value="0" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '0')>Uitgeschakeld (veilig voor testen)</option>
                 <option value="1" @selected(old('smartschool_enabled', $settings['smartschool_enabled'] ?? '0') == '1')>Ingeschakeld</option>
             </select>
-            <p class="library-help">Afzender: <strong>bib</strong>. Activeren pas wanneer het Smartschool-account bestaat en getest is. Bij ingeschakelde verzending krijgen leerlingen en personeelsleden een bevestiging bij uitlening en terugbrengen, automatische herinneringen en eventuele handmatige herinneringen.</p>
+            <p class="library-help">Alle bibliotheekberichten vertrekken vanuit Smartschool-account <strong>bib</strong>. Kies <strong>Ingeschakeld</strong> en sla op om de verzending te activeren. Dan worden uitleningen, terugbrengingen, automatische herinneringen en handmatige herinneringen via dit account verzonden (enkel naar het hoofdaccount).</p>
         </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
