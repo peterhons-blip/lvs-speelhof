@@ -2,229 +2,155 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use App\Services\SmartschoolSoap;
 use App\Models\Leerling;
 use App\Models\User;
+use App\Services\BirthdaySettings;
+use App\Services\SmartschoolSoap;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class CheckVerjaardagen extends Command
 {
     protected $signature = 'verjaardagen:check
-                            {--test : Testmodus: niets verzenden, enkel loggen}
-                            {--date= : Forceer datum (YYYY-MM-DD) om te testen}
-                            {--only= : Filter: leerlingen|users}
-                            {--to= : Test-override: stuur alles naar deze Smartschool gebruikersnaam}
-                            {--dummy : Gebruik 2 dummy personen (1 leerling + 1 user) voor test}';
+        {--test : Alleen tonen, niets versturen}
+        {--date= : Datum YYYY-MM-DD voor veilige preview}
+        {--only= : leerlingen|users}
+        {--to= : Ontvanger voor testpreview, vereist --test}
+        {--dummy : Toon voorbeeldpersonen, vereist --test}';
 
-    protected $description = 'Stuurt elke dag Smartschool verjaardagsbericht naar jarige leerlingen en leerkrachten (zonder dubbels voor 18-jarigen).';
+    protected $description = 'Verjaardagsberichten aan leerlingen en personeel volgens beheerinstellingen.';
 
-    public function handle(): int
+    public function handle(BirthdaySettings $settingsService): int
     {
-        $isTest = $this->option('test') === true;
-        $only = strtolower((string)($this->option('only') ?? ''));
-        $toOverride = trim((string)($this->option('to') ?? ''));
-        $useDummy = $this->option('dummy') === true;
+        $test = (bool) $this->option('test');
+        $dummy = (bool) $this->option('dummy');
+        $override = trim((string) $this->option('to'));
+        $dateOption = (string) ($this->option('date') ?? '');
+        $only = (string) ($this->option('only') ?? '');
 
-        /** @var SmartschoolSoap $ss */
-        $ss = app(SmartschoolSoap::class);
+        if (! in_array($only, ['', 'leerlingen', 'users'], true)) {
+            $this->error('Gebruik --only=leerlingen of --only=users.');
+            return self::FAILURE;
+        }
+        if (! $test && ($dummy || $override !== '' || $dateOption !== '')) {
+            $this->error('--dummy, --to en --date kunnen alleen met --test gebruikt worden.');
+            return self::FAILURE;
+        }
+        try {
+            $today = $dateOption !== '' ? Carbon::createFromFormat('!Y-m-d', $dateOption, 'Europe/Brussels') : now('Europe/Brussels')->startOfDay();
+            if (! $today || ($dateOption !== '' && $today->format('Y-m-d') !== $dateOption)) throw new \InvalidArgumentException('Ongeldige datum');
+        } catch (\Throwable $error) {
+            $this->error('Ongeldige datum (gebruik YYYY-MM-DD).');
+            return self::FAILURE;
+        }
 
-        $today = $this->option('date')
-            ? Carbon::parse($this->option('date'), 'Europe/Brussels')->startOfDay()
-            : now('Europe/Brussels')->startOfDay();
+        $settings = $settingsService->all();
+        if ($settings['enabled'] !== '1') {
+            $this->info('Verjaardagsberichten zijn uitgeschakeld in het beheer.');
+            return self::SUCCESS;
+        }
+        if (! $test && (! Schema::hasTable('birthday_deliveries') || ! Schema::hasTable('birthday_settings'))) {
+            $this->error('Voer eerst de verjaardagsmigratie uit: verzenden wordt uit veiligheid overgeslagen.');
+            return self::FAILURE;
+        }
+        $date = $today->toDateString();
+        $schoolFilter = (int) $settings['school_id'];
 
-        $this->info('Verjaardagen-check: ' . $today->toDateString());
-
-        // Onderwerp
-        $subject = "Proficiat met je verjaardag! 🎉";
-
-        // =========================
-        // Dummy mode (handig testen)
-        // =========================
-        if ($useDummy) {
-            $this->warn('DUMMY: gebruikt dummy personen (geen DB).');
-
-            $dummyPayloads = [
-                [
-                    'type' => 'leerling',
-                    'voornaam' => 'Test',
-                    'naam' => 'Leerling',
-                    'school' => null,
-                    'recipient' => $toOverride ?: 'dummy.leerling',
-                    'age' => 17,
-                ],
-                [
-                    'type' => 'user',
-                    'voornaam' => 'Test',
-                    'naam' => 'Leerkracht',
-                    'school' => null,
-                    'recipient' => $toOverride ?: 'dummy.leerkracht',
-                    'age' => 33,
-                ],
-            ];
-
-            foreach ($dummyPayloads as $p) {
-                $bodyView = $p['type'] === 'leerling'
-                    ? $this->pickView('smartschool.berichten.default.verjaardag_leerling', 'smartschool.berichten.default.verjaardag_leerling')
-                    : $this->pickView('smartschool.berichten.default.verjaardag_user', 'smartschool.berichten.default.verjaardag_user');
-
-                $body = view($bodyView, [
-                    'voornaam' => $p['voornaam'],
-                    'naam'     => $p['naam'],
-                    'age'      => $p['age'],
-                    'school'   => $p['school'],
-                    'datum'    => $today,
-                ])->render();
-
-                if ($isTest) {
-                    $this->line("TEST: zou sturen naar {$p['recipient']} (dummy {$p['type']})");
-                    continue;
-                }
-
-                try {
-                    // sender: we nemen standaard "verzender" uit env (of je kan dit later per school maken)
-                    $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
-
-                    $ss->sendMessage($p['recipient'], $subject, $body, $sender, false, 0);
-                    $this->info("DUMMY: bericht verstuurd naar {$p['recipient']}");
-                } catch (\SoapFault $e) {
-                    $this->error("DUMMY: fout bij versturen naar {$p['recipient']}: " . $e->getMessage());
-                }
-            }
-
+        if ($dummy) {
+            $this->info('TEST dummy: leerling en medewerker; er wordt niets verstuurd.');
             return self::SUCCESS;
         }
 
-        // =========================
-        // Leerlingen
-        // =========================
-        if ($only === '' || $only === 'leerlingen') {
-            $leerlingen = Leerling::with('school')
-                ->where('active', 1)
-                ->whereMonth('geboortedatum', $today->month)
-                ->whereDay('geboortedatum', $today->day)
-                ->get();
-
-            foreach ($leerlingen as $l) {
-                // Niet dubbel: als vandaag 18 → skip (want leerlingen:check-18 doet al de “18-flow”)
-                $age = $l->geboortedatum ? Carbon::parse($l->geboortedatum, 'Europe/Brussels')->age : null;
-                if ($age === 18) {
-                    Log::info("VERJAARDAG: skip leerling {$l->id} ({$l->gebruikersnaam}) → wordt vandaag 18 (handled by leerlingen:check-18)");
-                    continue;
-                }
-
-                $recipient = $toOverride !== '' ? $toOverride : (string)($l->gebruikersnaam ?? '');
-                if (trim($recipient) === '') {
-                    Log::warning("VERJAARDAG: leerling {$l->id} heeft geen gebruikersnaam → overgeslagen.");
-                    continue;
-                }
-
-                // Template per school mogelijk (later uitbreidbaar)
-                $view = $this->pickView(
-                    $l->school ? "smartschool.berichten.scholen.{$l->school->id}.verjaardag_leerling" : '',
-                    "smartschool.berichten.default.verjaardag_leerling"
-                );
-
-                $body = view($view, [
-                    'voornaam' => $l->voornaam,
-                    'naam'     => $l->naam,
-                    'age'      => $age,
-                    'school'   => $l->school,
-                    'datum'    => $today,
-                ])->render();
-
-                if ($isTest) {
-                    $this->line("TEST: leerling {$l->voornaam} {$l->naam} → {$recipient}");
-                    continue;
-                }
-
-                // Afzender: per school (beleid/verzender) of fallback env
-                $sender = $this->pickSenderForSchool($l->school);
-
-                try {
-                    $ss->sendMessage($recipient, $subject, $body, $sender, false, 0);
-                    Log::info("VERJAARDAG: leerling bericht verstuurd naar {$recipient} | sender={$sender}");
-                    $this->info("Leerling: verstuurd naar {$recipient}");
-                } catch (\SoapFault $e) {
-                    Log::error("VERJAARDAG: fout leerling {$recipient}: " . $e->getMessage());
-                    $this->error("Leerling: fout naar {$recipient}: " . $e->getMessage());
-                }
+        if (($only === '' || $only === 'leerlingen') && $settings['students_enabled'] === '1') {
+            $query = Leerling::with('school')->where('active', 1)
+                ->whereMonth('geboortedatum', $today->month)->whereDay('geboortedatum', $today->day);
+            if ($schoolFilter > 0) $query->where('schoolid', $schoolFilter);
+            foreach ($query->cursor() as $student) {
+                $student->load('school');
+                $this->deliver($settingsService, $settings, 'leerling', (int) $student->id,
+                    (int) ($student->schoolid ?? 0), $date, $today,
+                    $student->geboortedatum, (string) $student->voornaam, (string) $student->naam,
+                    (string) ($student->school->schoolnaam ?? 'GO! Atheneum Sint-Truiden'),
+                    (string) ($student->gebruikersnaam ?? ''), (string) ($student->email ?? ''),
+                    $student->school, $test, $override);
             }
         }
 
-        // =========================
-        // Users (leerkrachten)
-        // =========================
-        if ($only === '' || $only === 'users') {
-            $users = User::with('school')
-                ->whereMonth('geboortedatum', $today->month)
+        if (($only === '' || $only === 'users') && $settings['staff_enabled'] === '1') {
+            $query = User::with('school')->whereMonth('geboortedatum', $today->month)
                 ->whereDay('geboortedatum', $today->day)
-                ->get();
-
-            foreach ($users as $u) {
-                $age = $u->geboortedatum ? Carbon::parse($u->geboortedatum, 'Europe/Brussels')->age : null;
-
-                // Extra safety: ook bij users skip als 18 (moet niet, maar voorkomt ooit dubbele flows)
-                if ($age === 18) {
-                    Log::info("VERJAARDAG: skip user {$u->id} → wordt vandaag 18 (safety)");
-                    continue;
-                }
-
-                $recipient = $toOverride !== '' ? $toOverride : (string)($u->smartschool_gebruikersnaam ?? '');
-                if (trim($recipient) === '') {
-                    Log::warning("VERJAARDAG: user {$u->id} heeft geen smartschool_gebruikersnaam → overgeslagen.");
-                    continue;
-                }
-
-                $view = $this->pickView(
-                    $u->school ? "smartschool.berichten.scholen.{$u->school->id}.verjaardag_user" : '',
-                    "smartschool.berichten.default.verjaardag_user"
-                );
-
-                $body = view($view, [
-                    'voornaam' => $u->voornaam ?: '',
-                    'naam'     => $u->name ?: '',
-                    'age'      => $age,
-                    'school'   => $u->school,
-                    'datum'    => $today,
-                ])->render();
-
-                if ($isTest) {
-                    $this->line("TEST: user {$u->voornaam} {$u->name} → {$recipient}");
-                    continue;
-                }
-
-                $sender = $this->pickSenderForSchool($u->school);
-
-                try {
-                    $ss->sendMessage($recipient, $subject, $body, $sender, false, 0);
-                    Log::info("VERJAARDAG: user bericht verstuurd naar {$recipient} | sender={$sender}");
-                    $this->info("User: verstuurd naar {$recipient}");
-                } catch (\SoapFault $e) {
-                    Log::error("VERJAARDAG: fout user {$recipient}: " . $e->getMessage());
-                    $this->error("User: fout naar {$recipient}: " . $e->getMessage());
-                }
+                ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); });
+            if ($schoolFilter > 0) $query->where('schoolid', $schoolFilter);
+            foreach ($query->cursor() as $staff) {
+                $staff->load('school');
+                $this->deliver($settingsService, $settings, 'user', (int) $staff->id,
+                    (int) ($staff->schoolid ?? 0), $date, $today,
+                    $staff->geboortedatum, (string) ($staff->voornaam ?? ''), (string) ($staff->name ?? ''),
+                    (string) ($staff->school->schoolnaam ?? 'GO! Atheneum Sint-Truiden'),
+                    (string) ($staff->smartschool_gebruikersnaam ?? ''), (string) ($staff->email ?? ''),
+                    $staff->school, $test, $override);
             }
         }
-
-        $this->info('Klaar.');
+        $this->info('Verjaardagencontrole voltooid.');
         return self::SUCCESS;
     }
 
-    private function pickView(string $preferred, string $fallback): string
+    private function deliver(BirthdaySettings $service, array $settings, string $type, int $id,
+        int $schoolId, string $date, Carbon $today, $birthdate, string $first, string $last,
+        string $schoolName, string $username, string $email, $school, bool $test, string $override): void
     {
-        if ($preferred !== '' && view()->exists($preferred)) return $preferred;
-        return $fallback;
-    }
+        $age = $birthdate ? Carbon::parse($birthdate)->diffInYears($today) : null;
+        if ($age === 18) return; // 18-jarigen: aparte privacy- en co-accountprocedure
+        $suffix = $type === 'leerling' ? 'students' : 'staff';
+        $vars = ['voornaam' => $first, 'naam' => $last, 'school' => $schoolName, 'leeftijd' => $age ?? ''];
+        $subject = $service->render($settings['subject_'.$suffix], $vars);
+        $bodyText = $service->render($settings['body_'.$suffix], $vars);
+        $sender = trim($settings['sender']);
+        if ($sender === '') $sender = trim((string) ($school->smartschool_verzender_beleid ?? ''));
+        if ($sender === '') $sender = trim((string) ($school->smartschool_verzender ?? ''));
+        if ($sender === '') $sender = config('services.smartschool.sender') ?: 'lvs';
 
-    private function pickSenderForSchool($school): string
-    {
-        // Jij kan dit sturen “van beleid” of “van verzender”.
-        // Voor verjaardagen: ik neem beleid als dat ingevuld is, anders verzender, anders env.
-        $sender = $school ? trim((string)($school->smartschool_verzender_beleid ?? '')) : '';
-        if ($sender === '' && $school) $sender = trim((string)($school->smartschool_verzender ?? ''));
-        if ($sender === '') $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
-        return $sender;
+        foreach (['smartschool', 'email'] as $channel) {
+            if ($settings[$channel.'_'.$suffix] !== '1') continue;
+            $recipient = $channel === 'smartschool' ? $username : $email;
+            if ($test && $override !== '' && $channel === 'smartschool') $recipient = $override;
+            if (trim($recipient) === '' || ($channel === 'email' && ! filter_var($recipient, FILTER_VALIDATE_EMAIL))) {
+                $this->warn('Overgeslagen: '.$type.' #'.$id.' mist geldig '.$channel.'-adres.');
+                continue;
+            }
+            if ($test) {
+                $this->info('TEST: '.$type.' #'.$id.' via '.$channel.' (er is niets verstuurd).');
+                continue;
+            }
+            if ($channel === 'email' && in_array(config('mail.default'), ['log', 'array'], true)) {
+                $this->warn('E-mail uitgeschakeld: configureer eerst een echte mailtransport.');
+                continue;
+            }
+            if (! $service->claim($schoolId, $type, $id, $date, $channel)) {
+                $this->line('Overgeslagen: al verwerkt voor '.$type.' #'.$id.' via '.$channel.'.');
+                continue;
+            }
+            try {
+                if ($channel === 'smartschool') {
+                    app(SmartschoolSoap::class)->sendMessage($recipient, $subject,
+                        nl2br(e($bodyText)), $sender, false, 0);
+                } else {
+                    Mail::raw($bodyText, static function ($message) use ($recipient, $subject) {
+                        $message->to($recipient)->subject($subject);
+                    });
+                }
+                $service->finish($schoolId, $type, $id, $date, $channel, true);
+                $this->info(ucfirst($type).': verstuurd naar '.$recipient.' via '.$channel);
+            } catch (\Throwable $error) {
+                // Uncertain outcomes must never retry automatically, to prevent duplicate birthday messages.
+                $service->finish($schoolId, $type, $id, $date, $channel, false, $error->getMessage());
+                Log::error('Verjaardagsbericht mislukt', ['type' => $type, 'id' => $id,
+                    'schoolid' => $schoolId, 'channel' => $channel, 'error' => $error->getMessage()]);
+                $this->error('Verzenden mislukt voor '.$type.' #'.$id.' via '.$channel.'.');
+            }
+        }
     }
 }
