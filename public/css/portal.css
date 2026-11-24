@@ -728,13 +728,4 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .library-sheet-label-text span { font-size: 7pt; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; }
 .library-sheet-label-empty { border-color: #f0f2f5; }
 @media screen and (max-width: 850px) { .library-label-sheets { overflow-x: auto; max-width: 100%; } }
-@page { size: A4 portrait; margin: 0; }
-@media print {
-    html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: white !important; }
-    .library-page-head, .library-qr-toolbar, .library-label-settings, #qr-feedback, .library-help,
-    header, footer, aside, nav { display: none !important; }
-    .library-page, .library-form-card, .library-label-sheets { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; max-width: none !important; width: 210mm !important; }
-    .library-label-sheet { margin: 0 !important; box-shadow: none !important; break-after: page; page-break-after: always; }
-    .library-label-sheet:last-child { break-after: auto; page-break-after: auto; }
-    .library-sheet-label, .library-sheet-label-empty { border: 0 !important; }
-}
+
