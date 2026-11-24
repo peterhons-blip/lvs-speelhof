@@ -14,7 +14,10 @@
             <h1>LVS-dashboard</h1>
             <p>Een centraal overzicht van leerlingen, gedragsmeldingen en de opvolging. Gegevens komen rechtstreeks uit het bestaande LVS.</p>
         </div>
-        <a href="{{ route('leerlingen.index') }}" class="library-button library-button-primary">Leerling zoeken</a>
+        <div class="lvs-dashboard-header-actions">
+            <a href="{{ route('leerlingen.index') }}" class="library-button library-button-secondary">Leerling zoeken</a>
+            @if($canCreate)<a href="{{ route('meldingen.select-student') }}" class="library-button library-button-primary">+ Nieuwe melding</a>@endif
+        </div>
     </div>
 
     <section class="lvs-dashboard-stats" aria-label="LVS in cijfers">
