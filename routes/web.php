@@ -185,15 +185,30 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::post('/rechten', [\App\Http\Controllers\PortalPermissionsController::class, 'update'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->name('permissions.update');
     });
 
-    Route::prefix('leerlingen')->name('leerlingen.')->group(function () {
+    // LVS: all records remain staff-only. Future parent/student access is not active.
+    Route::get('/lvs', [\App\Http\Controllers\LvsDashboardController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
+        ->name('lvs.dashboard');
+    Route::get('/lvs/klassenraad', [\App\Http\Controllers\LvsReportsController::class, 'index'])
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
+        ->name('lvs.reports.index');
+
+    Route::prefix('leerlingen')->name('leerlingen.')->middleware(
+        \App\Http\Middleware\RequirePortalPermission::class.':lvs.view'
+    )->group(function () {
         Route::get('/', [LeerlingenController::class, 'index'])->name('index');
         Route::get('/verjaardagen', [LeerlingenController::class, 'verjaardagen'])->name('verjaardagen');
-        Route::get('/{id}', [LeerlingenController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/{id}', [LeerlingenController::class, 'show'])->whereNumber('id')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.view')->name('show');
     });
 
     Route::prefix('meldingen')->name('meldingen.')->group(function () {
-        Route::get('/add/{id}', [MeldingController::class, 'create'])->whereNumber('id')->name('create');
-        Route::post('/add/{id}', [MeldingController::class, 'store'])->whereNumber('id')->name('store');
+        Route::get('/', [MeldingController::class, 'index'])
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.view')->name('index');
+        Route::get('/add/{id}', [MeldingController::class, 'create'])->whereNumber('id')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('create');
+        Route::post('/add/{id}', [MeldingController::class, 'store'])->whereNumber('id')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('store');
     });
 });
 
