@@ -202,6 +202,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     });
 
     Route::prefix('meldingen')->name('meldingen.')->group(function () {
+        Route::get('/nieuw', [MeldingController::class, 'selectStudent'])
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.create')->name('select-student');
         Route::get('/', [MeldingController::class, 'index'])
             ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.meldingen.view')->name('index');
         Route::get('/add/{id}', [MeldingController::class, 'create'])->whereNumber('id')
