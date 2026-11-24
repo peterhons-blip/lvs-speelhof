@@ -22,6 +22,7 @@ class CheckLeeftijdLeerlingen extends Command
     {
         $this->info('Check gestart…');
 
+        $warningSettings = app(\App\Services\BirthdaySettings::class)->all();
         $isTest = $this->option('test') === true;
         $testSsOverzichtOnly = $this->option('test-ss-overzicht') === true;
         $useDummy = $this->option('dummy') === true;
@@ -45,7 +46,13 @@ class CheckLeeftijdLeerlingen extends Command
         $leerlingen = Leerling::query()->where('active', 1)->with(['klas', 'school'])->get();
 
         // 7 dagen vooraf + vandaag
-        $leerlingenBinnenWeek18 = $leerlingen->filter(fn($l) => $l->wordtBinnen7Dagen18());
+        $warningDays = max(1, min(30, (int) ($warningSettings['warning_days'] ?? 7)));
+        $warningTarget = now('Europe/Brussels')->addDays($warningDays)->toDateString();
+        $leerlingenBinnenWeek18 = $warningSettings['warning_enabled'] === '1'
+            && ($warningSettings['warning_student'] === '1' || $warningSettings['warning_coaccounts'] === '1')
+            ? $leerlingen->filter(fn ($l) => $l->geboortedatum
+                && $l->geboortedatum->copy()->addYears(18)->toDateString() === $warningTarget)
+            : collect();
         $leerlingenVandaag18    = $leerlingen->filter(fn($l) => $l->wordtVandaag18());
 
         // === TEST: enkel Smartschool-overzicht ===
@@ -75,7 +82,8 @@ class CheckLeeftijdLeerlingen extends Command
         }
 
         // Onderwerpen
-        $onderwerpVooraf       = "Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld";
+        $onderwerpVooraf = (string) ($warningSettings['warning_subject']
+            ?? 'Belangrijk: je wordt binnenkort 18 — co-accounts worden uitgeschakeld');
         $onderwerpVandaagCo    = "Belangrijk: aanpassing van je co-accounts nu je 18 jaar geworden bent!";
         $onderwerpSecretariaat = "Uitnodiging: even langs bij het leerlingensecretariaat";
         $onderwerpOverzichtSs  = "Overzicht: leerlingen vandaag 18";
@@ -102,6 +110,9 @@ class CheckLeeftijdLeerlingen extends Command
             if ($senderSecretariaat === '') {
                 $senderSecretariaat = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
             }
+            if (trim((string) ($warningSettings['warning_sender'] ?? '')) !== '') {
+                $senderSecretariaat = trim((string) $warningSettings['warning_sender']);
+            }
 
             $beleid = trim((string)($school->smartschool_verzender_beleid ?? ''));
             if ($beleid === '') $beleid = null;
@@ -125,13 +136,21 @@ class CheckLeeftijdLeerlingen extends Command
                 }
 
                 // 1A: naar leerling (hoofdaccount)
-                try {
+                if ($warningSettings['warning_student'] === '1') try {
                     $bodyLeerling = view($viewVoorafLeerling, [
                         'voornaam' => $leerling->voornaam,
                         'naam'     => $leerling->naam,
                         'school'   => $school,
                         'beleid'   => $beleid,
                     ])->render();
+
+                    if (trim((string) ($warningSettings['warning_body_student'] ?? '')) !== '') {
+                        $bodyLeerling = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
+                            $warningSettings['warning_body_student'],
+                            ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                                'school' => $school->schoolnaam, 'dagen' => $warningDays]
+                        )));
+                    }
 
                     $ss->sendMessage(
                         $leerling->gebruikersnaam,
@@ -149,13 +168,21 @@ class CheckLeeftijdLeerlingen extends Command
                 }
 
                 // 1B: naar co-accounts (1..6)
-                try {
+                if ($warningSettings['warning_coaccounts'] === '1') try {
                     $bodyCo = view($viewVoorafCo, [
                         'voornaam' => $leerling->voornaam,
                         'naam'     => $leerling->naam,
                         'school'   => $school,
                         'beleid'   => $beleid,
                     ])->render();
+
+                    if (trim((string) ($warningSettings['warning_body_coaccount'] ?? '')) !== '') {
+                        $bodyCo = nl2br(e(app(\App\Services\BirthdaySettings::class)->render(
+                            $warningSettings['warning_body_coaccount'],
+                            ['voornaam' => $leerling->voornaam, 'naam' => $leerling->naam,
+                                'school' => $school->schoolnaam, 'dagen' => $warningDays]
+                        )));
+                    }
 
                     for ($i = 1; $i <= 6; $i++) {
                         try {
