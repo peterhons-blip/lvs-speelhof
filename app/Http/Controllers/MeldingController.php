@@ -30,6 +30,9 @@ class MeldingController extends Controller
             ->select('m.id', 'm.leerlingId', 'm.comment', 'm.gebeurdop', 'm.created_at',
                 'l.naam', 'l.voornaam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie');
 
+        if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
+            $query->addSelect('m.auteur_gebruikersnaam');
+        }
         if (!empty($data['categorie'])) $query->where('c.id', $data['categorie']);
         if (!empty($data['van'])) $query->whereDate('m.gebeurdop', '>=', $data['van']);
         if (!empty($data['tot'])) $query->whereDate('m.gebeurdop', '<=', $data['tot']);
