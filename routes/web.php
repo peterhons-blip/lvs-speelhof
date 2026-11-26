@@ -33,6 +33,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('bibliotheek.reports.export')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
+        Route::get('/opvolging-beleid', [\App\Http\Controllers\LibraryEscalationController::class, 'index'])
+            ->name('escalations.index')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+        Route::post('/opvolging-beleid/{escalation}/afhandelen', [\App\Http\Controllers\LibraryEscalationController::class, 'resolve'])
+            ->whereNumber('escalation')->name('escalations.resolve')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
