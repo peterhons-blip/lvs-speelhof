@@ -233,6 +233,11 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
         ->name('lvs.reports.index');
 
+    Route::prefix('secretariaatsbezoeken')->name('secretariat-visits.')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.secretariat_visits.manage')->group(function(){
+        Route::get('/',[\App\Http\Controllers\AdultSecretariatVisitController::class,'index'])->name('index');
+        Route::post('/{visit}/status',[\App\Http\Controllers\AdultSecretariatVisitController::class,'update'])->whereNumber('visit')->name('update');
+        Route::post('/leerling/{student}',[\App\Http\Controllers\AdultSecretariatVisitController::class,'register'])->whereNumber('student')->name('register');
+    });
     Route::prefix('leerlingen')->name('leerlingen.')->middleware(
         \App\Http\Middleware\RequirePortalPermission::class.':lvs.view'
     )->group(function () {
