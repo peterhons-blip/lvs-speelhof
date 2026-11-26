@@ -21,22 +21,25 @@ class LvsDashboardController extends Controller
 
         $stats = [
             'students' => DB::table('leerlingen')->where('active', 1)->count(),
-            'notifications' => DB::table('meldingen')->count(),
-            'this_month' => DB::table('meldingen')->whereBetween('gebeurdop', [$from, $until])->count(),
-            'last_7_days' => DB::table('meldingen')->whereBetween('gebeurdop', [
+            'notifications' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count(),
+            'this_month' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [$from, $until])->count(),
+            'last_7_days' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [
                 $today->copy()->subDays(6)->toDateString(), $until,
             ])->count(),
         ];
 
         $categories = DB::table('meldingscategorien as c')
             ->leftJoin('meldingssoorten as s', 's.meldingscategorieId', '=', 'c.id')
-            ->leftJoin('meldingen as m', 'm.meldingssoortId', '=', 's.id')
+            ->leftJoin('meldingen as m', function($join) use($access,$request) {
+                $join->on('m.meldingssoortId','=','s.id');
+                if (!$access->has($request,'lvs.meldingen.confidential.view')) $join->where('m.vertrouwelijk',0);
+            })
             ->select('c.id', 'c.naam')
             ->selectRaw('COUNT(m.id) AS totaal')
             ->groupBy('c.id', 'c.naam')
             ->orderByDesc('totaal')->orderBy('c.naam')->get();
 
-        $recent = DB::table('meldingen as m')
+        $recent = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
             ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
             ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
