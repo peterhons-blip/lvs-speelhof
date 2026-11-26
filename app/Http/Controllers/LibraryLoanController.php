@@ -478,7 +478,15 @@ class LibraryLoanController extends Controller
     {
         $this->authorizeSettings(request());
         $settings = DB::table('library_settings')->pluck('value', 'key');
-        return view('bibliotheek.loans.settings', compact('settings'));
+        $staffOptions = DB::table('users')
+            ->whereNotNull('smartschool_gebruikersnaam')
+            ->where('smartschool_gebruikersnaam', '<>', '')
+            ->where(function ($query) {
+                $query->whereNull('smartschool_active')->orWhere('smartschool_active', 1);
+            })
+            ->select('voornaam', 'name', 'smartschool_gebruikersnaam')
+            ->orderBy('name')->orderBy('voornaam')->get();
+        return view('bibliotheek.loans.settings', compact('settings', 'staffOptions'));
     }
 
     public function saveSettings(Request $request): RedirectResponse
