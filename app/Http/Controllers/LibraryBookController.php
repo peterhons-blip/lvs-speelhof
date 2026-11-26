@@ -129,9 +129,13 @@ class LibraryBookController extends Controller
             return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
         }
 
-        $book = $lookup->find($isbn);
+        // Query both providers by the same ISBN; preserve Open Library fields
+        // and fill only missing values from Google Books.
+        $book = $lookup->findEnriched($isbn);
         if ($book === null) {
-            return response()->json(['message' => 'Geen gegevens gevonden. Vul het boek handmatig in.'], 404);
+            return response()->json([
+                'message' => 'Geen boekgegevens gevonden bij Open Library of Google Books. Controleer het ISBN en probeer opnieuw. Je kunt het boek ook handmatig registreren.',
+            ], 404);
         }
 
         return response()->json(['book' => $book]);
@@ -144,7 +148,12 @@ class LibraryBookController extends Controller
             'type' => ['nullable', Rule::in(['title', 'author'])],
         ]);
 
-        $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
+        $query = trim($data['q']);
+        $type = $data['type'] ?? 'title';
+        $books = $lookup->searchByName($query, $type);
+        if (empty($books)) {
+            $books = $lookup->searchGoogleBooksByName($query, $type);
+        }
 
         return response()->json(['books' => $books]);
     }

@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'google_books' => [
+        'api_key' => env('GOOGLE_BOOKS_API_KEY', ''),
+    ],
+
     'smartschool' => [
         'client_id' => env('SMARTSCHOOL_CLIENT_ID'),
         'client_secret' => env('SMARTSCHOOL_CLIENT_SECRET'),
