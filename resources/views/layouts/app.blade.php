@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=40">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=41">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
 </head>
 <body class="portal-body">
@@ -30,6 +30,9 @@
                     <strong>{{ trim(($ss_user['voornaam'] ?? '') . ' ' . ($ss_user['naam'] ?? '')) }}</strong>
                     <small>{{ $ss_user['groupname'] ?? 'Personeelslid' }}</small>
                 </span>
+                @if(!session('portal_preview') && app(\App\Services\LibraryAccess::class)->role(request()) === 'ict_coordinator')
+                    @include('partials.portal-preview-picker')
+                @endif
                 <a href="{{ route('logout') }}" class="portal-logout">Uitloggen</a>
             </div>
         </header>
