@@ -55,10 +55,13 @@ class SendLibraryLoanReminders extends Command
             if ($days > 0 && $todayDate->equalTo($calendar->reminderDate($due,$days)) && $todayDate->greaterThanOrEqualTo(\Carbon\CarbonImmutable::parse($loan->loan_date,'Europe/Brussels'))) $types[] = 'before_due';
             if ($onDue && $todayDate->equalTo($due)) $types[] = 'due_today';
             $overdueDays = $calendar->distance($due,$todayDate);
-            if ($firstOverdue > 0 && $overdueDays >= $firstOverdue &&
-                ($overdueDays === $firstOverdue ||
-                    ($repeatEvery > 0 && ($overdueDays - $firstOverdue) % $repeatEvery === 0))) {
-                $types[] = 'overdue';
+            if ($firstOverdue > 0 && $todayDate->greaterThan($due) && $overdueDays >= $firstOverdue) {
+                $last = DB::table('library_loan_notifications')->where('loan_id',$loan->id)
+                    ->where('type','overdue')->where('status','sent')
+                    ->where('scheduled_for','>',$due->toDateString())->max('scheduled_for');
+                if (!$last || ($repeatEvery > 0 && $calendar->distance(\Carbon\CarbonImmutable::parse($last,'Europe/Brussels'),$todayDate) >= $repeatEvery)) {
+                    $types[] = 'overdue';
+                }
             }
 
             foreach ($types as $type) {
@@ -77,7 +80,7 @@ class SendLibraryLoanReminders extends Command
                 \Illuminate\Support\Facades\Schema::hasTable('library_loan_escalations')) {
                 $successfulOverdue = DB::table('library_loan_notifications')
                     ->where('loan_id', $loan->id)
-                    ->where('type', 'overdue')->where('status', 'sent')->count();
+                    ->where('type', 'overdue')->where('status', 'sent')->where('scheduled_for','>',$due->toDateString())->count();
                 $queued = DB::table('library_loan_escalations')
                     ->where('loan_id', $loan->id)->exists();
                 if ($successfulOverdue >= $escalateAfter && !$queued) {
