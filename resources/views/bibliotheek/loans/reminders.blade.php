@@ -42,6 +42,7 @@
         </div>
         <div class="library-reminder-actions"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
+    <section class="library-form-card"><h2>Automatische herinneringen pauzeren</h2><p>Geen automatische herinneringen of escalatie tot en met deze datum. Laat leeg om te hervatten; handmatige berichten blijven mogelijk.</p><form method="post" action="{{ route('bibliotheek.loans.pause',$item->id) }}">@csrf<input type="date" name="until" value="{{ $item->reminders_paused_until }}"><button class="library-button library-button-secondary">Pauze opslaan</button></form></section>
     @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
         <section class="library-form-card library-reminder-manual">
             <h2>Handmatige herinnering</h2>
