@@ -15,20 +15,14 @@
 @endphp
 @if($libraryItems)
 <div class="portal-nav-module">
-    <a class="portal-nav-link {{ $personalActive && in_array($section,array_merge(['library'],array_keys($libraryItems)))?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'library']) }}"><span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek</a>
+    <a class="portal-nav-link {{ $personalActive && in_array($section,array_merge(['library','book'],array_keys($libraryItems)))?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'library']) }}"><span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek</a>
     @if($personalActive && in_array($section,array_merge(['library'],array_keys($libraryItems))))
     <nav class="portal-nav-submenu" aria-label="Mijn bibliotheek">
         <a class="portal-nav-subitem {{ $section==='library'?'is-active':'' }}" href="{{ route('external.dashboard',['section'=>'library']) }}">Overzicht</a>
         @foreach($libraryItems as $key=>$label)
-        <a class="portal-nav-subitem {{ $section===$key?'is-active':'' }}" href="{{ route('external.dashboard',['section'=>$key]) }}">{{ $label }}</a>
+        <a class="portal-nav-subitem {{ ($section===$key || ($key==='catalog' && $section==='book'))?'is-active':'' }}" href="{{ route('external.dashboard',['section'=>$key]) }}">{{ $label }}</a>
         @endforeach
     </nav>
     @endif
 </div>
-@endif
-@if($externalCan('profile.view'))
-<a class="portal-nav-link {{ $personalActive && $section==='profile'?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'profile']) }}"><span class="portal-nav-icon" aria-hidden="true">◎</span>{{ $externalRole==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</a>
-@endif
-@if($externalCan('lvs.view') && $externalCan('incidents.view'))
-<a class="portal-nav-link {{ $personalActive && $section==='incidents'?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'incidents']) }}"><span class="portal-nav-icon" aria-hidden="true">◎</span> LVS-meldingen</a>
 @endif
