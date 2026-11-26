@@ -68,12 +68,13 @@
                 <details style="margin:12px 0" @if($module==='leerling') open @endif>
                     <summary style="cursor:pointer;font-weight:600">{{ $label }}</summary>
                     @if($module==='bibliotheek')
-                    <p>Activeer ook het persoonlijke dashboard en het individuele recht Bibliotheekmedewerker.</p>
+                    <p>Activeer ook het persoonlijke dashboard. Bibliotheek openen bepaalt of het beheermenu verschijnt.</p>
                     <button type="button" class="library-button library-button-secondary" id="bulk-all-bib">Alle bibliotheekrechten toestaan</button>
                     <button type="button" class="library-button library-button-secondary" id="bulk-no-bib">Alle bibliotheekrechten weigeren</button>
                     @endif
                     <div class="library-table-wrap"><table class="library-table"><tbody>
                     @foreach(config('portal_permissions.'.$module.'.permissions',[]) as $key=>$title)
+                    @continue($key==='leerling.library.help')
                     <tr><td>{{ $title }}</td><td><select name="rights[{{ $key }}]" data-module="{{ $module }}" aria-label="{{ $title }}">
                     <option value="unchanged">Ongewijzigd</option><option value="allow">Toestaan</option><option value="deny">Weigeren</option><option value="inherit">Individuele keuze wissen</option>
                     </select></td></tr>

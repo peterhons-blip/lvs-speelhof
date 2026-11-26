@@ -11,9 +11,10 @@ class ExternalLibraryWorkflowController extends Controller
     public function submit(Request $request,ExternalPortalAccess $access)
     {
         $student=$request->attributes->get('external_student');
-        abort_unless($student && !$request->session()->has('portal_preview'),403);
+        abort_unless($student,403);
+        $simulate=$request->session()->has('portal_preview');
         $role=$request->session()->get('ss_user.principal_type');
-        $data=$request->validate(['type'=>'required|in:reserve,renew','target_id'=>'nullable|integer|min:1','action'=>'nullable|in:books.create,isbn.lookup,labels.print,loans.create,loans.return','details'=>'nullable|string|max:500']);
+        $data=$request->validate(['type'=>'required|in:reserve,renew','target_id'=>'required|integer|min:1']);
         $can=fn($p)=>$access->has($role,$p,(int)$student->id);
         $target=$data['target_id']??null;
         $payload=null;
@@ -24,14 +25,16 @@ class ExternalLibraryWorkflowController extends Controller
             abort_unless($can('library.renew.request') && $can('library.view'),403);
             abort_unless($target && DB::table('library_loans')->where('id',$target)->where('leerling_id',$student->id)->whereNull('staff_user_id')->whereNull('returned_at')->exists(),404);
         }
+        if ($simulate) return back()->with('success','Testmodus: aanvraag is geldig. Er is geen echte aanvraag opgeslagen.');
         DB::transaction(function()use($student,$role,$data,$target,$payload){
             DB::table('leerlingen')->where('id',$student->id)->lockForUpdate()->first();
             $pending=DB::table('external_library_requests')->where('leerling_id',$student->id)->where('status','pending');
-            if ((clone $pending)->count()>=20) abort(422,'Te veel openstaande aanvragen.');
-            if ($data['type']!=='helper' && (clone $pending)->where('request_type',$data['type'])->where('target_id',$target)->exists()) abort(422,'Er bestaat al een openstaande aanvraag.');
+            if ((clone $pending)->count()>=20) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Je hebt te veel openstaande aanvragen.']);
+            if ((clone $pending)->where('request_type',$data['type'])->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Er bestaat al een openstaande aanvraag voor dit boek.']);
+            if ($data['type']==='reserve' && app(\App\Services\LibraryReservations::class)->active()->where('leerling_id',$student->id)->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Dit boek is al voor jou gereserveerd.']);
             DB::table('external_library_requests')->insert(['leerling_id'=>$student->id,'request_type'=>$data['type'],'target_id'=>$target,'principal_type'=>$role,'payload'=>$payload,'status'=>'pending','created_at'=>now(),'updated_at'=>now()]);
         });
-        return back()->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
+        return redirect()->route('external.dashboard',['section'=>'requests'])->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
     }
 
     public function index(Request $request,LibraryAccess $access)

@@ -49,9 +49,9 @@
 @if($section==='profile' && $can('profile.view'))
 <section class="library-form-card"><h2>Leerlinggegevens</h2><dl class="lvs-details-grid"><div><dt>Naam</dt><dd>{{ $student->voornaam }} {{ $student->naam }}</dd></div><div><dt>Klas</dt><dd>{{ $profile ?? '—' }}</dd></div></dl></section>
 @endif
-@if(session('success'))<p role="status">{{ session('success') }}</p>
+@if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>
 @endif
-@if($errors->any())<div role="alert">{{ $errors->first() }}</div>
+@if($errors->any())<div class="library-errors" role="alert">{{ $errors->first() }}</div>
 @endif
 @if($section==='incidents' && $incidents!==null)
 <section class="library-form-card"><h2>LVS-meldingen</h2>
@@ -72,7 +72,7 @@
 </td>
 @if($can('library.renew.request'))<td><form method="post" action="{{ route('external.requests.submit') }}">
 @csrf
-<input type="hidden" name="type" value="renew"><input type="hidden" name="target_id" value="{{ $loan->id }}"><button class="library-button library-button-secondary" @disabled(session('portal_preview'))>Verlenging aanvragen</button></form></td>
+<input type="hidden" name="type" value="renew"><input type="hidden" name="target_id" value="{{ $loan->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Verlenging testen' : 'Verlenging aanvragen' }}</button></form></td>
 @endif
 </tr>
 @empty
@@ -100,7 +100,7 @@
 @forelse($books as $book)<tr><td>{{ $book->title }}</td><td>{{ $book->authors }}</td>
 @if($can('library.reserve'))<td><form method="post" action="{{ route('external.requests.submit') }}">
 @csrf
-<input type="hidden" name="type" value="reserve"><input type="hidden" name="target_id" value="{{ $book->id }}"><button class="library-button library-button-secondary" @disabled(session('portal_preview'))>Reserveren</button></form></td>
+<input type="hidden" name="type" value="reserve"><input type="hidden" name="target_id" value="{{ $book->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Reserveren (test)' : 'Reserveren' }}</button></form></td>
 @endif
 @if($can('library.availability.view'))<td>{{ $book->available }}</td>
 @endif
