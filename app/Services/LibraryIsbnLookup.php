@@ -115,7 +115,7 @@ class LibraryIsbnLookup
             }
 
             return null;
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
             return null;
         }
