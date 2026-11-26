@@ -111,13 +111,22 @@
 </tbody></table></div>
 @include('partials.portal-pagination',['paginator'=>$books])</section>
 @endif
-@if($section==='requests')<section class="library-form-card"><h2>Mijn aanvragen</h2>
-@forelse($requests as $item)<p>{{ ['reserve'=>'Reservering','renew'=>'Verlenging','helper'=>'Bibliotheektaak'][$item->request_type] ?? '' }} · {{ $item->created_at }} · {{ $item->status==='approved' && $item->reserved_until && $item->reserved_until < now('Europe/Brussels')->toDateString() ? 'Verlopen' : (['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd','fulfilled'=>'Opgehaald','cancelled'=>'Geannuleerd'][$item->status] ?? '') }} @if($item->reserved_until) · Ophalen uiterlijk {{ $item->reserved_until }} @endif @if($item->decision_note) · {{ $item->decision_note }} @endif
-</p>
+@if($section==='requests')
+<section class="library-form-card"><h2>Mijn aanvragen</h2>
+<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Boek</th><th>Type</th><th>Datum</th><th>Status</th><th>Toelichting</th></tr></thead><tbody>
+@forelse($requests as $item)
+<tr><td><strong>{{ ($item->request_type==='reserve'?$item->requested_book:$item->renew_book) ?? 'Boek niet beschikbaar' }}</strong></td>
+<td>{{ $item->request_type==='reserve'?'Reservering':'Verlenging' }}</td>
+<td>{{ \Illuminate\Support\Carbon::parse($item->created_at)->format('d/m/Y') }}</td>
+<td><span class="library-pill">{{ $item->status==='approved' && $item->reserved_until && $item->reserved_until < now('Europe/Brussels')->toDateString() ? 'Verlopen' : (['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd','fulfilled'=>'Opgehaald','cancelled'=>'Geannuleerd'][$item->status] ?? '') }}</span>
+@if($item->reserved_until && $item->status==='approved')
+<div>Ophalen uiterlijk {{ \Illuminate\Support\Carbon::parse($item->reserved_until)->format('d/m/Y') }}</div>
+@endif
+</td><td>{{ $item->decision_note ?? '—' }}</td></tr>
 @empty
-<p>Je hebt nog geen aanvragen.</p>
+<tr><td colspan="5">Je hebt nog geen aanvragen.</td></tr>
 @endforelse
-</section>
+</tbody></table></div></section>
 @endif
 </main>
 @endsection
