@@ -32,6 +32,13 @@
                 <input id="{{ $key }}" name="{{ $key }}" type="number" min="1" max="365" required value="{{ old($key, $settings[$key] ?? $default) }}">
             </div>
         @endforeach
+        <div class="library-wide"><h2>Schoolkalender</h2><p>Configureer hoe weekends en sluitingsdagen meetellen. @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))<a href="{{ route('beheer.school-calendar.index') }}">Schoolkalender beheren</a>@endif</p></div>
+        @foreach(['loan_day_unit'=>['Uitleen- en verlengingstermijn','calendar'],'reminder_day_unit'=>['Herinneringsintervallen','school']] as $key=>[$label,$default])
+            <div class="library-field"><label for="{{ $key }}">{{ $label }}</label><select id="{{ $key }}" name="{{ $key }}"><option value="calendar" @selected(old($key,$settings[$key] ?? $default)==='calendar')>Kalenderdagen</option><option value="school" @selected(old($key,$settings[$key] ?? $default)==='school')>Schooldagen</option></select></div>
+        @endforeach
+        @foreach(['shift_due_to_schoolday'=>'Inleverdatum verschuiven naar schooldag','skip_weekends'=>'Geen automatische herinneringen in weekends','skip_holidays'=>'Geen automatische herinneringen tijdens sluitingsdagen'] as $key=>$label)
+            <div class="library-field"><input type="hidden" name="{{ $key }}" value="0"><label><input type="checkbox" name="{{ $key }}" value="1" @checked(old($key,$settings[$key] ?? '1')=='1')> {{ $label }}</label></div>
+        @endforeach
         <div class="library-field">
             <label for="reminder_days_before">Herinnering vóór inleverdatum (dagen)</label>
             <input id="reminder_days_before" name="reminder_days_before" type="number" min="0" max="60" required value="{{ old('reminder_days_before', $settings['reminder_days_before'] ?? 3) }}">
