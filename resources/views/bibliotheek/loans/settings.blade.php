@@ -93,6 +93,25 @@
         </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
+    <section class="library-form-card" style="margin-top:22px">
+        <h2>Recente escalaties naar beleid</h2>
+        <p class="library-help">Dit overzicht toont maximaal 30 escalaties. Een mislukte of onzekere Smartschool-verzending wordt om dubbele berichten te voorkomen niet automatisch opnieuw verstuurd. Controleer die handmatig.</p>
+        <div class="library-table-wrap"><table class="library-table">
+            <thead><tr><th>Datum</th><th>Boek / exemplaar</th><th>Ontvanger</th><th>Status</th></tr></thead>
+            <tbody>
+                @forelse($recentEscalations as $record)
+                    <tr>
+                        <td>{{ $record->created_at }}</td>
+                        <td>{{ $record->title ?: 'Onbekend boek' }} <small>{{ $record->barcode }}</small></td>
+                        <td>{{ $record->recipient }}</td>
+                        <td>{{ ['sent'=>'Aangeboden','failed'=>'Mislukt','processing'=>'Onzekere verwerking'][$record->status] ?? $record->status }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4">Nog geen escalaties geregistreerd.</td></tr>
+                @endforelse
+            </tbody>
+        </table></div>
+    </section>
     <p class="library-help">De tekst en verzending van Smartschool-berichten beheer je via de aparte tegel Smartschool-berichten. Automatische herinneringen lopen via de Laravel scheduler.</p>
 </main>
 @endsection
