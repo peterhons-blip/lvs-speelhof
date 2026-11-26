@@ -83,6 +83,7 @@ class SendLibraryLoanReminders extends Command
                         ]);
                     }
                 }
+                if (! $dryRun) app(\App\Services\LibraryEscalationNotifier::class)->notify((int) $loan->id);
             }
         }
 
