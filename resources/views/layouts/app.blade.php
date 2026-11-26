@@ -84,7 +84,8 @@
                         @endif
                     </div>
                     @endif
-                    @php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
+                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
+@php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
                     <div class="portal-nav-module">
                         <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ $bibliotheekActive ? 'is-current' : '' }}" @if($bibliotheekActive) aria-expanded="true" @endif>
                             <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek
@@ -95,16 +96,12 @@
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
 <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.escalations.view'))
 <a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
 @endif
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
 <a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
 @endif
-                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
 <a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
 @endif
@@ -117,11 +114,9 @@
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
 <a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
 <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.qr-labels') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.qr-labels')) aria-current="page" @endif>QR-codes en etiketten</a>
 @endif
-                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.manage'))
 <a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
 @endif
@@ -134,6 +129,7 @@
                             </nav>
                         @endif
                     </div>
+                    @endif
                     @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     <div class="portal-nav-module">
                         <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
