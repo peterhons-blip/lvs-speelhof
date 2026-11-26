@@ -129,13 +129,9 @@ class LibraryBookController extends Controller
             return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
         }
 
-        // Open Library first; Google Books is the independent fallback.
-        $book = $lookup->find($isbn);
-        if ($book !== null) {
-            $book['source'] = 'Open Library';
-        } else {
-            $book = $lookup->findGoogleBooks($isbn);
-        }
+        // Query both providers by the same ISBN; preserve Open Library fields
+        // and fill only missing values from Google Books.
+        $book = $lookup->findEnriched($isbn);
         if ($book === null) {
             return response()->json([
                 'message' => 'Geen boekgegevens gevonden bij Open Library of Google Books. Controleer het ISBN en probeer opnieuw. Je kunt het boek ook handmatig registreren.',
