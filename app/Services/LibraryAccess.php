@@ -21,6 +21,8 @@ class LibraryAccess
         'tac' => 'TAC',
     ];
 
+    public const EXTERNAL_ROLES = ['leerling'=>'Leerling','coaccount'=>'Ouder / voogd (co-account)'];
+
     public const LABELS = [
         'ict_coordinator' => 'ICT-coördinator',
         'directie' => 'Directie',
@@ -85,7 +87,13 @@ class LibraryAccess
 
         // ICT-coördinator behoudt altijd volledige beheertoegang.
         if ($role === 'ict_coordinator') return true;
-        // Alle rechten, ook beheermodules, worden per schoolrol toegekend.
+        if (str_starts_with($permission,'leerling.') || str_starts_with($permission,'coaccount.')) return false;
+        if (Schema::hasTable('portal_user_permissions')) {
+            $id=DB::table('users')->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->value('id');
+            $override=DB::table('portal_user_permissions')->where('user_id',$id)->where('permission',$permission)->value('allowed');
+            if ($override !== null) return (bool)$override;
+        }
+        // Alle overige rechten worden per schoolrol toegekend.
         if (! Schema::hasTable('portal_role_permissions')) return false;
 
         return DB::table('portal_role_permissions')

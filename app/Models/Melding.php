@@ -11,12 +11,14 @@ class Melding extends Model
         'leerlingId',
         'meldingssoortId',
         'comment',
+        'vertrouwelijk',
         'gebeurdop',
         'auteur_gebruikersnaam',
     ];
 
     protected $casts = [
         'gebeurdop' => 'date',
+        'vertrouwelijk' => 'boolean',
     ];
 
     public function leerling()

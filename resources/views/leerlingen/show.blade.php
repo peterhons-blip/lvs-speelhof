@@ -87,7 +87,7 @@
                                             <span class="badge badge-soort">{{ optional($melding->soort)->naam ?? '—' }}</span>
                                         </div>
                                     </div>
-                                    <p class="melding-comment">{{ $melding->comment }}</p>
+                                    <p class="melding-comment">@if($melding->vertrouwelijk)<strong>Vertrouwelijk</strong><br>@endif {{ $melding->comment }}</p>
                                 </article>
                             @endforeach
                         </div>

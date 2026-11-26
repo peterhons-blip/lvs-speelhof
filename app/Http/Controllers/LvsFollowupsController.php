@@ -17,6 +17,8 @@ class LvsFollowupsController extends Controller
         $ready = Schema::hasTable('lvs_followup_events');
         $showAll = $request->boolean('alles');
         $events = $ready ? DB::table('lvs_followup_events as e')
+            ->join('meldingen as m','m.id','=','e.melding_id')
+            ->when(!$access->has($request,'lvs.meldingen.confidential.view'),fn($q)=>$q->where('m.vertrouwelijk',0))
             ->leftJoin('lvs_followup_rules as r', 'r.id', '=', 'e.rule_id')
             ->leftJoin('leerlingen as l', 'l.id', '=', 'e.leerling_id')
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
@@ -40,6 +42,7 @@ class LvsFollowupsController extends Controller
         ]);
         $changed = DB::table('lvs_followup_events')
             ->where('id', $event)->where('status', 'pending')
+            ->when(!$access->has($request,'lvs.meldingen.confidential.view'),fn($q)=>$q->whereIn('melding_id',DB::table('meldingen')->where('vertrouwelijk',0)->select('id')))
             ->whereIn('action', ['review', 'sanction_proposal'])
             ->update([
                 'status' => $data['decision'],
