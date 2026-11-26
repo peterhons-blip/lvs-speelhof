@@ -302,8 +302,8 @@ class LibraryLoanController extends Controller
                 }
 
                 $hold=app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->lockForUpdate()->first();
-                if ($hold && (!$student || (int)$hold->leerling_id!==(int)$student->id)) {
-                    throw ValidationException::withMessages(['barcodes'=>"Exemplaar {$barcode} is gereserveerd voor een andere leerling."]);
+                if ($hold && !(($student && $hold->staff_user_id===null && (int)$hold->leerling_id===(int)$student->id) || ($staff && $hold->leerling_id===null && (int)$hold->staff_user_id===(int)$staff->id))) {
+                    throw ValidationException::withMessages(['barcodes'=>"Exemplaar {$barcode} is gereserveerd voor een andere ontlener."]);
                 }
                 if ($hold) DB::table('external_library_requests')->where('id',$hold->id)->update(['status'=>'fulfilled','updated_at'=>now()]);
                 $id = DB::table('library_loans')->insertGetId([
@@ -461,7 +461,7 @@ class LibraryLoanController extends Controller
                 return back()->withErrors(['extend' => 'Maximaal aantal verlengingen bereikt.']);
             }
             $book=DB::table('library_copies')->where('id',$item->copy_id)->value('book_id');
-            if (DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$book)->where(fn($q)=>$q->where('status','pending')->orWhere(fn($x)=>$x->where('status','approved')->where('reserved_until','>=',now('Europe/Brussels')->toDateString())))->when($item->leerling_id,fn($q)=>$q->where('leerling_id','<>',$item->leerling_id))->exists()) return back()->withErrors(['extend'=>'Een andere leerling wacht op dit boek.']);
+            if (DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$book)->where(fn($q)=>$q->where('status','pending')->orWhere(fn($x)=>$x->where('status','approved')->where('reserved_until','>=',now('Europe/Brussels')->toDateString())))->where(fn($q)=>$item->staff_user_id ? $q->whereNull('staff_user_id')->orWhere('staff_user_id','<>',$item->staff_user_id) : $q->whereNull('leerling_id')->orWhere('leerling_id','<>',$item->leerling_id))->exists()) return back()->withErrors(['extend'=>'Een andere ontlener wacht op dit boek.']);
             $old = CarbonImmutable::parse($item->due_date, 'Europe/Brussels');
             $base = $old->isAfter(CarbonImmutable::today('Europe/Brussels')) ? $old : CarbonImmutable::today('Europe/Brussels');
             $newDue = app(\App\Services\LibraryCalendar::class)->due($base, $this->setting('extension_days', 21))->toDateString();
