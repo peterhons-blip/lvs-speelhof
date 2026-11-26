@@ -57,7 +57,8 @@ return [
         'label' => 'Nascholingen (toekomstig)',
         'permissions' => ['nascholingen.view' => 'Nascholingen bekijken (pas werkzaam na implementatie)'],
     ],
-    'leerling' => ['label'=>'Leerlingenportaal (voorbereiding)', 'permissions'=>['leerling.dashboard.view'=>'Eigen leerlingportaal openen (nog niet actief)','leerling.library.view'=>'Eigen uitleningen bekijken (nog niet actief)','leerling.library.help'=>'Bibliotheek helpen registreren (nog niet actief)']],
+    'leerling' => ['label'=>'Leerlingenportaal (voorbereiding)', 'permissions'=>['leerling.dashboard.view'=>'Eigen leerlingportaal openen (nog niet actief)','leerling.library.view'=>'Eigen uitleningen bekijken (nog niet actief)','leerling.library.help'=>'Bibliotheek helpen registreren (nog niet actief)','leerling.incidents.view'=>'Vrijgegeven gewone meldingen van eigen dossier bekijken (nog niet actief)']],
+    'coaccount' => ['label'=>'Ouderportaal (voorbereiding)', 'permissions'=>['coaccount.dashboard.view'=>'Eigen ouderportaal openen (nog niet actief)','coaccount.library.view'=>'Uitleningen van gekoppelde leerling bekijken (nog niet actief)','coaccount.incidents.view'=>'Vrijgegeven gewone meldingen van gekoppelde leerling bekijken (nog niet actief)']],
     'beheer' => [
         'label' => 'Portaalbeheer',
         'permissions' => [
