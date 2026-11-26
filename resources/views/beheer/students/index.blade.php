@@ -118,7 +118,7 @@
                     @forelse($students as $student)
                     <tr>
                         <td><input type="checkbox" data-bulk-id form="students-bulk-form" name="ids[]" value="{{ $student->id }}" aria-label="Selecteer {{ $student->voornaam }} {{ $student->naam }}"></td>
-                        <td><strong>{{ trim(($student->voornaam ?? '').' '.($student->naam ?? '')) }}</strong></td>
+                        <td><strong>{{ trim(($student->naam ?? '').' '.($student->voornaam ?? '')) }}</strong></td>
                         <td>{{ $student->klasnaam ?: '—' }}</td>
                         <td>{{ $student->gebruikersnaam ?: '—' }}</td>
                         <td>{{ (int) $student->active === 1 ? 'Actief' : 'Inactief' }}</td>
