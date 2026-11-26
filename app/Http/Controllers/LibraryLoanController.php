@@ -491,7 +491,26 @@ class LibraryLoanController extends Controller
             'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
             'reminder_days_before' => ['required', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['required', 'in:0,1'],
+            'overdue_reminders_enabled' => ['required', 'in:0,1'],
+            'overdue_first_days' => ['required', 'integer', 'between:1,90'],
+            'overdue_repeat_days' => ['required', 'integer', 'between:1,90'],
+            'escalation_enabled' => ['required', 'in:0,1'],
+            'escalation_after_reminders' => ['required', 'integer', 'between:1,30'],
+            'escalation_recipient' => ['nullable', 'string', 'max:120', 'regex:/^[a-zA-Z0-9._-]*$/'],
         ]);
+        if ($values['escalation_enabled'] === '1') {
+            $recipient = trim((string) ($values['escalation_recipient'] ?? ''));
+            $exists = $recipient !== '' && DB::table('users')
+                ->where('smartschool_gebruikersnaam', $recipient)
+                ->where(function ($q) { $q->whereNull('smartschool_active')->orWhere('smartschool_active', 1); })
+                ->exists();
+            if (!$exists) {
+                return back()->withInput()->withErrors(['escalation_recipient' =>
+                    'Kies een actief Smartschool-personeelsaccount als ontvanger van escalaties.']);
+            }
+        }
+        $values = collect($values)->map(fn ($v) => $v === null ? '' : (string) $v)->all();
+
 
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(
