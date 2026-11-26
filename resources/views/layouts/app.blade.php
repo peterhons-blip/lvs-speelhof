@@ -55,43 +55,6 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                     <a href="{{ route('home') }}" class="portal-nav-link {{ (request()->routeIs('home') || (request()->routeIs('external.dashboard') && request('section','dashboard')==='dashboard')) ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
                     </a>
-                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
-                    <div class="portal-nav-module">
-                        <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
-                        @if(request()->routeIs('beheer.*'))
-                        <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                                <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
-                                <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
-                                <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
-                                <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
-                                <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
-                                <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
-                                <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
-                                <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
-                                <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
-                                @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.sent_items.view'))
-                                <a href="{{ route('beheer.sent-items.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.sent-items.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.sent-items.*')) aria-current="page" @endif>Verzonden items</a>
-                                @endif
-                            </nav>
-                        @endif
-                    </div>
-                    @endif
                     @if($isExternal)
                         @include('external.partials.navigation')
                     @elseif(app(\App\Services\LibraryAccess::class)->has(request(),'persoonlijke_bibliotheek.view'))
@@ -178,6 +141,43 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
                                 <a href="{{ route('leerlingen.verjaardagen') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.verjaardagen') ? 'is-active' : '' }}">Verjaardagen</a>
+                                @endif
+                            </nav>
+                        @endif
+                    </div>
+                    @endif
+                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
+                    <div class="portal-nav-module">
+                        <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        @if(request()->routeIs('beheer.*'))
+                        <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
+                                <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
+                                <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
+                                <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
+                                <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
+                                <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
+                                <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
+                                <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
+                                <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
+                                <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.sent_items.view'))
+                                <a href="{{ route('beheer.sent-items.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.sent-items.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.sent-items.*')) aria-current="page" @endif>Verzonden items</a>
                                 @endif
                             </nav>
                         @endif
