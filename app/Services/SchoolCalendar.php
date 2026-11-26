@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 class SchoolCalendar
 {
     private ?array $closures = null;
+    private array $officialCache = [];
     public static function official(int $year): array
     {
         if ($year < 2000 || $year > 2098) throw new \InvalidArgumentException('Ongeldig schooljaar.');
@@ -15,7 +16,13 @@ class SchoolCalendar
         $christmas = $date($year,12,25);
         $autumn = $nov->isSunday() ? $nov->addDay() : $nov->startOfWeek();
         $winter = $christmas->isWeekend() ? $christmas->next(1) : $christmas->startOfWeek();
-        $easter = $date($year+1,3,21)->addDays(easter_days($year+1));
+        // Gregorian computus; independent of PHP's optional calendar extension.
+        $y=$year+1; $a=$y%19; $b=intdiv($y,100); $c=$y%100;
+        $d=intdiv($b,4); $e=$b%4; $f=intdiv($b+8,25); $g=intdiv($b-$f+1,3);
+        $h=(19*$a+$b-$d-$g+15)%30; $i=intdiv($c,4); $k=$c%4;
+        $l=(32+2*$e+2*$i-$h-$k)%7; $m=intdiv($a+11*$h+22*$l,451);
+        $v=$h+$l-7*$m+114;
+        $easter=$date($y,intdiv($v,31),$v%31+1);
         $spring = $easter->subWeeks(7)->next(1);
         $april = $date($year+1,4,1);
         $firstMonday = $april->isMonday() ? $april : $april->next(1);
@@ -52,6 +59,11 @@ class SchoolCalendar
         foreach ($this->closures as $row) {
             if ($row->starts_on <= $day && $row->ends_on >= $day) return $row->name;
         }
+        $year = $date->month >= 9 ? $date->year : $date->year-1;
+        $this->officialCache[$year] ??= self::official($year);
+        foreach ($this->officialCache[$year] as [$name,$start,$end]) {
+            if ($day >= $start->toDateString() && $day <= $end->toDateString()) return $name;
+        }
         return null;
     }
     public function nextOpen(CarbonImmutable $date): CarbonImmutable
@@ -64,7 +76,8 @@ class SchoolCalendar
     public function shift(CarbonImmutable $date, int $days, bool $weekends=true, bool $holidays=true): CarbonImmutable
     {
         $direction=$days<0 ? -1 : 1;
-        for ($i=0; $i<abs($days);) {
+        for ($i=0, $attempts=0; $i<abs($days);) {
+            if (++$attempts > 5000) throw new \RuntimeException('Te veel opeenvolgende sluitingsdagen.');
             $date=$date->addDays($direction);
             if (!$this->reason($date,$weekends,$holidays)) $i++;
         }
