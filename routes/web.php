@@ -20,6 +20,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
     Route::post('/beheer/preview-stop', [\App\Http\Controllers\PortalPreviewController::class,'stop'])->name('portal-preview.stop');
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
+    Route::middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view')->group(function () {
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view');
 
     Route::get('/bibliotheek/smartschool-berichten', [\App\Http\Controllers\LibraryMessageController::class, 'index'])
@@ -108,6 +109,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/{book}/exemplaren/{copy}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'editCopy'])->whereNumber(['book', 'copy'])->name('copies.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.edit');
         Route::put('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'updateCopy'])->whereNumber(['book', 'copy'])->name('copies.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.edit');
         Route::delete('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'destroyCopy'])->whereNumber(['book', 'copy'])->name('copies.destroy')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.delete');
+
+    });
 
     });
 
