@@ -7,11 +7,12 @@
         ->whereIn('groups.groupname',array_values(array_diff_key(\App\Services\LibraryAccess::ROLES,['ict_coordinator'=>true])))
         ->orderBy('users.name')->orderBy('users.voornaam')
         ->get(['users.id','users.voornaam','users.name','users.smartschool_gebruikersnaam','groups.groupname']);
+    $previewStudents = \Illuminate\Support\Facades\DB::table('leerlingen')->where('schoolid',1)->where('active',1)->whereNotNull('gebruikersnaam')->orderBy('naam')->orderBy('voornaam')->get(['id','voornaam','naam','gebruikersnaam','geboortedatum']);
 @endphp
 <details class="portal-preview-picker" id="portal-preview-picker">
     <summary class="portal-preview-trigger">Inloggen als… <span aria-hidden="true">▾</span></summary>
     <div class="portal-preview-menu">
-        <label for="portal-preview-search">Medewerker zoeken</label>
+        <label for="portal-preview-search">Gebruiker zoeken</label>
         <input id="portal-preview-search" type="search" placeholder="Naam, account of rol…" autocomplete="off">
         <p class="portal-preview-hint">Alleen-lezen testmodus</p>
         <div class="portal-preview-list">
@@ -24,7 +25,15 @@
                     </button>
                 </form>
             @endforeach
-            <p id="portal-preview-empty" hidden>Geen medewerkers gevonden.</p>
+            @foreach($previewStudents as $person)
+                @foreach(['leerling'=>'Leerling','coaccount'=>'Co-account'] as $role=>$label)
+                    @continue($role==='coaccount' && (!$person->geboortedatum || $person->geboortedatum<=now('Europe/Brussels')->subYears(18)->toDateString()))
+                    <form method="post" action="{{ route('portal-preview.external',[$role,$person->id]) }}" data-preview-person hidden>@csrf
+                        <button type="submit"><strong>{{ $person->voornaam }} {{ $person->naam }}</strong><small>{{ $label }} · {{ $person->gebruikersnaam }}</small></button>
+                    </form>
+                @endforeach
+            @endforeach
+            <p id="portal-preview-empty" hidden>Geen gebruikers gevonden.</p>
         </div>
     </div>
 </details>
