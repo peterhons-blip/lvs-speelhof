@@ -89,7 +89,25 @@ class LibraryReportController extends Controller
             ->orderByDesc('loans.loan_date')->orderByDesc('loans.id')
             ->paginate(25)->withQueryString();
 
-        return view('bibliotheek.reports.index', compact('from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'borrowers', 'loans'));
+        $stockStatus=DB::table('library_copies')->select('status')->selectRaw('COUNT(*) as total')->groupBy('status')->orderBy('status')->get();
+        $authors=$this->loans($from,$to,$status,$borrower)->whereNotNull('books.authors')->where('books.authors','<>','')->select('books.authors')->selectRaw('COUNT(*) as total')->groupBy('books.authors')->orderByDesc('total')->limit(20)->get();
+        $registered=DB::table('library_copies')->whereDate('created_at','>=',$from)->whereDate('created_at','<=',$to)->selectRaw('DATE(created_at) as day, COUNT(*) as total')->groupByRaw('DATE(created_at)')->orderByDesc('day')->get();
+        $unused=DB::table('library_books as b')->whereNotExists(function($q){$q->selectRaw('1')->from('library_copies as c')->join('library_loans as l','l.copy_id','=','c.id')->whereColumn('c.book_id','b.id');})->select('b.id','b.title')->orderBy('b.title')->limit(100)->get();
+        $stale=DB::table('library_books as b')->join('library_copies as c','c.book_id','=','b.id')->join('library_loans as l','l.copy_id','=','c.id')->select('b.id','b.title')->selectRaw('MAX(l.loan_date) as last_loan')->groupBy('b.id','b.title')->havingRaw('MAX(l.loan_date) < ?', [now('Europe/Brussels')->subYear()->toDateString()])->orderBy('last_loan')->limit(100)->get();
+        return view('bibliotheek.reports.index', compact('stockStatus','authors','registered','unused','stale','from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'borrowers', 'loans'));
+    }
+
+    public function exportStock(Request $request, LibraryAccess $access): StreamedResponse
+    {
+        $access->requirePermission($request,'bibliotheek.books.view');
+        return response()->streamDownload(function(){
+            $h=fopen('php://output','w'); fwrite($h,"\xEF\xBB\xBF");
+            fputcsv($h,['Titel','ISBN','Auteur','Barcode','Status','Staat','Locatie','Registratiedatum'],';');
+            foreach(DB::table('library_copies as c')->join('library_books as b','b.id','=','c.book_id')->select('b.title','b.isbn','b.authors','c.barcode','c.status','c.condition','c.shelf_location','c.created_at')->orderBy('c.id')->cursor() as $row){
+                fputcsv($h,array_map(fn($v)=>preg_match('/^[\s]*[=+@-]/u',(string)$v) ? "'".$v : (string)$v,(array)$row),';');
+            }
+            fclose($h);
+        },'bibliotheek-voorraad.csv',['Content-Type'=>'text/csv; charset=UTF-8']);
     }
 
     public function export(Request $request, LibraryAccess $access): StreamedResponse
