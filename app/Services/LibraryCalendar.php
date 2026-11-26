@@ -33,7 +33,9 @@ class LibraryCalendar
     public function reminderDate(CarbonImmutable $due, int $days): CarbonImmutable
     {
         $date = $this->setting('reminder_day_unit','school') === 'school' ? $this->calendar->shift($due,-$days) : $due->subDays($days);
-        while ($this->closed($date)) $date=$date->subDay();
+        for ($i=0; $this->closed($date); $i++, $date=$date->subDay()) {
+            if ($i>=370) throw new \RuntimeException('Geen beschikbare herinneringsdag.');
+        }
         return $date;
     }
 }
