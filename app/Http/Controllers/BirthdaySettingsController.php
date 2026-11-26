@@ -127,6 +127,32 @@ class BirthdaySettingsController extends Controller
             ['title' => 'Smartschool-overzicht voor medewerkers', 'subject' => $settings['adult_overview_smartschool_subject'],
                 'override' => '', 'template' => 'overzicht_worden18'],
         ];
+        // Display each school's real fallback without turning it into a global override.
+        $adultSenderDefaults = $schools->map(function ($school) {
+            $general = trim((string) $school->smartschool_verzender) ?: (env('SMARTSCHOOL_SENDER_USER') ?: 'lvs');
+            return ['school'=>$school->schoolnaam, 'general'=>$general,
+                'secretariat'=>trim((string) $school->smartschool_verzender_secretariaat) ?: $general];
+        });
+        $adultBodyDefaults = [];
+        foreach (['adult_body_student'=>'wordt18','adult_body_secretariat'=>'wordt18_secretariaat'] as $key=>$template) {
+            foreach ($schools as $school) {
+                $preferred='smartschool.berichten.scholen.'.$school->id.'.'.$template;
+                $html=view(view()->exists($preferred) ? $preferred : 'smartschool.berichten.default.'.$template, [
+                    'voornaam'=>'{voornaam}', 'naam'=>'{naam}',
+                    'school'=>(object)['schoolnaam'=>'{school}'], 'beleid'=>null,
+                ])->render();
+                $plain=preg_replace('~<br\s*/?>~i', "\n", $html);
+                $plain=preg_replace('~</p\s*>~i', "\n\n", $plain);
+                $plain=preg_replace('~<li\s*>~i', '• ', $plain);
+                $plain=preg_replace('~</li\s*>~i', "\n", $plain);
+                $plain=html_entity_decode(strip_tags($plain), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $plain=preg_replace('/[ \t]+/u',' ', $plain);
+                $plain=preg_replace('/ *\n */u',"\n",$plain);
+                $plain=trim(preg_replace('/\n{3,}/u',"\n\n",$plain));
+                $adultBodyDefaults[$key][]=['school'=>$school->schoolnaam,'text'=>$plain];
+            }
+        }
+        $adultEmailSubjectDefault=config('app.name').' - Leerlingen die vandaag 18 worden – ';
         $exampleMessages = [];
         foreach ($exampleDefinitions as $definition) {
             $message = ['title' => $definition['title'], 'subject' => $definition['subject'], 'html' => ''];
@@ -182,7 +208,7 @@ class BirthdaySettingsController extends Controller
             ];
         }
 
-        return view('beheer.birthdays', compact('settings', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages', 'canManagePrivacy', 'privacyAudit'));
+        return view('beheer.birthdays', compact('settings', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages', 'adultSenderDefaults', 'adultBodyDefaults', 'adultEmailSubjectDefault', 'canManagePrivacy', 'privacyAudit'));
     }
 
 
