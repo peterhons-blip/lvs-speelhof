@@ -37,6 +37,13 @@
                 <button type="button" class="library-button library-button-secondary" id="library-lookup">Gegevens ophalen</button>
             </div>
             <p class="library-help" id="library-lookup-result" role="status" aria-live="polite">Zonder ISBN kun je alle gegevens handmatig invullen.</p>
+            <div id="library-other-sources" class="library-help" hidden>
+                Niet automatisch gevonden? Zoek zelf bij
+                <a id="library-source-google" href="https://www.google.com/" target="_blank" rel="noopener noreferrer">Google</a>,
+                <a id="library-source-bibliotheek" href="https://www.bibliotheek.be/" target="_blank" rel="noopener noreferrer">Bibliotheek.be</a>
+                of <a id="library-source-isbnsearch" href="https://isbnsearch.org/" target="_blank" rel="noopener noreferrer">ISBNsearch</a>.
+                Controleer altijd de exacte editie en vul de gevonden gegevens hierboven handmatig in.
+            </div>
             <div class="library-name-lookup">
                 <h3>Geen ISBN bij de hand? Zoek op naam</h3>
                 <div class="library-name-search-row">
@@ -101,6 +108,13 @@
     if (!button) return;
     const isbnInput = document.getElementById('isbn');
     const message = document.getElementById('library-lookup-result');
+    const otherSources = document.getElementById('library-other-sources');
+    const updateOtherSources = isbn => {
+        const number = isbn.replace(/[^0-9X]/gi, '');
+        document.getElementById('library-source-google').href = 'https://www.google.com/search?q=' + encodeURIComponent('ISBN ' + number);
+        document.getElementById('library-source-bibliotheek').href = 'https://www.bibliotheek.be/catalogus?zoekterm=' + encodeURIComponent(number);
+        document.getElementById('library-source-isbnsearch').href = 'https://isbnsearch.org/isbn/' + encodeURIComponent(number);
+    };
     const coverPreview = document.getElementById('library-cover-preview');
     const coverImage = document.getElementById('library-cover-image');
     const clearCoverButton = document.getElementById('library-clear-cover');
@@ -372,16 +386,19 @@
         const isbn = isbnInput.value.trim();
         if (!isbn) { message.textContent = 'Vul eerst een ISBN in.'; isbnInput.focus(); return; }
         button.disabled = true;
+        otherSources.hidden = true;
         message.textContent = 'Boekgegevens ophalen…';
         try {
             const response = await fetch(@json(route('bibliotheek.books.lookup')) + '?isbn=' + encodeURIComponent(isbn), { headers: { Accept: 'application/json' } });
             const result = await response.json();
-            if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; return; }
+            if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; updateOtherSources(isbn); otherSources.hidden = false; return; }
             const book = result.book;
             applyBook(book);
             message.textContent = 'Gegevens gevonden. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
+            updateOtherSources(isbn);
+            otherSources.hidden = false;
         } finally {
             button.disabled = false;
         }
