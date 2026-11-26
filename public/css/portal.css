@@ -957,3 +957,12 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .lvs-staff-chooser .lvs-staff-search {margin:6px 0 9px}
 .lvs-staff-chooser select {min-height:44px}
 .lvs-staff-chooser small {display:block;margin-top:7px;line-height:1.5}
+
+
+/* Bibliotheek: tweede bronselector bij titel-/auteurzoeken */
+.library-name-search-row .library-field:has(#library-search-source){flex:0 0 170px;min-width:0}
+.library-name-search-row .library-name-search-input{min-width:170px}
+@media(max-width:850px){
+ .library-name-search-row{flex-wrap:wrap}
+ .library-name-search-row .library-name-search-input{flex:1 1 220px}
+}
