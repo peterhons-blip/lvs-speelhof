@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title','Bibliotheekaanvragen')
+@section('title',$type==='renew'?'Verlengingsaanvragen':'Reserveringen')
 @section('breadcrumbs')
-@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('home')],['label'=>'Bibliotheekbeheer','url'=>route('bibliotheek.index')],['label'=>'Aanvragen']]])
+@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('home')],['label'=>'Bibliotheekbeheer','url'=>route('bibliotheek.index')],['label'=>$type==='renew'?'Verlengingsaanvragen':'Reserveringen']]])
 @endsection
 @section('content')
 <style>
@@ -23,7 +23,7 @@
 @media(max-width:900px){.request-card{grid-template-columns:1fr}.request-action{border-left:0;border-top:1px solid #e2e9ef;padding:14px 0 0}}
 </style>
 <main class="library-page">
-<div class="library-page-head"><div><p class="portal-eyebrow">BIBLIOTHEEKBEHEER</p><h1>Bibliotheekaanvragen</h1><p>Beheer reserveringen, wachtlijsten en verlengingen.</p></div></div>
+<div class="library-page-head"><div><p class="portal-eyebrow">BIBLIOTHEEKBEHEER</p><h1>{{ $type==='renew'?'Verlengingsaanvragen':'Reserveringen' }}</h1><p>{{ $type==='renew'?'Beoordeel aanvragen om de uitleentermijn te verlengen.':'Beheer reserveringen, wachtlijsten en boeken die afgehaald kunnen worden.' }}</p></div></div>
 @if(session('success'))
 <div class="library-message" role="status">{{ session('success') }}</div>
 @endif
@@ -31,22 +31,22 @@
 <div class="library-errors" role="alert">{{ $errors->first() }}</div>
 @endif
 <nav class="request-tabs" aria-label="Aanvraagstatus">
-@foreach(['pending'=>'Te behandelen ('.$counts['pending'].')','pickup'=>'Af te halen ('.$counts['pickup'].')','history'=>'Historiek','all'=>'Alle ('.$counts['all'].')'] as $key=>$label)
-<a class="library-button {{ $status===$key?'library-button-primary':'library-button-secondary' }}" href="{{ route('bibliotheek.requests.index',array_merge(request()->only(['q','type','principal']),['status'=>$key])) }}">{{ $label }}</a>
+@foreach(array_merge(['pending'=>'Te behandelen ('.$counts['pending'].')'],$type==='reserve'?['pickup'=>'Af te halen ('.$counts['pickup'].')']:[],['history'=>'Historiek','all'=>'Alle ('.$counts['all'].')']) as $key=>$label)
+<a class="library-button {{ $status===$key?'library-button-primary':'library-button-secondary' }}" href="{{ route('bibliotheek.requests.index',array_merge(request()->only(['q','principal']),['status'=>$key,'type'=>$type])) }}">{{ $label }}</a>
 @endforeach
 </nav>
 <section class="library-form-card">
 <form class="request-filters" method="get" action="{{ route('bibliotheek.requests.index') }}">
 <input type="hidden" name="status" value="{{ $status }}">
+<input type="hidden" name="type" value="{{ $type }}">
 <div class="library-field"><label for="request-q">Zoeken</label><input id="request-q" name="q" type="search" value="{{ $search }}" placeholder="Naam of boektitel"></div>
-<div class="library-field"><label for="request-type">Type aanvraag</label><select id="request-type" name="type"><option value="">Alle types</option><option value="reserve" @selected($type==='reserve')>Reservering</option><option value="renew" @selected($type==='renew')>Verlenging</option></select></div>
 <div class="library-field"><label for="request-principal">Aanvrager</label><select id="request-principal" name="principal"><option value="">Iedereen</option>
 @foreach(['leerling'=>'Leerling','staff'=>'Personeel','coaccount'=>'Co-account'] as $key=>$label)
 <option value="{{ $key }}" @selected($principal===$key)>{{ $label }}</option>
 @endforeach
 </select></div>
 <button class="library-button library-button-primary" type="submit">Filteren</button>
-<a class="library-button library-button-secondary" href="{{ route('bibliotheek.requests.index',['status'=>$status]) }}">Wissen</a>
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.requests.index',['status'=>$status,'type'=>$type]) }}">Wissen</a>
 </form>
 <div class="request-grid">
 @forelse($requests as $item)
