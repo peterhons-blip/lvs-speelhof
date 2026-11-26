@@ -46,5 +46,23 @@
             <div><button class="library-button library-button-primary" type="submit">Wijzigingen opslaan</button></div>
         </form>
     </section>
+    @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+    @php
+        $rights=config('portal_permissions.leerling.permissions',[]);
+        $overrides=\Illuminate\Support\Facades\DB::table('portal_student_permissions')->where('leerling_id',$student->id)->pluck('allowed','permission')->all();
+        $inherited=\Illuminate\Support\Facades\DB::table('portal_role_permissions')->where('role','leerling')->pluck('permission')->all();
+    @endphp
+    <section class="library-form-card">
+        <h2>Individuele portaalrechten leerling</h2>
+        <p>Individuele keuzes hebben voorrang op de leerlingrol. Rechten van co-accounts blijven ongewijzigd.</p>
+        <form method="post" action="{{ route('beheer.students.portal-rights',$student->id) }}">@csrf
+            <div class="library-table-wrap"><table class="library-table"><thead><tr><th>Recht</th><th>Groepsrecht</th><th>Individuele keuze</th></tr></thead><tbody>
+            @foreach($rights as $key=>$label)
+            <tr><td>{{ $label }}</td><td>{{ in_array($key,$inherited,true)?'Toegestaan':'Niet toegestaan' }}</td><td><select name="rights[{{ $key }}]" aria-label="{{ $label }}"><option value="inherit" @selected(!array_key_exists($key,$overrides))>Volg groepsrecht</option><option value="allow" @selected(array_key_exists($key,$overrides)&&(bool)$overrides[$key])>Toestaan</option><option value="deny" @selected(array_key_exists($key,$overrides)&&!(bool)$overrides[$key])>Weigeren</option></select></td></tr>
+            @endforeach
+            </tbody></table></div><button class="library-button library-button-primary" type="submit">Portaalrechten opslaan</button>
+        </form>
+    </section>
+    @endif
 </main>
 @endsection
