@@ -13,6 +13,7 @@ class ScheduledTasksController extends Controller
 {
     private const LOG_FILES = [
         'becoming_18' => 'leerlingen_check.log',
+        'secretariat_reminders' => 'secretariaat_herinneringen.log',
         'birthdays' => 'verjaardagen_check.log',
         'student_sync' => 'smartschool_sync_leerlingen.log',
         'staff_sync' => 'smartschool_sync_personeel.log',
@@ -25,6 +26,7 @@ class ScheduledTasksController extends Controller
 
         // These are all tasks currently registered in routes/console.php.
         $scheduledTasks = [
+            'secretariat_reminders' => ['title'=>'Secretariaatsherinneringen 18-jarigen','type'=>'Leerlingen','time'=>'08.15','description'=>'Herinnert aan openstaande secretariaatsbezoeken op schooldagen.'],
             'becoming_18' => ['title' => '18-jarigen en co-accounts', 'type' => 'Leerlingen', 'time' => '01.00',
                 'description' => 'Controleert welke leerlingen binnenkort 18 jaar worden of vandaag 18 worden. Verwerkt de voorziene Smartschoolmeldingen en opvolging rond co-accounts bij meerderjarigheid.'],
             'birthdays' => ['title' => 'Verjaardagsberichten', 'type' => 'Leerlingen en personeel', 'time' => '02.00',

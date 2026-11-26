@@ -12,6 +12,7 @@ return [
     'lvs' => [
         'label' => 'Leerlingenvolgsysteem',
         'permissions' => [
+            'lvs.secretariat_visits.manage' => 'Secretariaatsbezoeken 18-jarigen opvolgen en afvinken',
             'lvs.view' => 'Leerlingenoverzicht en leerlingdossiers openen',
             'lvs.dashboard.view' => 'LVS-dashboard en statistieken bekijken',
             'lvs.meldingen.view' => 'Alle meldingen en details bekijken',

@@ -335,6 +335,9 @@ class CheckLeeftijdLeerlingen extends Command
                     $this->error('Handmatige opvolging vereist: ontbrekende gebruikersnaam voor '.$leerling->voornaam.' '.$leerling->naam);
                 }
 
+                if ($warningSettings['adult_secretariat_notice'] === '1' && \Illuminate\Support\Facades\Schema::hasTable('adult_secretariat_visits')) {
+                    app(\App\Services\AdultSecretariatVisits::class)->register($studentId,$schoolId,$actionDate);
+                }
                 $payload[] = [
                     'voornaam'                           => $leerling->voornaam ?? '',
                     'naam'                               => $leerling->naam ?? '',

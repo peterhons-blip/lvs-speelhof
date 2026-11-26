@@ -101,7 +101,9 @@ class LeerlingenController extends Controller
         $canCreate = app(\App\Services\LibraryAccess::class)
             ->has($request, 'lvs.meldingen.create');
 
-        return view('leerlingen.show', compact('leerling', 'meldingen', 'meldingGroepen',
+        $canManageVisit=app(\App\Services\LibraryAccess::class)->has($request,'lvs.secretariat_visits.manage') && \Illuminate\Support\Facades\Schema::hasTable('adult_secretariat_visits');
+        $adultVisit=$canManageVisit ? \Illuminate\Support\Facades\DB::table('adult_secretariat_visits')->where('student_id',$leerling->id)->where('school_id',$leerling->schoolid)->first() : null;
+        return view('leerlingen.show', compact('canManageVisit','adultVisit','leerling', 'meldingen', 'meldingGroepen',
             'canCreate', 'canSeeMeldingen'));
     }
 

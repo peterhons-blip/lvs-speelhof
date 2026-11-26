@@ -339,6 +339,17 @@
                     <button type="button" class="library-button library-button-secondary adult-template-toggle" data-field="adult_body_secretariat" data-default="{{ $adultBodyDefaults['adult_body_secretariat'][0]['text'] ?? '' }}">{{ $customBody === '' ? 'Eigen tekst aanpassen' : 'Standaardtekst gebruiken' }}</button>
                 </div>
             </div>
+            <h3>Herinneringen voor secretariaatsbezoek</h3>
+            <p class="library-help">Herinneringen stoppen zodra het secretariaat de leerling als langsgekomen registreert. Alleen schooldagen tellen mee; weekends, vakanties en sluitingsdagen worden overgeslagen.</p>
+            <div class="library-form-grid">
+                <div class="library-field"><label for="secretariat_reminder_enabled">Automatische herinneringen</label><select id="secretariat_reminder_enabled" name="secretariat_reminder_enabled"><option value="0" @selected(old('secretariat_reminder_enabled',$settings['secretariat_reminder_enabled'])==='0')>Uitgeschakeld</option><option value="1" @selected(old('secretariat_reminder_enabled',$settings['secretariat_reminder_enabled'])==='1')>Ingeschakeld</option></select></div>
+                <div class="library-field"><label for="secretariat_reminder_days">Herinnering om de X schooldagen</label><input id="secretariat_reminder_days" type="number" name="secretariat_reminder_days" min="1" max="60" required value="{{ old('secretariat_reminder_days',$settings['secretariat_reminder_days']) }}"></div>
+                <div class="library-field library-wide"><label for="secretariat_reminder_subject">Onderwerp herinnering</label><input id="secretariat_reminder_subject" name="secretariat_reminder_subject" maxlength="200" required value="{{ old('secretariat_reminder_subject',$settings['secretariat_reminder_subject']) }}"></div>
+                <div class="library-field library-wide"><label for="secretariat_reminder_body">Berichttekst herinnering</label><textarea id="secretariat_reminder_body" name="secretariat_reminder_body" rows="7" maxlength="5000" required>{{ old('secretariat_reminder_body',$settings['secretariat_reminder_body']) }}</textarea></div>
+            </div>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.secretariat_visits.manage'))
+                <p><a href="{{ route('secretariat-visits.index') }}">Open opvolging secretariaatsbezoeken</a></p>
+            @endif
             <h3>Dagelijkse overzichten voor medewerkers</h3>
             <div class="library-form-grid">
                 @foreach([

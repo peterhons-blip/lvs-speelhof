@@ -316,6 +316,10 @@ class BirthdaySettingsController extends Controller
         $data = $request->validate([
             'adult_student_notice' => ['required', 'in:0,1'],
             'adult_secretariat_notice' => ['required', 'in:0,1'],
+            'secretariat_reminder_enabled' => ['required','in:0,1'],
+            'secretariat_reminder_days' => ['required','integer','min:1','max:60'],
+            'secretariat_reminder_subject' => ['required','string','max:200'],
+            'secretariat_reminder_body' => ['required','string','max:5000'],
             'adult_subject_student' => ['required', 'string', 'max:200'],
             'adult_subject_secretariat' => ['required', 'string', 'max:200'],
             'adult_body_student' => ['nullable', 'string', 'max:5000'],
