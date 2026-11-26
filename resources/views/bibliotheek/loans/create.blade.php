@@ -534,22 +534,22 @@
         }
     }
 
+    let dueSequence=0, dueTimer;
     function updateDate() {
-        const days = Number(term.value);
-        if (!Number.isInteger(days) || days < 1 || days > 365) {
-            due.textContent = '—';
-        } else {
-            const now = new Date();
-            const dateParts = new Intl.DateTimeFormat('en-GB', {
-                timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit'
-            }).formatToParts(now);
-            const value = type => Number(dateParts.find(part => part.type === type).value);
-            const date = new Date(Date.UTC(value('year'), value('month') - 1, value('day') + days));
-            due.textContent = new Intl.DateTimeFormat('nl-BE', {
-                timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'
-            }).format(date);
-        }
+        const seq=++dueSequence, days=Number(term.value);
+        clearTimeout(dueTimer);
+        due.textContent='—';
         updateSubmit();
+        if (!Number.isInteger(days) || days<1 || days>365) return;
+        dueTimer=setTimeout(async () => {
+            try {
+                const response=await fetch(@json(route('bibliotheek.loans.due-preview'))+'?days='+days,{headers:{Accept:'application/json'}});
+                if (!response.ok) throw new Error();
+                const result=await response.json();
+                if(seq!==dueSequence) return;
+                due.textContent=new Intl.DateTimeFormat('nl-BE',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'}).format(new Date(result.date+'T00:00:00Z'));
+            } catch { if(seq===dueSequence) due.textContent='Datum wordt berekend bij registratie'; }
+        },150);
     }
     term.addEventListener('input', updateDate);
     document.getElementById('library-checkout-form').addEventListener('submit', e => {
