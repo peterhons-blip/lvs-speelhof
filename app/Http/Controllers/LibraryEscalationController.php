@@ -13,7 +13,7 @@ class LibraryEscalationController extends Controller
 {
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requirePermission($request, 'bibliotheek.messages.manage');
+        $access->requirePermission($request, 'bibliotheek.escalations.view');
         $ready = Schema::hasTable('library_loan_escalations');
         $all = $request->boolean('alle');
         $items = $ready ? DB::table('library_loan_escalations as e')
@@ -33,7 +33,7 @@ class LibraryEscalationController extends Controller
 
     public function resolve(Request $request, LibraryAccess $access, int $escalation): RedirectResponse
     {
-        $access->requirePermission($request, 'bibliotheek.messages.manage');
+        $access->requirePermission($request, 'bibliotheek.escalations.resolve');
         $data = $request->validate([
             'status' => ['required', 'in:resolved,dismissed'],
             'note' => ['required', 'string', 'min:5', 'max:1000'],
