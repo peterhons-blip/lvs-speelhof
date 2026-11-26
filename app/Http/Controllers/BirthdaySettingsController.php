@@ -231,7 +231,7 @@ class BirthdaySettingsController extends Controller
             return back()->withErrors(['school_id' => 'School niet gevonden.']);
         }
 
-        return redirect()->route('beheer.birthdays.index', ['overzicht_school' => $data['school_id']])
+        return redirect()->route('beheer.birthdays.index', ['tab' => 'overzichten', 'overzicht_school' => $data['school_id']])
             ->with('success', 'Ontvangers van het 18-jarigenoverzicht opgeslagen voor de geselecteerde school.');
     }
 
@@ -278,7 +278,7 @@ class BirthdaySettingsController extends Controller
             $changed = true;
         });
 
-        return redirect()->route('beheer.birthdays.index', ['privacy' => '1'])
+        return redirect()->route('beheer.birthdays.index', ['tab' => 'privacy', 'privacy' => '1'])
             ->with('success', $changed
                 ? 'Instelling voor automatisch uitschakelen van co-accounts aangepast en geregistreerd.'
                 : 'Geen wijziging: de gekozen instelling was al actief.');
@@ -312,7 +312,7 @@ class BirthdaySettingsController extends Controller
                 );
             }
         });
-        return redirect()->route('beheer.birthdays.index')
+        return redirect()->route('beheer.birthdays.index', ['tab' => 'meerderjarig'])
             ->with('success', 'Instellingen voor de 18e verjaardag en overzichten opgeslagen.');
     }
 
@@ -339,7 +339,7 @@ class BirthdaySettingsController extends Controller
                 );
             }
         });
-        return redirect()->route('beheer.birthdays.index')
+        return redirect()->route('beheer.birthdays.index', ['tab' => 'waarschuwing'])
             ->with('success', 'Waarschuwingen voor 18-jarigen opgeslagen.');
     }
 
@@ -379,7 +379,7 @@ class BirthdaySettingsController extends Controller
                 );
             }
         });
-        return redirect()->route('beheer.birthdays.index')
+        return redirect()->route('beheer.birthdays.index', ['tab' => 'felicitaties'])
             ->with('success', 'Verjaardagsinstellingen opgeslagen. De volgende geplande uitvoering gebruikt deze instellingen.');
     }
 }
