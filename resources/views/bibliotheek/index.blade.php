@@ -61,9 +61,6 @@
                 <p>Bekijk vervallen inleverdatums en alle openstaande uitleningen.</p>
                 <span class="portal-library-feature-state">Bekijk te late boeken →</span>
             </a>
-            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.manage'))
-                <a href="{{ route('bibliotheek.inventory.index') }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">▦</span><h2>Inventariscontrole</h2><p>Scan de voorraad en volg ontbrekende exemplaren op.</p><span class="portal-library-feature-state">Start controle →</span></a>
-            @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
                 <a href="{{ route('bibliotheek.loans.index',['filter'=>'departed']) }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">↗</span><h2>Uitgeschreven leerlingen</h2><p>Openstaande uitleningen bij niet-actieve leerlingen.</p><span class="portal-library-feature-state">Bekijk opvolging →</span></a>
             @endif
