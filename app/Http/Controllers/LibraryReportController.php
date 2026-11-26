@@ -89,12 +89,13 @@ class LibraryReportController extends Controller
             ->orderByDesc('loans.loan_date')->orderByDesc('loans.id')
             ->paginate(25)->withQueryString();
 
+        $classes=$this->loans($from,$to,$status,$borrower)->whereNotNull('loans.leerling_id')->leftJoin('klassen as k','k.id','=','student.klasid')->select('k.klasnaam')->selectRaw('COUNT(*) as total')->groupBy('k.klasnaam')->orderBy('k.klasnaam')->get();
         $stockStatus=DB::table('library_copies')->select('status')->selectRaw('COUNT(*) as total')->groupBy('status')->orderBy('status')->get();
         $authors=$this->loans($from,$to,$status,$borrower)->whereNotNull('books.authors')->where('books.authors','<>','')->select('books.authors')->selectRaw('COUNT(*) as total')->groupBy('books.authors')->orderByDesc('total')->limit(20)->get();
         $registered=DB::table('library_copies')->whereDate('created_at','>=',$from)->whereDate('created_at','<=',$to)->selectRaw('DATE(created_at) as day, COUNT(*) as total')->groupByRaw('DATE(created_at)')->orderByDesc('day')->get();
         $unused=DB::table('library_books as b')->whereNotExists(function($q){$q->selectRaw('1')->from('library_copies as c')->join('library_loans as l','l.copy_id','=','c.id')->whereColumn('c.book_id','b.id');})->select('b.id','b.title')->orderBy('b.title')->limit(100)->get();
         $stale=DB::table('library_books as b')->join('library_copies as c','c.book_id','=','b.id')->join('library_loans as l','l.copy_id','=','c.id')->select('b.id','b.title')->selectRaw('MAX(l.loan_date) as last_loan')->groupBy('b.id','b.title')->havingRaw('MAX(l.loan_date) < ?', [now('Europe/Brussels')->subYear()->toDateString()])->orderBy('last_loan')->limit(100)->get();
-        return view('bibliotheek.reports.index', compact('stockStatus','authors','registered','unused','stale','from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'borrowers', 'loans'));
+        return view('bibliotheek.reports.index', compact('classes','stockStatus','authors','registered','unused','stale','from', 'to', 'status', 'borrower', 'stats', 'monthly', 'popular', 'borrowers', 'loans'));
     }
 
     public function exportStock(Request $request, LibraryAccess $access): StreamedResponse
