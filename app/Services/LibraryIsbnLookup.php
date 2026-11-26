@@ -7,10 +7,15 @@ use Illuminate\Support\Facades\Http;
 class LibraryIsbnLookup
 {
     /**
-     * Public Open Library book metadata. Returns null for unknown/unavailable books.
+     * Look up ISBN metadata in Open Library, then Google Books. Returns null if both fail.
      * No personal/student data is ever sent to this external service.
      */
     public function find(string $isbn): ?array
+    {
+        return $this->findOpenLibrary($isbn) ?? $this->findGoogleBooks($isbn);
+    }
+
+    private function findOpenLibrary(string $isbn): ?array
     {
         try {
             $response = Http::acceptJson()->timeout(7)->retry(1, 200)
@@ -52,6 +57,65 @@ class LibraryIsbnLookup
                 'description' => $this->descriptionText($book['notes'] ?? ($book['excerpts'][0]['text'] ?? null)),
             ];
         } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
+    }
+
+    /**
+     * Google Books fallback for valid ISBN lookups.
+     * Metadata is not guaranteed to describe the same edition: staff must verify it.
+     */
+    private function findGoogleBooks(string $isbn): ?array
+    {
+        try {
+            $response = Http::acceptJson()->timeout(7)->retry(1, 200)
+                ->get('https://www.googleapis.com/books/v1/volumes', [
+                    'q' => 'isbn:'.$isbn,
+                    'maxResults' => 5,
+                    'printType' => 'books',
+                ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            foreach ((array) $response->json('items', []) as $item) {
+                $info = is_array($item) ? ($item['volumeInfo'] ?? null) : null;
+                if (! is_array($info) || empty($info['title'])) {
+                    continue;
+                }
+
+                // Do not associate an approximate match with a different ISBN.
+                $identifiers = collect((array) ($info['industryIdentifiers'] ?? []))
+                    ->pluck('identifier')
+                    ->map(fn ($value) => strtoupper(preg_replace('/[^0-9X]/i', '', (string) $value)))
+                    ->all();
+                if (! in_array(strtoupper($isbn), $identifiers, true)) {
+                    continue;
+                }
+
+                $published = (string) ($info['publishedDate'] ?? '');
+                $categories = (array) ($info['categories'] ?? []);
+                $description = isset($info['description']) && is_string($info['description'])
+                    ? trim(strip_tags($info['description'])) : '';
+
+                return [
+                    'isbn' => $isbn,
+                    'title' => mb_substr((string) $info['title'], 0, 255),
+                    'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
+                    'authors' => mb_substr(implode(', ', array_filter((array) ($info['authors'] ?? []), 'is_string')), 0, 255),
+                    'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                    'published_year' => mb_substr($published, 0, 20),
+                    // Only Open Library cover URLs are currently accepted by the registration form.
+                    'cover_url' => null,
+                    'category' => $this->genreFromSubjects($categories),
+                    'description' => mb_substr($description, 0, 5000),
+                ];
+            }
+
+            return null;
+        } catch (\\Throwable $e) {
             report($e);
             return null;
         }
