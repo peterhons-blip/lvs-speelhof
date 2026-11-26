@@ -33,7 +33,7 @@ class ImportLibraryIsbn implements ShouldQueue
         $isbn = $item->isbn;
         $metadata = null;
         if (! LibraryBook::where('isbn', $isbn)->exists()) {
-            $metadata = $lookup->find($isbn) ?? $lookup->findGoogleBooks($isbn);
+            $metadata = $lookup->findEnriched($isbn);
         }
 
         // Concurrent jobs may create this book during the lookup; the unique ISBN
