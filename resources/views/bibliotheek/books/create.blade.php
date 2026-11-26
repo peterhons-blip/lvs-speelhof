@@ -16,7 +16,7 @@
     <div class="library-page-head">
         <div>
             <p class="portal-eyebrow">BIBLIOTHEEK / BOEKENCATALOGUS</p>
-            <h1 id="add-book-title">{{ $quick ? 'Snel boeken registreren' : 'Nieuw boek registreren' }}</h1>
+            <h1 id="add-book-title">Nieuw boek registreren</h1>
             <p>Zoek een boek via ISBN, titel of auteur. Controleer de gegevens vóór het opslaan.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Terug naar catalogus</a>
@@ -24,15 +24,10 @@
     @if(session('success'))
         <div class="library-message" role="status">{{ session('success') }} · {{ session('last_barcode') }}</div>
     @endif
-    @if($quick)
-        <section class="library-form-card">
+    <section class="library-form-card">
             <strong>Vandaag:</strong> {{ $todayCopies }} exemplaren · {{ $todayBooks }} nieuwe titels · {{ $todayUnprinted }} etiketten nog niet bevestigd
             <p class="library-help">Scan het ISBN, controleer de gegevens en kies Registreren en volgend boek. Leg onbekende boeken apart indien nodig.</p>
-            <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.create') }}">Uitgebreide invoer</a>
-        </section>
-    @else
-        <p><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.create', ['quick' => 1]) }}">Snel boeken registreren</a></p>
-    @endif
+    </section>
     @if($errors->any())
         <div class="library-errors" role="alert"><strong>Controleer de invoer:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
@@ -122,13 +117,9 @@
             </div>
         </section>
         <div class="library-form-actions">
-            @if($quick)
-                <button type="submit" name="next_book" value="1" class="library-button library-button-primary">Registreren en volgend boek</button>
-                <button type="submit" class="library-button library-button-secondary">Registreren en details bekijken</button>
-            @else
                 <button type="submit" class="library-button library-button-primary">Boek / exemplaar registreren</button>
                 <button type="submit" name="next_book" value="1" class="library-button library-button-secondary">Registreren en volgend boek</button>
-            @endif<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
     </form>
 </main>
 @endsection
