@@ -12,6 +12,7 @@ class Melding extends Model
         'meldingssoortId',
         'comment',
         'vertrouwelijk',
+        'visible_student', 'visible_coaccount',
         'gebeurdop',
         'auteur_gebruikersnaam',
     ];
