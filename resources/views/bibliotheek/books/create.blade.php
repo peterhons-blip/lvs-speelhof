@@ -257,7 +257,7 @@
                 info.append(title, author);
 
                 const choose = document.createElement('span');
-                choose.textContent = 'Edities bekijken →';
+                choose.textContent = book.work_key ? 'Edities bekijken →' : 'Boek kiezen →';
                 choose.className = 'library-name-result-select';
                 option.append(cover, info, choose);
                 option.addEventListener('click', () => openEditions(book));
