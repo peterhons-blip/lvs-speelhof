@@ -17,6 +17,23 @@
 .external-card-overdue{color:#a91e36!important;font-weight:600}
 @media(max-width:850px){.external-card-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.external-card{padding:14px;column-gap:10px;grid-template-columns:40px minmax(0,1fr) auto}.external-card-icon{width:40px;height:40px}}
+.personal-catalog-search{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+.personal-catalog-search-field{display:flex;align-items:center;flex:1 1 240px;min-width:0;border:1px solid #cbd9e5;border-radius:10px;padding:0 12px;background:#fff}
+.personal-catalog-search-field:focus-within{border-color:#008599;box-shadow:0 0 0 2px #00859922}
+.personal-catalog-search-field svg{width:20px;height:20px;flex-shrink:0;fill:none;stroke:#526b83;stroke-width:1.7;stroke-linecap:round}
+.personal-catalog-search-field input{border:0!important;box-shadow:none!important;width:100%;min-width:0;padding:12px;background:transparent;outline:none}
+.personal-catalog-table td{vertical-align:middle}
+.personal-catalog-title{color:#12365b;font-weight:700;text-decoration:none;line-height:1.4}
+.personal-catalog-title:hover,.personal-catalog-title:focus-visible{color:#007e90;text-decoration:underline}
+.personal-catalog-isbn{display:block;font-size:12px;color:#61778b;margin-top:4px}
+.personal-catalog-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.personal-catalog-actions form{margin:0}
+.personal-catalog-actions .library-button{white-space:nowrap}
+.personal-catalog-stock{display:inline-block;font-size:12px;font-weight:600;padding:5px 9px;border-radius:6px;background:#f0f3f6;color:#526b83;white-space:nowrap}
+.personal-catalog-stock.is-available{background:#e5f4ef;color:#21694e}
+.personal-catalog-feedback{font-size:13px;color:#526b83;margin:0 0 8px;min-height:0}
+.personal-catalog-feedback:empty{display:none}
+[data-catalog-results][aria-busy=true]{opacity:.65}
 </style>
 <main class="library-page">
 <div class="library-page-head"><div><p class="portal-eyebrow">{{ $role==='staff'?'MIJN BIBLIOTHEEK':'MIJN PORTAAL' }}</p><h1>{{ $titles[$section] }}</h1>
@@ -95,26 +112,21 @@
 @include('partials.portal-pagination',['paginator'=>$history])</section>
 @endif
 @if($section==='catalog' && $books!==null)
-<section class="library-form-card"><h2>Bibliotheekcatalogus</h2><form method="get" action="{{ route($portalRoute) }}" class="library-search" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><input type="hidden" name="section" value="catalog"><input style="flex:1" type="search" name="q" value="{{ request('q') }}" placeholder="Titel, auteur of ISBN" maxlength="100"><button class="library-button library-button-primary" type="submit">Zoeken</button></form>
-<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Titel</th><th>Auteur</th>
-@if($can('library.reserve'))<th>Actie</th>
-@endif
-@if($can('library.availability.view'))<th>Beschikbaar</th>
-@endif
-</tr></thead><tbody>
-@forelse($books as $book)<tr><td><a href="{{ route($portalRoute,['section'=>'book','book'=>$book->id,'q'=>request('q'),'page'=>request('page')]) }}" style="font-weight:600">{{ $book->title }}</a></td><td>{{ $book->authors }}</td>
-@if($can('library.reserve'))<td><form method="post" action="{{ route($submitRoute) }}">
-@csrf
-<input type="hidden" name="type" value="reserve"><input type="hidden" name="target_id" value="{{ $book->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Reserveren (test)' : 'Reserveren' }}</button></form></td>
-@endif
-@if($can('library.availability.view'))<td>{{ $book->available }}</td>
-@endif
-</tr>
-@empty
-<tr><td colspan="{{ 2 + (int)$can('library.availability.view') + (int)$can('library.reserve') }}">Geen boeken gevonden.</td></tr>
-@endforelse
-</tbody></table></div>
-@include('partials.portal-pagination',['paginator'=>$books])</section>
+<section class="library-form-card personal-catalog" data-personal-catalog>
+<form method="get" action="{{ route($portalRoute) }}" class="personal-catalog-search" data-catalog-search>
+    <input type="hidden" name="section" value="catalog">
+    <div class="personal-catalog-search-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        <input type="search" name="q" value="{{ request('q') }}" placeholder="Zoek op titel, auteur of ISBN..." maxlength="100" aria-label="Boeken zoeken" autocomplete="off">
+    </div>
+    <button class="library-button library-button-secondary" type="button" data-catalog-clear>Wissen</button>
+    <button class="library-button library-button-primary" type="submit">Zoeken</button>
+</form>
+<p class="personal-catalog-feedback" data-catalog-feedback role="status" aria-live="polite"></p>
+<div data-catalog-results>
+@include('external.partials.catalog-results')
+</div>
+</section>
 @endif
 @if($section==='book' && $book)
 <div class="library-form-actions">
@@ -178,3 +190,7 @@
 @endif
 </main>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/personal-catalog.js') }}?v=1" defer></script>
+@endpush
