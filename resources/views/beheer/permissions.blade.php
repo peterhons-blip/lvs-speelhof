@@ -31,8 +31,6 @@
         <h2>Individuele uitzonderingen</h2>
         <p>De schoolrol is de basis. Een individuele toestemming of weigering heeft voorrang. ICT behoudt volledige toegang.</p>
         <a class="library-button library-button-secondary" href="{{ route('beheer.permissions.individual') }}">Individuele rechten beheren</a>
-        <h3>Leerlingen en co-accounts</h3>
-        <p>De afzonderlijke rollen hieronder zijn voorbereid. Instellingen worden bewaard maar geven nog geen aanmeldtoegang. Alleen rechten voor het eigen of gekoppelde dossier zijn beschikbaar.</p>
     </section>
 
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
