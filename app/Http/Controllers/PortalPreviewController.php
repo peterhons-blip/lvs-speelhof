@@ -25,6 +25,21 @@ class PortalPreviewController extends Controller
         return redirect()->route('home');
     }
 
+    public function startExternal(Request $request, LibraryAccess $access, string $role, int $student)
+    {
+        abort_unless(!$request->session()->has('portal_preview') && $access->role($request)==='ict_coordinator',403);
+        abort_unless(in_array($role,['leerling','coaccount'],true),404);
+        $username=DB::table('leerlingen')->where('id',$student)->where('schoolid',1)->value('gebruikersnaam');
+        $external=app(\App\Services\ExternalPortalAccess::class);
+        $target=$external->student((string)$username,$role,$student);
+        abort_unless($target && $external->has($role,'dashboard.view',$student),403,'Dit portaal is niet beschikbaar voor deze leerling.');
+        $actor=$access->username($request);
+        Log::notice('External portal preview started',['actor'=>$actor,'target'=>$student,'role'=>$role]);
+        $request->session()->regenerate();
+        $request->session()->put('portal_preview',['target_id'=>$student,'target_role'=>$role,'actor'=>$actor,'expires_at'=>time()+1800]);
+        return redirect()->route('external.dashboard');
+    }
+
     public function stop(Request $request)
     {
         $preview = $request->session()->pull('portal_preview');
