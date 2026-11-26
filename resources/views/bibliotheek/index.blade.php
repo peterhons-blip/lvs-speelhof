@@ -21,6 +21,9 @@
         </div>
 
         <div class="portal-library-feature-grid" aria-label="Bibliotheekfuncties">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
+            <a href="{{ route('bibliotheek.requests.index') }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">☷</span><h2>Aanvragen</h2><p>Reserveringen, verlengingen en leerlingmedewerkertaken beoordelen.</p></a>
+            @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
 <a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">▤</span>
