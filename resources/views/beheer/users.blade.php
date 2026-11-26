@@ -103,6 +103,12 @@
                                 <span class="portal-login-status {{ (int) $user->allowed_login ? 'portal-login-status-yes' : 'portal-login-status-no' }}">{{ (int) $user->allowed_login ? 'Toegang actief' : 'Geblokkeerd' }}</span>
                                 <button type="submit" class="library-button library-button-secondary">{{ (int) $user->allowed_login ? 'Blokkeren' : 'Toestaan' }}</button>
                             </form>
+                            @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator' && !session('portal_preview') && $current && $current !== 'ict_coordinator' && $user->allowed_login && $user->smartschool_gebruikersnaam)
+                            <form method="post" action="{{ route('portal-preview.start',$user->id) }}" style="margin-top:8px">
+                                @csrf
+                                <button type="submit" class="library-button library-button-secondary" title="Bekijk het portaal in alleen-lezen testmodus">Inloggen als…</button>
+                            </form>
+                            @endif
                         </td>
                     </tr>
                 @empty
