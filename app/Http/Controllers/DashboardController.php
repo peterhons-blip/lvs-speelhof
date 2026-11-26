@@ -27,8 +27,8 @@ class DashboardController extends Controller
         }
 
         if ($canSeeLvs && Schema::hasTable('meldingen')) {
-            $lvs['meldingen'] = DB::table('meldingen')->count();
-            $lvs['meldingen_maand'] = DB::table('meldingen')
+            $lvs['meldingen'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count();
+            $lvs['meldingen_maand'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))
                 ->whereBetween('gebeurdop', [
                     now()->startOfMonth()->toDateString(),
                     now()->endOfMonth()->toDateString(),
