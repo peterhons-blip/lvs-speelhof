@@ -15,6 +15,8 @@ class StudentManagementController extends Controller
         $access->requirePermission($request, 'beheer.students.manage');
         $search = mb_substr(trim((string) $request->query('zoek', '')), 0, 100);
         $showInactive = $request->boolean('toon_inactief');
+        $classId=max(0,(int)$request->query('klas',0));
+        $classes=DB::table('klassen')->whereIn('id',DB::table('leerlingen')->where('schoolid',1)->whereNotNull('klasid')->select('klasid'))->orderBy('klasnaam')->get(['id','klasnaam']);
         $sortColumns = [
             'leerling' => 'leerlingen.naam',
             'klas' => 'klassen.klasnaam',
@@ -28,6 +30,7 @@ class StudentManagementController extends Controller
         $students = DB::table('leerlingen')
             ->leftJoin('klassen', 'klassen.id', '=', 'leerlingen.klasid')
             ->where('leerlingen.schoolid', 1)
+            ->when($classId>0,fn($q)=>$q->where('leerlingen.klasid',$classId))
             ->when(! $showInactive, fn ($q) => $q->where('leerlingen.active', 1))
             ->when($search !== '', function ($query) use ($search) {
                 $term = '%'.addcslashes($search, '%_\\').'%';
@@ -43,7 +46,37 @@ class StudentManagementController extends Controller
             ->orderBy($sortColumns[$sort], $direction)
             ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
-        return view('beheer.students.index', compact('students', 'search', 'showInactive'));
+        return view('beheer.students.index', compact('students', 'search', 'showInactive','classes','classId'));
+    }
+
+    public function bulkRights(Request $request, LibraryAccess $access): RedirectResponse
+    {
+        abort_unless($access->role($request)==='ict_coordinator',403);
+        $data=$request->validate([
+            'ids'=>'required|array|min:1|max:100',
+            'ids.*'=>'required|integer|min:1|distinct',
+            'rights'=>'required|array',
+            'rights.*'=>'required|in:unchanged,inherit,allow,deny',
+        ]);
+        $known=array_merge(array_keys(config('portal_permissions.leerling.permissions',[])),array_keys(config('portal_permissions.bibliotheek.permissions',[])));
+        abort_if(array_diff(array_keys($data['rights']),$known),422);
+        $changes=array_filter($data['rights'],fn($v)=>$v!=='unchanged');
+        if (!$changes) return back()->withErrors(['rights'=>'Selecteer minstens een recht om te wijzigen.']);
+        $ids=array_map('intval',$data['ids']);
+        DB::transaction(function()use($ids,$changes,$access,$request){
+            $students=DB::table('leerlingen')->where('schoolid',1)->whereIn('id',$ids)->orderBy('id')->lockForUpdate()->pluck('id');
+            abort_unless($students->count()===count($ids),422);
+            foreach($students as $id){
+                $before=DB::table('portal_student_permissions')->where('leerling_id',$id)->pluck('allowed','permission')->all();
+                foreach($changes as $key=>$value){
+                    $query=DB::table('portal_student_permissions')->where('leerling_id',$id)->where('permission',$key);
+                    if($value==='inherit') $query->delete();
+                    else DB::table('portal_student_permissions')->updateOrInsert(['leerling_id'=>$id,'permission'=>$key],['allowed'=>$value==='allow','updated_at'=>now()]);
+                }
+                DB::table('portal_permission_audit')->insert(['actor'=>$access->username($request),'target'=>'leerling:'.$id,'changes'=>json_encode(['before'=>$before,'after'=>DB::table('portal_student_permissions')->where('leerling_id',$id)->pluck('allowed','permission')->all()]),'created_at'=>now(),'updated_at'=>now()]);
+            }
+        });
+        return back()->with('success',count($ids).' leerlingen: individuele rechten bijgewerkt.');
     }
 
     public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse

@@ -8,7 +8,7 @@
 ]])
 @endsection
 @push('scripts')
-<script src="{{ asset('js/management-live.js') }}?v=1" defer></script>
+<script src="{{ asset('js/management-live.js') }}?v=2" defer></script>
 @endpush
 @section('content')
 <main class="library-page portal-users-page">
@@ -27,7 +27,7 @@
             <span class="portal-users-total" data-management-total>{{ $students->total() }} leerlingen</span>
         </div>
         <nav class="portal-users-account-filters" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;">
-            <a class="library-button {{ $showInactive ? 'library-button-secondary' : 'library-button-primary' }}" href="{{ route('beheer.students.index', $search !== '' ? ['zoek' => $search] : []) }}">Actieve leerlingen</a>
+            <a class="library-button {{ $showInactive ? 'library-button-secondary' : 'library-button-primary' }}" href="{{ route('beheer.students.index', array_filter(['zoek'=>$search,'klas'=>$classId])) }}">Actieve leerlingen</a>
             <a class="library-button {{ $showInactive ? 'library-button-primary' : 'library-button-secondary' }}" href="{{ route('beheer.students.index', array_merge(['toon_inactief' => 1], $search !== '' ? ['zoek' => $search] : [])) }}">Alle leerlingen</a>
         </nav>
         <form method="get" action="{{ route('beheer.students.index') }}" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:end;margin-bottom:1rem;">
@@ -36,8 +36,13 @@
                 <label for="leerlingenbeheer-zoek">Leerling of klas zoeken</label>
                 <input id="leerlingenbeheer-zoek" data-live-search type="search" name="zoek" maxlength="100" value="{{ $search }}" placeholder="Naam, gebruikersnaam of klas...">
             </div>
+            <div class="library-field" style="min-width:180px;margin:0"><label for="student-class">Klas</label><select id="student-class" name="klas"><option value="">Alle klassen</option>
+            @foreach($classes as $class)
+            <option value="{{ $class->id }}" @selected($classId===$class->id)>{{ $class->klasnaam }}</option>
+            @endforeach
+            </select></div>
             <button class="library-button library-button-primary" type="submit">Zoeken</button>
-            @if($search !== '')
+            @if($search !== '' || $classId)
                 <a class="library-button library-button-secondary" href="{{ route('beheer.students.index', $showInactive ? ['toon_inactief' => 1] : []) }}">Wissen</a>
             @endif
         </form>
@@ -53,6 +58,56 @@
             </div>
             <button class="library-button library-button-primary" type="submit">Toepassen op selectie</button>
         </form>
+        @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+        <details class="library-form-card" style="margin:16px 0">
+            <summary style="cursor:pointer;font-weight:700">Individuele rechten in bulk wijzigen</summary>
+            <p>Vink leerlingen in de tabel aan. Standaard blijven alle rechten ongewijzigd; kies alleen wat je wilt aanpassen. De selectie geldt voor deze pagina.</p>
+            <form method="post" action="{{ route('beheer.students.bulk-rights') }}" id="student-rights-form">
+                @csrf
+                @foreach(['leerling'=>'Persoonlijk portaal','bibliotheek'=>'Bibliotheekbeheer (individueel)'] as $module=>$label)
+                <details style="margin:12px 0" @if($module==='leerling') open @endif>
+                    <summary style="cursor:pointer;font-weight:600">{{ $label }}</summary>
+                    @if($module==='bibliotheek')
+                    <p>Activeer ook het persoonlijke dashboard en het individuele recht Bibliotheekmedewerker.</p>
+                    <button type="button" class="library-button library-button-secondary" id="bulk-all-bib">Alle bibliotheekrechten toestaan</button>
+                    <button type="button" class="library-button library-button-secondary" id="bulk-no-bib">Alle bibliotheekrechten weigeren</button>
+                    @endif
+                    <div class="library-table-wrap"><table class="library-table"><tbody>
+                    @foreach(config('portal_permissions.'.$module.'.permissions',[]) as $key=>$title)
+                    <tr><td>{{ $title }}</td><td><select name="rights[{{ $key }}]" data-module="{{ $module }}" aria-label="{{ $title }}">
+                    <option value="unchanged">Ongewijzigd</option><option value="allow">Toestaan</option><option value="deny">Weigeren</option><option value="inherit">Individuele keuze wissen</option>
+                    </select></td></tr>
+                    @endforeach
+                    </tbody></table></div>
+                </details>
+                @endforeach
+                <button class="library-button library-button-primary" type="submit">Rechten toepassen op selectie</button>
+            </form>
+        </details>
+        <script>
+        (() => {
+            const form=document.getElementById('student-rights-form');
+            const master=form.querySelector('[name="rights[leerling.library.help]"]');
+            const dash=form.querySelector('[name="rights[leerling.dashboard.view]"]');
+            const setBib=value=>{
+                form.querySelectorAll('[data-module="bibliotheek"]').forEach(s=>s.value=value);
+                if(master) master.value=value;
+                if(dash && value==='allow') dash.value='allow';
+            };
+            document.getElementById('bulk-all-bib').addEventListener('click',()=>setBib('allow'));
+            document.getElementById('bulk-no-bib').addEventListener('click',()=>setBib('deny'));
+            form.addEventListener('submit',e=>{
+                const boxes=[...document.querySelectorAll('[data-bulk-id]:checked')];
+                if(!boxes.length || ![...form.querySelectorAll('select')].some(s=>s.value!=='unchanged')){
+                    e.preventDefault();alert('Selecteer leerlingen en minstens één recht.');return;
+                }
+                if(!confirm('Individuele rechten wijzigen voor '+boxes.length+' geselecteerde leerlingen?')){e.preventDefault();return;}
+                form.querySelectorAll('input[name="ids[]"]').forEach(x=>x.remove());
+                boxes.forEach(box=>{const input=document.createElement('input');input.type='hidden';input.name='ids[]';input.value=box.value;form.append(input);});
+            });
+        })();
+        </script>
+        @endif
         <p class="portal-users-card-intro">Let op: de nachtelijke Smartschool-synchronisatie kan de actieve status van leerlingen opnieuw aanpassen.</p>
         <div data-management-results>
         <div class="library-table-wrap">
