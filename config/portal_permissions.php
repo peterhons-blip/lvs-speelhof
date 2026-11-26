@@ -102,12 +102,7 @@ return [
             'leerling.library.history.view' => 'Bibliotheek · Eigen uitleenhistoriek bekijken',
             'leerling.library.reserve' => 'Bibliotheek · Boeken reserveren',
             'leerling.library.renew.request' => 'Bibliotheek · Verlenging aanvragen',
-            'leerling.library.help' => 'Bibliotheekmedewerker · Werkruimte openen (individueel toe te kennen)',
-            'leerling.library.help.books.create' => 'Bibliotheekmedewerker · Boekregistratie voorbereiden (goedkeuring personeel)',
-            'leerling.library.help.isbn.lookup' => 'Bibliotheekmedewerker · ISBN-opzoektaak indienen',
-            'leerling.library.help.labels.print' => 'Bibliotheekmedewerker · QR-etiketten voorbereiden',
-            'leerling.library.help.loans.create' => 'Bibliotheekmedewerker · Uitlening voorbereiden (goedkeuring personeel)',
-            'leerling.library.help.loans.return' => 'Bibliotheekmedewerker · Inname voorbereiden (goedkeuring personeel)',
+            'leerling.library.help' => 'Bibliotheekmedewerker · Bibliotheekbeheer openen (uitsluitend individueel)',
         ],
     ],
     'coaccount' => [
