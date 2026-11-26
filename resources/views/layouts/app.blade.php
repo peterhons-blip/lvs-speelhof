@@ -12,7 +12,10 @@
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
 </head>
 <body class="portal-body">
-@php($ss_user = session('ss_user'))
+@php
+$ss_user = session('ss_user');
+$isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccount'],true);
+@endphp
 @if($ss_user)
     <div class="app portal-app">
         <header class="portal-topbar">
@@ -49,9 +52,12 @@
             <aside class="portal-sidebar" aria-label="Hoofdnavigatie">
                 <span class="portal-sidebar-label">WERKOMGEVING</span>
                 <nav class="portal-nav" aria-label="Modules">
-                    <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('home') ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
+                    <a href="{{ route('home') }}" class="portal-nav-link {{ (request()->routeIs('home') || (request()->routeIs('external.dashboard') && request('section','dashboard')==='dashboard')) ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
                     </a>
+                    @if($isExternal)
+                        @include('external.partials.navigation')
+                    @endif
                     @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
                     @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
                     <div class="portal-nav-module">
@@ -91,7 +97,7 @@
 @php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
                     <div class="portal-nav-module">
                         <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ $bibliotheekActive ? 'is-current' : '' }}" @if($bibliotheekActive) aria-expanded="true" @endif>
-                            <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek
+                            <span class="portal-nav-icon" aria-hidden="true">▤</span> {{ $isExternal ? 'Bibliotheekbeheer' : 'Bibliotheek' }}
                         </a>
                         @if($bibliotheekActive)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
@@ -174,12 +180,14 @@
                         @endif
                     </div>
                     @endif
+                    @unless($isExternal)
                     <span class="portal-sidebar-label portal-sidebar-label-secondary">BINNENKORT</span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▣</span> Aanvraag bestelling <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">◈</span> EDBI-instrument <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">▦</span> EMA's <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">⊕</span> Onboarding personeel <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
                     <span class="portal-nav-link is-disabled" aria-disabled="true"><span class="portal-nav-icon" aria-hidden="true">◇</span> Nascholingen <span class="portal-nav-lock" aria-hidden="true">⌁</span></span>
+                    @endunless
                 </nav>
                 <div class="portal-sidebar-foot">GO! Atheneum Sint-Truiden<br><span>Campus Speelhof</span></div>
             </aside>
