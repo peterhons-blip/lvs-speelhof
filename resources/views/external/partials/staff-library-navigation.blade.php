@@ -16,7 +16,7 @@
     <nav class="portal-nav-submenu" aria-label="Mijn bibliotheek">
         <a class="portal-nav-subitem {{ $personalSection==='library'?'is-active':'' }}" href="{{ route('personal-library.index') }}">Overzicht</a>
         @foreach($personalItems as $key=>$label)
-        <a class="portal-nav-subitem {{ $personalSection===$key?'is-active':'' }}" href="{{ route('personal-library.index',['section'=>$key]) }}">{{ $label }}</a>
+        <a class="portal-nav-subitem {{ ($personalSection===$key || ($key==='catalog' && $personalSection==='book'))?'is-active':'' }}" href="{{ route('personal-library.index',['section'=>$key]) }}">{{ $label }}</a>
         @endforeach
     </nav>
     @endif
