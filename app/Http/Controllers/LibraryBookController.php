@@ -131,11 +131,12 @@ class LibraryBookController extends Controller
         app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
         $results = [];
         foreach ([
-            'Open Library' => 'https://openlibrary.org/search.json?title=test&limit=1',
-            'Google Books' => 'https://www.googleapis.com/books/v1/volumes?q=intitle:test&maxResults=1',
-        ] as $provider => $url) {
+            'Open Library' => ['https://openlibrary.org/search.json', ['title' => 'test', 'limit' => 1]],
+            'Google Books' => ['https://www.googleapis.com/books/v1/volumes', ['q' => 'intitle:test', 'maxResults' => 1]],
+        ] as $provider => [$url, $params]) {
             try {
-                $response = \Illuminate\Support\Facades\Http::acceptJson()->timeout(6)->get($url, $provider === 'Google Books' && config('services.google_books.api_key') ? ['key' => config('services.google_books.api_key')] : []);
+                if ($provider === 'Google Books' && config('services.google_books.api_key')) $params['key'] = config('services.google_books.api_key');
+                $response = \Illuminate\Support\Facades\Http::acceptJson()->timeout(6)->get($url, $params);
                 $results[$provider] = [
                     'reachable' => $response->successful(),
                     'status' => $response->status(),
