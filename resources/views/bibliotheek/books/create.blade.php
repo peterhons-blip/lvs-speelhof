@@ -51,6 +51,14 @@
                             <option value="author">Auteur</option>
                         </select>
                     </div>
+                    <div class="library-field">
+                        <label for="library-search-source">Bron</label>
+                        <select id="library-search-source">
+                            <option value="auto">Automatisch</option>
+                            <option value="openlibrary">Open Library</option>
+                            <option value="google">Google Books</option>
+                        </select>
+                    </div>
                     <div class="library-field library-name-search-input">
                         <label for="library-name-query">Zoekterm</label>
                         <input id="library-name-query" type="search" maxlength="120" placeholder="Bijv. De brief voor de koning" autocomplete="off">
@@ -140,6 +148,7 @@
     const nameButton = document.getElementById('library-search-name');
     const nameQuery = document.getElementById('library-name-query');
     const nameType = document.getElementById('library-search-type');
+    const nameSource = document.getElementById('library-search-source');
     const nameFeedback = document.getElementById('library-name-feedback');
     const nameResults = document.getElementById('library-name-results');
     const editionPanel = document.getElementById('library-edition-panel');
@@ -185,6 +194,7 @@
             const url = new URL(@json(route('bibliotheek.books.search-external')), window.location.origin);
             url.searchParams.set('q', q);
             url.searchParams.set('type', nameType.value);
+            url.searchParams.set('source', nameSource.value);
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
             const data = await response.json();
             if (!response.ok) {
