@@ -152,7 +152,12 @@ class LibraryBookController extends Controller
             'type' => ['nullable', Rule::in(['title', 'author'])],
         ]);
 
-        $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
+        $query = trim($data['q']);
+        $type = $data['type'] ?? 'title';
+        $books = $lookup->searchByName($query, $type);
+        if (empty($books)) {
+            $books = $lookup->searchGoogleBooksByName($query, $type);
+        }
 
         return response()->json(['books' => $books]);
     }
