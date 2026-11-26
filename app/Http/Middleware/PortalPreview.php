@@ -29,8 +29,9 @@ class PortalPreview
                 return redirect()->route('home');
             }
             if ($request->routeIs('logout')) { $request->session()->forget('portal_preview'); return $next($request); }
-            if (!in_array($request->method(),['GET','HEAD'],true)) return redirect()->route('external.dashboard');
-            if (!$request->routeIs('external.dashboard','home','bibliotheek.*')) abort(403);
+            $simulate=$request->isMethod('POST') && $request->routeIs('external.requests.submit');
+            if (!$simulate && !in_array($request->method(),['GET','HEAD'],true)) return redirect()->route('external.dashboard')->with('preview_warning','Testmodus is alleen-lezen. Er werd niets opgeslagen.');
+            if (!$request->routeIs('external.dashboard','home','bibliotheek.*','external.requests.submit')) abort(403);
             $request->session()->put('ss_user',['id'=>$student->id,'voornaam'=>$role==='leerling'?$student->voornaam:'Co-account','naam'=>$role==='leerling'?$student->naam:'(testmodus)','gebruikersnaam'=>$student->gebruikersnaam,'principal_type'=>$role,'leerling_id'=>$student->id,'platform'=>$actor['platform']??null,'groupname'=>$role]);
             try {
                 $response=$next($request);
