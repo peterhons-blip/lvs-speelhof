@@ -42,5 +42,6 @@ Gebruik **niet** onbeheerd `php artisan migrate` in dit legacy project wegens mo
 
 ## Nog open / externe afhankelijkheden
 - Meta4Books contract en API-sleutels/documentatie aanvragen.
+- Google Books kan desgewenst met een API-sleutel geconfigureerd worden via `GOOGLE_BOOKS_API_KEY` in de .env op de server; de configuratie leest die via `config/services.php`. Zonder sleutel wordt een publieke lookup geprobeerd, maar die kan door Google op basis van hun voorwaarden of limieten geweigerd worden.
 - Fout in de live boekopzoeking: de code is beter bestand tegen ontbrekende resultaten en heeft een tweede bron; **de exacte oorspronkelijke live fout is niet gereproduceerd** zonder een foutieve ISBN/HTTP-respons en serverlogs.
 - Escalaties naar beleid worden voorlopig als interne opvolging genoteerd; direct automatisch mailen naar een verantwoordelijke is bewust niet geactiveerd zonder vastgelegde ontvangers en beleid.
