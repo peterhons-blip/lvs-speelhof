@@ -54,6 +54,18 @@ class SendLibraryLoanReminders extends Command
                 $types[] = 'overdue_repeat';
             }
 
+            foreach ($types as $type) {
+                $exists = DB::table('library_loan_notifications')
+                    ->where('loan_id', $loan->id)->where('type', $type)
+                    ->where('scheduled_for', $today)->exists();
+                if ($exists) continue;
+                $planned++;
+                if ($dryRun) {
+                    $this->line("TEST: loan={$loan->id} type={$type} vervalt={$loan->due_date}");
+                } elseif ($notifier->send((int) $loan->id, $type, $today)) {
+                    $sent++;
+                }
+            }
             // Escalation is based on confirmed sent reminders, not mere attempts.
             if ($escalationEnabled && $daysLate > 0 &&
                 \Illuminate\Support\Facades\Schema::hasTable('library_escalations')) {
@@ -67,18 +79,6 @@ class SendLibraryLoanReminders extends Command
                     } else {
                         app(\App\Services\LibraryEscalationNotifier::class)->notify((int) $loan->id);
                     }
-                }
-            }
-            foreach ($types as $type) {
-                $exists = DB::table('library_loan_notifications')
-                    ->where('loan_id', $loan->id)->where('type', $type)
-                    ->where('scheduled_for', $today)->exists();
-                if ($exists) continue;
-                $planned++;
-                if ($dryRun) {
-                    $this->line("TEST: loan={$loan->id} type={$type} vervalt={$loan->due_date}");
-                } elseif ($notifier->send((int) $loan->id, $type, $today)) {
-                    $sent++;
                 }
             }
         }
