@@ -62,8 +62,8 @@
             @endforeach
             </tbody></table></div>
             <h3>Bibliotheekmedewerker · volledige module</h3><p>Alleen individuele toestemmingen; activeer ook het recht Werkruimte openen.</p>
-            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='allow')">Alle bibliotheekrechten toestaan</button>
-            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='deny')">Alle bibliotheekrechten weigeren</button>
+            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='allow');this.form.elements['rights[leerling.library.help]'].value='allow';this.form.elements['rights[leerling.dashboard.view]'].value='allow'">Alle bibliotheekrechten toestaan</button>
+            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='deny');this.form.elements['rights[leerling.library.help]'].value='deny'">Alle bibliotheekrechten weigeren</button>
             <div class="library-table-wrap"><table class="library-table"><tbody>
             @foreach(config('portal_permissions.bibliotheek.permissions',[]) as $key=>$label)
             <tr><td>{{ $label }}</td><td><select data-bib-right name="rights[{{ $key }}]" aria-label="{{ $label }}"><option value="inherit" @selected(!array_key_exists($key,$overrides))>Niet toegekend</option><option value="allow" @selected(array_key_exists($key,$overrides)&&(bool)$overrides[$key])>Toestaan</option><option value="deny" @selected(array_key_exists($key,$overrides)&&!(bool)$overrides[$key])>Weigeren</option></select></td></tr>
