@@ -129,6 +129,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/verjaardagsberichten/overzicht-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateOverviewRecipients'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
         ->name('beheer.birthdays.overview.update');
+    Route::prefix('beheer/schoolkalender')->name('beheer.school-calendar.')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SchoolCalendarController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\SchoolCalendarController::class, 'store'])->name('store');
+        Route::post('/import', [\App\Http\Controllers\SchoolCalendarController::class, 'import'])->name('import');
+        Route::delete('/{closure}', [\App\Http\Controllers\SchoolCalendarController::class, 'destroy'])->whereNumber('closure')->name('destroy');
+    });
     Route::get('/beheer', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('beheer.dashboard');
 
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.
