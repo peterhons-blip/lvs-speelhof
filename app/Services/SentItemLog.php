@@ -44,6 +44,7 @@ class SentItemLog
         $classes = array_column(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 18), 'class');
         $mapping = [
             'LibraryLoanNotifier' => 'Bibliotheek',
+            'LibraryEscalationNotifier' => 'Bibliotheek',
             'CheckLeeftijdLeerlingen' => '18-jarigen',
             'CheckVerjaardagen' => 'Verjaardagen',
             'SmartschoolTestMessageController' => 'Smartschool-test',
