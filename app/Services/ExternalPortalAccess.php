@@ -37,12 +37,14 @@ class ExternalPortalAccess
     {
         if (!in_array($role,['leerling','coaccount'],true)) return false;
         $key=$role.'.'.$permission;
-        $implemented=['dashboard.view','profile.view','library.catalog.view','library.availability.view','library.view','library.history.view'];
+        $implemented=['dashboard.view','profile.view','library.catalog.view','library.availability.view','library.view','library.history.view','lvs.view','incidents.view','library.reserve','library.renew.request','library.help','library.help.books.create','library.help.isbn.lookup','library.help.labels.print','library.help.loans.create','library.help.loans.return'];
         if (!in_array($permission,$implemented,true)) return false;
+        if (str_starts_with($permission,'library.help') && ($role!=='leerling' || !$studentId)) return false;
         if ($role==='leerling' && $studentId) {
             $override=DB::table('portal_student_permissions')->where('leerling_id',$studentId)->where('permission',$key)->value('allowed');
             if ($override!==null) return (bool)$override;
         }
+        if (str_starts_with($permission,'library.help')) return false; // Individual grants only.
         return DB::table('portal_role_permissions')->where('role',$role)->where('permission',$key)->exists();
     }
 }
