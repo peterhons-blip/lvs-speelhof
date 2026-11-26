@@ -108,7 +108,7 @@ class LibraryLoanController extends Controller
 
     public function lookupStudent(Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $value = trim((string) $request->query('code', ''));
         if ($value === '' || mb_strlen($value) > 200) return response()->json(['message' => 'Ongeldige scanwaarde.'], 422);
 
@@ -128,7 +128,7 @@ class LibraryLoanController extends Controller
 
     public function staff(Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $q = trim((string) $request->query('q', ''));
         if (mb_strlen($q) < 2 || mb_strlen($q) > 100) return response()->json([]);
 
@@ -167,7 +167,7 @@ class LibraryLoanController extends Controller
      */
     public function searchBooks(Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $q = trim((string) $request->query('q', ''));
         if (mb_strlen($q) < 2 || mb_strlen($q) > 120) return response()->json([]);
 
@@ -196,7 +196,7 @@ class LibraryLoanController extends Controller
 
     public function availableCopies(Request $request, int $book): \Illuminate\Http\JsonResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $exists = DB::table('library_books')->where('id', $book)->exists();
         if (! $exists) return response()->json(['message' => 'Boek niet gevonden.'], 404);
 
@@ -216,7 +216,7 @@ class LibraryLoanController extends Controller
 
     public function lookupCopy(Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $barcode = trim((string) $request->query('barcode', ''));
         if ($barcode === '' || mb_strlen($barcode) > 60) {
             return response()->json(['message' => 'Scan een geldige boekbarcode.'], 422);
@@ -237,7 +237,7 @@ class LibraryLoanController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.create');
         $data = $request->validate([
             'ontlener_type' => ['required', 'in:leerling,personeel'],
             'leerling' => ['required_if:ontlener_type,leerling', 'nullable', 'string', 'max:200'],
@@ -335,8 +335,9 @@ class LibraryLoanController extends Controller
 
     public function bulk(Request $request): RedirectResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.loans.bulk');
         $data=$request->validate(['action'=>'required|in:return,extend','ids'=>'nullable|array|max:100','ids.*'=>'integer|min:1|distinct','barcodes'=>'nullable|string|max:7000']);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, $data['action']==='return' ? 'bibliotheek.loans.return' : 'bibliotheek.loans.extend');
         $ids=$data['ids'] ?? [];
         $fail=[];
         if (!empty($data['barcodes'])) {
@@ -365,7 +366,7 @@ class LibraryLoanController extends Controller
 
     public function pause(Request $request,int $loan): RedirectResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.reminders.pause');
         $data=$request->validate(['until'=>'nullable|date_format:Y-m-d|after_or_equal:today']);
         DB::transaction(function() use($request,$loan,$data){
             $item=DB::table('library_loans')->where('id',$loan)->whereNull('returned_at')->lockForUpdate()->first(); abort_unless($item,404);
@@ -377,7 +378,7 @@ class LibraryLoanController extends Controller
 
     public function returnByBarcode(Request $request): RedirectResponse
     {
-        $this->authorizeOperator(request());
+        app(\App\Services\LibraryAccess::class)->requirePermission(request(), 'bibliotheek.loans.return');
         $data = $request->validate(['barcode' => ['required', 'string', 'max:60']]);
 
         $loan = DB::table('library_loans as loans')
@@ -394,7 +395,7 @@ class LibraryLoanController extends Controller
 
     public function returnLoan(int $loan): RedirectResponse
     {
-        $this->authorizeOperator(request());
+        app(\App\Services\LibraryAccess::class)->requirePermission(request(), 'bibliotheek.loans.return');
         $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
@@ -419,7 +420,7 @@ class LibraryLoanController extends Controller
 
     public function sendManualReminder(Request $request, int $loan): RedirectResponse
     {
-        $this->authorizeOperator($request);
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.reminders.send');
         app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.messages.manage');
         $item = DB::table('library_loans')->where('id', $loan)->first();
         abort_unless($item, 404);
@@ -442,7 +443,7 @@ class LibraryLoanController extends Controller
 
     public function extend(int $loan): RedirectResponse
     {
-        $this->authorizeOperator(request());
+        app(\App\Services\LibraryAccess::class)->requirePermission(request(), 'bibliotheek.loans.extend');
         $result = DB::transaction(function () use ($loan) {
             $item = DB::table('library_loans')->where('id', $loan)->lockForUpdate()->first();
             abort_unless($item, 404);
@@ -473,7 +474,7 @@ class LibraryLoanController extends Controller
 
     public function editReminders(int $loan): View
     {
-        $this->authorizeOperator(request());
+        app(\App\Services\LibraryAccess::class)->requirePermission(request(), 'bibliotheek.reminders.edit');
         $item = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
             ->join('library_books as books', 'books.id', '=', 'copies.book_id')
@@ -485,7 +486,7 @@ class LibraryLoanController extends Controller
 
     public function updateReminders(Request $request, int $loan): RedirectResponse
     {
-        $this->authorizeOperator(request());
+        app(\App\Services\LibraryAccess::class)->requirePermission(request(), 'bibliotheek.reminders.edit');
         $data = $request->validate([
             'due_date' => ['required', 'date', 'after_or_equal:today'],
             'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
