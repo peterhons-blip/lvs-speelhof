@@ -55,7 +55,7 @@ class ExternalLibraryWorkflowController extends Controller
     {
         $access->requirePermission($request,'bibliotheek.view');
         $access->requirePermission($request,'bibliotheek.requests.manage');
-        $requests=DB::table('external_library_requests as r')->leftJoin('leerlingen as l','l.id','=','r.leerling_id')->leftJoin('users as u','u.id','=','r.staff_user_id')->where(fn($q)=>$q->where('l.schoolid',1)->orWhere('u.schoolid',1))->whereIn('r.request_type',['reserve','renew'])->select('r.*')->selectRaw('COALESCE(u.voornaam,l.voornaam) as voornaam, COALESCE(u.name,l.naam) as naam')->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByDesc('r.id')->paginate(30);
+        $requests=DB::table('external_library_requests as r')->leftJoin('leerlingen as l','l.id','=','r.leerling_id')->leftJoin('users as u','u.id','=','r.staff_user_id')->where(fn($q)=>$q->where('l.schoolid',1)->orWhere('u.schoolid',1))->whereIn('r.request_type',['reserve','renew'])->select('r.*')->selectSub(DB::table('library_books')->whereColumn('library_books.id','r.target_id')->select('title'),'requested_book')->selectSub(DB::table('library_loans as rqloan')->join('library_copies as rqcopy','rqcopy.id','=','rqloan.copy_id')->join('library_books as rqbook','rqbook.id','=','rqcopy.book_id')->whereColumn('rqloan.id','r.target_id')->select('rqbook.title'),'renew_book')->selectRaw('COALESCE(u.voornaam,l.voornaam) as voornaam, COALESCE(u.name,l.naam) as naam')->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByDesc('r.id')->paginate(30);
         return view('bibliotheek.external-requests',compact('requests'));
     }
 
