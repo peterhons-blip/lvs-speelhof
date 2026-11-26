@@ -19,7 +19,8 @@
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <section class="library-form-card">
         <h2>Filter uitleningen</h2>
-        <form method="get" action="{{ route('bibliotheek.reports.index') }}" class="library-form-grid">
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
+<form method="get" action="{{ route('bibliotheek.reports.index') }}" class="library-form-grid">
             <div class="library-field"><label for="from">Van</label><input type="date" id="from" name="from" value="{{ $from }}" required></div>
             <div class="library-field"><label for="to">Tot en met</label><input type="date" id="to" name="to" value="{{ $to }}" required></div>
             <div class="library-field"><label for="borrower">Ontlener</label>
@@ -41,6 +42,7 @@
                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.reports.export', compact('from','to','status','borrower')) }}">Uitleningen exporteren (CSV)</a>
             </div>
         </form>
+@endif
         <p class="library-help" style="margin-top: 1.25rem; margin-bottom: 0; clear: both; line-height: 1.6;">Voorraadcijfers zijn actueel; uitleningen, populaire boeken en de lijst hieronder volgen de geselecteerde datums en filters. Een uitlening telt mee op basis van de uitleendatum.</p>
     </section>
     <div class="library-report-stats">
@@ -59,7 +61,9 @@
     </div>
     <section class="library-form-card"><h2>Uitleningen per huidige klas</h2><p class="library-help">Gebaseerd op de huidige klas in LVS, niet de klas op de uitleendatum.</p>@forelse($classes as $row)<p>{{ $row->klasnaam ?: 'Onbekende klas' }} · {{ $row->total }} uitleningen</p>@empty<p>Geen gegevens.</p>@endforelse</section>
     <section class="library-form-card"><h2>Voorraad per status</h2>@foreach($stockStatus as $row)<p>{{ ucfirst($row->status) }}: <strong>{{ $row->total }}</strong></p>@endforeach
-    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))<a class="library-button library-button-secondary" href="{{ route('bibliotheek.reports.stock') }}">Voorraad exporteren (CSV voor Excel)</a>@endif</section>
+    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))@if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.stock.export'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.reports.stock') }}">Voorraad exporteren (CSV voor Excel)</a>
+@endif@endif</section>
     <section class="library-form-card"><h2>Meest uitgeleende auteurs</h2>@forelse($authors as $row)<p>{{ $row->authors }} · {{ $row->total }} uitleningen</p>@empty<p>Geen gegevens.</p>@endforelse</section>
     <section class="library-form-card"><h2>Registraties per dag (gekozen periode)</h2><table class="library-table"><thead><tr><th>Datum</th><th>Exemplaren</th></tr></thead><tbody>@foreach($registered as $row)<tr><td>{{ $row->day }}</td><td>{{ $row->total }}</td></tr>@endforeach</tbody></table></section>
     <section class="library-form-card"><h2>Nooit uitgeleend (max. 100 titels)</h2>@forelse($unused as $row)<p>{{ $row->title }}</p>@empty<p>Geen titels.</p>@endforelse</section>
