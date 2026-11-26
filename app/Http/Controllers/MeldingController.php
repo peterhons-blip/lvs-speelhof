@@ -124,6 +124,8 @@ class MeldingController extends Controller
         if ($confidential) app(\App\Services\LibraryAccess::class)->requirePermission($request,'lvs.meldingen.confidential.create');
         $attributes = [
             'vertrouwelijk'=>$confidential,
+            'visible_student'=>!$confidential && $request->boolean('visible_student'),
+            'visible_coaccount'=>!$confidential && $request->boolean('visible_coaccount'),
             'leerlingId' => $leerling->id,
             'meldingssoortId' => $soort->id,
             'comment' => $validated['comment'],
