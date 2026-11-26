@@ -110,11 +110,12 @@ class LibraryBookController extends Controller
                 ? app(\App\Services\LibraryAccess::class)->username($request) : null,
             'updated_at' => now(),
         ];
-        if ($printed) $values['qr_generated_at'] = DB::raw('COALESCE(qr_generated_at, CURRENT_TIMESTAMP)');
+        $values['qr_generated_at'] = $printed
+            ? DB::raw('COALESCE(qr_generated_at, CURRENT_TIMESTAMP)') : null;
         $count = DB::table('library_copies')->whereIn('id', $ids)->update($values);
 
         return back()->with('success', $count.' exemplaren '.($printed
-            ? 'gemarkeerd als voorzien van QR-etiket.' : 'opnieuw gemarkeerd als zonder QR-etiket.'));
+            ? 'gemarkeerd als voorzien van QR-etiket.' : 'waarvan de volledige QR-status is gewist.'));
     }
 
     public function create(): View
