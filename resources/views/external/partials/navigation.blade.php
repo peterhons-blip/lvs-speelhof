@@ -10,11 +10,9 @@
         'catalog'=>$externalCan('library.catalog.view')?'Catalogus':null,
         'requests'=>($externalCan('library.reserve')||$externalCan('library.renew.request'))?'Aanvragen':null,
     ]);
+    asort($libraryItems, SORT_NATURAL | SORT_FLAG_CASE);
     $personalActive=request()->routeIs('external.dashboard');
 @endphp
-@if($externalCan('profile.view'))
-<a class="portal-nav-link {{ $personalActive && $section==='profile'?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'profile']) }}"><span class="portal-nav-icon" aria-hidden="true">◎</span>{{ $externalRole==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</a>
-@endif
 @if($libraryItems)
 <div class="portal-nav-module">
     <a class="portal-nav-link {{ $personalActive && in_array($section,array_merge(['library'],array_keys($libraryItems)))?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'library']) }}"><span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek</a>
@@ -27,6 +25,9 @@
     </nav>
     @endif
 </div>
+@endif
+@if($externalCan('profile.view'))
+<a class="portal-nav-link {{ $personalActive && $section==='profile'?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'profile']) }}"><span class="portal-nav-icon" aria-hidden="true">◎</span>{{ $externalRole==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</a>
 @endif
 @if($externalCan('lvs.view') && $externalCan('incidents.view'))
 <a class="portal-nav-link {{ $personalActive && $section==='incidents'?'is-current':'' }}" href="{{ route('external.dashboard',['section'=>'incidents']) }}"><span class="portal-nav-icon" aria-hidden="true">◎</span> LVS-meldingen</a>
