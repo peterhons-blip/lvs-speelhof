@@ -12,7 +12,10 @@
     <div class="library-page-head">
         <div><p class="portal-eyebrow">BIBLIOTHEEK / BEHEER</p><h1>Uitleeninstellingen</h1>
         <p>Stel de uitleentermijnen en grenzen in. Nieuwe instellingen gelden voor nieuwe uitleningen en toekomstige verlengingen.</p></div>
-        <a href="{{ route('bibliotheek.loans.index') }}" class="library-button library-button-secondary">Naar uitleningen</a>
+        <div class="lvs-dashboard-header-actions">
+            <a href="{{ route('bibliotheek.loans.escalations.index') }}" class="library-button library-button-secondary">Opvolging beleid</a>
+            <a href="{{ route('bibliotheek.loans.index') }}" class="library-button library-button-secondary">Naar uitleningen</a>
+        </div>
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
