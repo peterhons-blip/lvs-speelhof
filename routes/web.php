@@ -42,6 +42,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::get('/inleverdatum-preview', [\App\Http\Controllers\LibraryLoanController::class, 'duePreview'])->name('due-preview')->middleware(['throttle:120,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage']);
         Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('student-scan');
         Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('copy-scan');
         Route::get('/boeken-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'searchBooks'])
