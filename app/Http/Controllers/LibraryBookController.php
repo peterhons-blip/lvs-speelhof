@@ -18,7 +18,7 @@ class LibraryBookController extends Controller
     {
         $query = trim((string) $request->query('q', ''));
         $books = LibraryBook::query()
-            ->withCount(['copies', 'copies as available_copies_count' => fn ($q) => $q->where('status', 'beschikbaar')])
+            ->withCount(['copies', 'copies as available_copies_count' => fn ($q) => app(\App\Services\LibraryReservations::class)->available($q->where('status', 'beschikbaar'))])
             ->when($query !== '', function ($q) use ($query) {
                 $q->where(function ($sub) use ($query) {
                     $sub->where('title', 'like', '%'.$query.'%')
@@ -361,7 +361,7 @@ class LibraryBookController extends Controller
             // Lock copy rows so an active loan cannot be overlooked on deletion.
             $copies = $book->copies()->lockForUpdate()->get();
 
-            if ($copies->contains(fn ($copy) => $copy->status !== 'beschikbaar')) {
+            if ($copies->contains(fn ($copy) => $copy->status !== 'beschikbaar' || app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->exists())) {
                 return back()->withErrors(['delete' => 'Verwijderen is niet mogelijk: minstens één exemplaar is niet beschikbaar of uitgeleend.']);
             }
 
@@ -448,7 +448,7 @@ class LibraryBookController extends Controller
             // Never delete a copy belonging to another book; lock it before checking availability.
             $copy = $book->copies()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
 
-            if ($copy->status !== 'beschikbaar') {
+            if ($copy->status !== 'beschikbaar' || app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->exists()) {
                 return back()->withErrors([
                     'delete' => 'Dit exemplaar kan niet verwijderd worden omdat het niet beschikbaar of uitgeleend is.',
                 ]);
