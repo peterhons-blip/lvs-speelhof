@@ -69,9 +69,6 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                         @if($bibliotheekActive)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
                                 <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
-                                <a href="{{ route('bibliotheek.requests.index') }}" class="portal-nav-subitem">Aanvragen</a>
-                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.create'))
                                 <a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
                                 @endif
@@ -96,6 +93,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
                                 <a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
                                 @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
+                                <a href="{{ route('bibliotheek.requests.index',['type'=>'reserve']) }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.requests.index') && request('type','reserve')!=='renew' ? 'is-active' : '' }}">Reserveringen</a>
+                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
                                 <a href="{{ route('bibliotheek.messages.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.messages.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.messages.*')) aria-current="page" @endif>Smartschool-berichten</a>
                                 @endif
@@ -104,6 +104,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
                                 <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
+                                <a href="{{ route('bibliotheek.requests.index',['type'=>'renew']) }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.requests.index') && request('type')==='renew' ? 'is-active' : '' }}">Verlengingsaanvragen</a>
                                 @endif
                             </nav>
                         @endif
