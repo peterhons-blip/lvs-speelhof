@@ -349,13 +349,15 @@ class LibraryLoanController extends Controller
             }
         }
         $ids=array_unique($ids);
+        $request->session()->forget('errors');
         if(count($ids)>100 || (!$ids && !$fail)) return back()->withErrors(['bulk'=>'Selecteer 1 tot 100 uitleningen.']);
         $ok=0;
         foreach($ids as $id){
             if(!DB::table('library_loans')->where('id',$id)->exists()){ $fail[]='Uitlening #'.$id.': niet gevonden'; continue; }
+            $request->session()->forget('errors');
             $response=$data['action']==='return' ? $this->returnLoan((int)$id) : $this->extend((int)$id);
             $errors=$request->session()->get('errors');
-            if($errors && $errors->any()){ $fail[]='Uitlening #'.$id.': '.$errors->first(); $request->session()->forget('errors'); } else $ok++;
+            if($errors instanceof \Illuminate\Support\ViewErrorBag && $errors->any()){ $fail[]='Uitlening #'.$id.': '.$errors->first(); $request->session()->forget('errors'); } else $ok++;
         }
         $response=back()->with('success',$ok.' uitleningen verwerkt.');
         return $fail ? $response->withErrors($fail) : $response;
