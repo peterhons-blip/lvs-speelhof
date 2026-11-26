@@ -21,7 +21,7 @@ class ExternalPortalController extends Controller
             $q=mb_substr(trim((string)$request->query('q','')),0,100);
             $query=DB::table('library_books')->select('id','title','authors','isbn');
             if ($q!=='') $query->where(fn($x)=>$x->where('title','like','%'.$q.'%')->orWhere('authors','like','%'.$q.'%')->orWhere('isbn','like','%'.$q.'%'));
-            if ($can('library.availability.view')) $query->selectSub(DB::table('library_copies')->whereColumn('book_id','library_books.id')->where('status','beschikbaar')->selectRaw('count(*)'),'available');
+            if ($can('library.availability.view')) $query->selectSub(app(\App\Services\LibraryReservations::class)->available(DB::table('library_copies')->whereColumn('book_id','library_books.id')->where('status','beschikbaar'))->selectRaw('count(*)'),'available');
             $books=$query->orderBy('title')->paginate(20)->withQueryString();
         }
         $base=fn()=>DB::table('library_loans as l')->join('library_copies as c','c.id','=','l.copy_id')->join('library_books as b','b.id','=','c.book_id')->where('l.leerling_id',$student->id)->whereNull('l.staff_user_id')->select('l.id','b.title','l.due_date','l.returned_at');
