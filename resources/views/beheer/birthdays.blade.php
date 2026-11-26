@@ -366,10 +366,11 @@
         <p class="library-help">De bestaande 18-jarigencontrole gebruikt deze lijsten rechtstreeks. De taak draait om 01.00 uur. Er wordt alleen een Smartschool-overzicht verstuurd wanneer er leerlingen van 18 jaar in het overzicht zitten. Het e-mailoverzicht volgt de bestaande 18-jarigenverwerking. Het opslaan hier verstuurt niets.</p>
     </section>
 
-    <section class="library-form-card" style="margin-top:20px">
+    <section id="ontvangers-controleren" class="library-form-card" style="margin-top:20px; scroll-margin-top: 100px;">
         <h2>Ontvangers controleren</h2>
         <p>Bekijk vooraf <strong>wie voor een bepaalde datum een felicitatie zou ontvangen</strong>, met het exacte account en eventuele reden voor overslaan. Dit is alleen een controle; er wordt niets verzonden.</p>
-        <form method="get" action="{{ route('beheer.birthdays.index') }}" class="library-birthday-preview-form">
+        <form method="get" action="{{ route('beheer.birthdays.index') }}#ontvangers-controleren" class="library-birthday-preview-form">
+            <input type="hidden" name="adult_date" value="{{ $adultDate }}">
             <div class="library-field">
                 <label for="preview-date">Verjaardagsdatum</label>
                 <input type="date" name="datum" id="preview-date" value="{{ $previewDate }}" required>
@@ -420,10 +421,11 @@
         @endforeach
     </section>
 
-    <section class="library-form-card library-birthday-history" style="margin-top:24px">
+    <section id="opvolging-18-jarigen" class="library-form-card library-birthday-history" style="margin-top:24px; scroll-margin-top: 100px;">
         <h2>Opvolging 18-jarigen</h2>
         <p class="library-help">Bekijk per datum welke leerlingen 18 worden en de afzonderlijke acties. Een mislukte of onzekere actie wordt niet automatisch opnieuw uitgevoerd; controleer zulke gevallen handmatig. Deze pagina verstuurt niets.</p>
-        <form method="get" action="{{ route('beheer.birthdays.index') }}" class="library-birthday-preview-form">
+        <form method="get" action="{{ route('beheer.birthdays.index') }}#opvolging-18-jarigen" class="library-birthday-preview-form">
+            <input type="hidden" name="datum" value="{{ $previewDate }}">
             <div class="library-field"><label for="adult_date">18e verjaardag op</label>
                 <input type="date" name="adult_date" id="adult_date" value="{{ $adultDate }}" required></div>
             <button type="submit" class="library-button library-button-secondary">Opvolging bekijken</button>
