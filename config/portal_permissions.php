@@ -15,7 +15,9 @@ return [
             'lvs.secretariat_visits.manage' => 'Secretariaatsbezoeken 18-jarigen opvolgen en afvinken',
             'lvs.view' => 'Leerlingenoverzicht en leerlingdossiers openen',
             'lvs.dashboard.view' => 'LVS-dashboard en statistieken bekijken',
-            'lvs.meldingen.view' => 'Alle meldingen en details bekijken',
+            'lvs.meldingen.view' => 'Gewone meldingen en details bekijken',
+            'lvs.meldingen.confidential.view' => 'Vertrouwelijke meldingen bekijken (ook in rapportages)',
+            'lvs.meldingen.confidential.create' => 'Vertrouwelijke meldingen registreren',
             'lvs.meldingen.create' => 'Gedragsmeldingen registreren',
             'lvs.reports.view' => 'Klassenraadoverzicht en tellingen bekijken',
             'lvs.followups.view' => 'Opvolging en sanctievoorstellen beoordelen en afhandelen',
@@ -55,6 +57,7 @@ return [
         'label' => 'Nascholingen (toekomstig)',
         'permissions' => ['nascholingen.view' => 'Nascholingen bekijken (pas werkzaam na implementatie)'],
     ],
+    'leerling' => ['label'=>'Leerlingenportaal (voorbereiding)', 'permissions'=>['leerling.dashboard.view'=>'Eigen leerlingportaal openen (nog niet actief)','leerling.library.view'=>'Eigen uitleningen bekijken (nog niet actief)','leerling.library.help'=>'Bibliotheek helpen registreren (nog niet actief)']],
     'beheer' => [
         'label' => 'Portaalbeheer',
         'permissions' => [
