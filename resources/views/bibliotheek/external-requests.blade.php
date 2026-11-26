@@ -3,13 +3,14 @@
 @section('content')
 <main class="library-page">
 <h1>Bibliotheekaanvragen</h1>
-<p>Beoordeel reserveringen, verlengingen en taken van leerlingmedewerkers. Een goedkeuring registreert de beslissing; voer de fysieke handeling of verlenging uit in het gewone beheer.</p>
+<p>Beoordeel reserveringen en verlengingsaanvragen. Goedkeuring reserveert een beschikbaar exemplaar gedurende vijf schooldagen of verlengt de uitleentermijn.</p>
 @if(session('success'))<p role="status">{{ session('success') }}</p>@endif
 @foreach($requests as $item)
 <section class="library-form-card">
 <h2>{{ $item->voornaam }} {{ $item->naam }} · {{ ['reserve'=>'Reservering','renew'=>'Verlenging','helper'=>'Leerlingmedewerker'][$item->request_type] ?? $item->request_type }}</h2>
 <p>{{ $item->principal_type }} · {{ $item->created_at }} · {{ ['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd'][$item->status] ?? $item->status }}</p>
 @if($item->target_id)<p>{{ $item->request_type==='reserve'?'Boek':'Uitlening' }} #{{ $item->target_id }}</p>@endif
+@if($item->reserved_copy_id)<p>Gereserveerd exemplaar #{{ $item->reserved_copy_id }} · tot {{ $item->reserved_until }}</p>@endif
 @if($item->payload) @php($payload=json_decode($item->payload,true)) <p>{{ $payload['action'] ?? '' }}: {{ $payload['details'] ?? '' }}</p>@endif
 @if($item->status==='pending')
 <form method="post" action="{{ route('bibliotheek.requests.decide',$item->id) }}">@csrf
