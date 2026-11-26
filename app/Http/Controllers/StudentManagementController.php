@@ -86,6 +86,24 @@ class StudentManagementController extends Controller
         ]);
     }
 
+    public function savePortalRights(Request $request, LibraryAccess $access, int $student): RedirectResponse
+    {
+        abort_unless($access->role($request)==='ict_coordinator',403);
+        abort_unless(DB::table('leerlingen')->where('schoolid',1)->where('id',$student)->exists(),404);
+        $data=$request->validate(['rights'=>'required|array','rights.*'=>'required|in:inherit,allow,deny']);
+        $valid=array_keys(config('portal_permissions.leerling.permissions',[]));
+        abort_if(array_diff(array_keys($data['rights']),$valid),422);
+        DB::transaction(function()use($data,$student,$access,$request){
+            $before=DB::table('portal_student_permissions')->where('leerling_id',$student)->pluck('allowed','permission')->all();
+            foreach($data['rights'] as $key=>$value){
+                if($value==='inherit') DB::table('portal_student_permissions')->where('leerling_id',$student)->where('permission',$key)->delete();
+                else DB::table('portal_student_permissions')->updateOrInsert(['leerling_id'=>$student,'permission'=>$key],['allowed'=>$value==='allow','updated_at'=>now()]);
+            }
+            DB::table('portal_permission_audit')->insert(['actor'=>$access->username($request),'target'=>'leerling:'.$student,'changes'=>json_encode(['before'=>$before,'after'=>DB::table('portal_student_permissions')->where('leerling_id',$student)->pluck('allowed','permission')->all()]),'created_at'=>now(),'updated_at'=>now()]);
+        });
+        return back()->with('success','Individuele leerlingrechten opgeslagen.');
+    }
+
     public function update(Request $request, LibraryAccess $access, int $student): RedirectResponse
     {
         $access->requirePermission($request, 'beheer.students.edit');
