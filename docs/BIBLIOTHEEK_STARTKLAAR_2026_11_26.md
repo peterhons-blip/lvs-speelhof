@@ -2,7 +2,7 @@
 
 ## Nieuwe functionaliteit
 - Bestaande Open Library opzoeking blijft primaire bron.
-- Google Books wordt automatisch als **tweede bron** geprobeerd bij ISBN, titel en auteur wanneer Open Library geen resultaten geeft. ISBN-resultaten worden op het ISBN gecontroleerd. De bestaande fysieke exemplaarbarcode blijft onafhankelijk.
+- Bij **ISBN** worden Open Library én Google Books gecontroleerd. Als Open Library een boek vindt, worden uitsluitend ontbrekende velden aangevuld met Google Books, **alleen wanneer Google Books exact hetzelfde ISBN bevestigt**; reeds ingevulde Open Library-gegevens worden niet overschreven. Als Open Library niets vindt, wordt Google Books als fallback gebruikt. Bij zoeken op titel of auteur wordt Google Books geprobeerd als Open Library geen zoekresultaten teruggeeft. De bestaande fysieke exemplaarbarcode blijft onafhankelijk.
 - Dezelfde ISBN-fallback geldt voor bulkimport via de wachtrij.
 - De bron wordt bij ISBN-opzoeking vermeld; foutmeldingen voor foutieve invoer, ontbrekende data, geen rechten, rate limiting en serverfouten zijn duidelijker.
 - **Meta4Books**: niet aangesloten; eigen Products API/Zoek API vereisen contract/API-documentatie en credentials. Geen onbevestigde API-adressen of scraping gebruiken.
@@ -39,6 +39,13 @@ Gebruik **niet** onbeheerd `php artisan migrate` in dit legacy project wegens mo
 8. Controleer dat 1e te-laat-herinnering na 1 dag, volgende na 3 dagen, derde na 5 dagen wordt ingepland; na de tweede succesvol aangeboden herinnering moet één beleidopvolging ontstaan. Controleer dat teruggebrachte boeken uit de planning verdwijnen.
 9. Controleer rechten: onbevoegden krijgen 403 voor escalatiepagina én afsluitactie, niet alleen een verborgen menu-item.
 10. Geen productie-uitrol vóór de bibliotheekmedewerkers een representatieve proef hebben gedaan.
+
+## Extra bronnen en veilige AI-uitbreiding (voorlopig alleen onderzocht)
+- **Cultuurconnect / bibliotheek.be** biedt een officiële catalogus-API (vrije en rijke variant). Voor onze schoolapp moeten we de toegangsvoorwaarden, eventuele sleutel en metadatarechten beoordelen voordat we koppelen. Geen HTML-scraping.
+- **ISBNsearch.org** verwijst voor databank/API-toegang naar ISBNdb; een account/contract kan nodig zijn. Nog geen directe koppeling.
+- **Meta4Books** biedt Products API (ONIX XML) en Zoek API (JSON), maar vraagt een eigen aansluiting.
+- **AI** kan op termijn relevante titels/edities suggereren of bestaande resultaten vergelijken. AI mag geen onbevestigde ISBN, auteur, titel, omslag of uitgever aanmaken. Alleen gegevens met controleerbare bron en exact ISBN komen in aanmerking voor automatisch invullen; een medewerker blijft eindverantwoordelijk.
+- De automatische samenvoeging is bewust conservatief: twee leveranciers kunnen verschillende metadata of beschrijvingen voor dezelfde editie voeren. Een bestaand veld van Open Library blijft leidend. Leg de gewenste datakwaliteit vast met de bib-medewerkers.
 
 ## Nog open / externe afhankelijkheden
 - Meta4Books contract en API-sleutels/documentatie aanvragen.
