@@ -65,7 +65,8 @@
                     <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
                 </a>
                 @endif
-                <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
+<a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
                     <span class="portal-module-icon" aria-hidden="true">▤</span>
                     <strong>Bibliotheek</strong>
                     <span>Boeken, exemplaren, uitleningen, herinneringen, QR-codes en rapportages beheren.</span>
@@ -89,6 +90,7 @@
                     @endif
                     <span class="portal-module-footer">Bekijk de module <span aria-hidden="true">→</span></span>
                 </a>
+@endif
                 <div class="portal-module portal-module-disabled" aria-disabled="true">
                     <span class="portal-module-icon" aria-hidden="true">▣</span><span class="portal-module-status">Binnenkort</span>
                     <strong>Aanvraag bestelling</strong>
