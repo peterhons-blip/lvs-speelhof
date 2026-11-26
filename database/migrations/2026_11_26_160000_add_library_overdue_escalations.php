@@ -10,6 +10,8 @@ return new class extends Migration {
             'overdue_first_days' => '0',
             'overdue_repeat_days' => '0',
             'overdue_escalate_after' => '0',
+            'policy_alert_enabled' => '0',
+            'policy_alert_recipient' => '',
         ] as $key => $value) {
             DB::table('library_settings')->insertOrIgnore([
                 'key' => $key, 'value' => $value,
