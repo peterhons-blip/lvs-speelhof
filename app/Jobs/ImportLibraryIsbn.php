@@ -31,7 +31,10 @@ class ImportLibraryIsbn implements ShouldQueue
         // For an existing book no external ISBN lookup is needed.
         // Metadata is fetched outside the transaction to keep locks short.
         $isbn = $item->isbn;
-        $metadata = LibraryBook::where('isbn', $isbn)->exists() ? null : $lookup->find($isbn);
+        $metadata = null;
+        if (! LibraryBook::where('isbn', $isbn)->exists()) {
+            $metadata = $lookup->find($isbn) ?? $lookup->findGoogleBooks($isbn);
+        }
 
         // Concurrent jobs may create this book during the lookup; the unique ISBN
         // constraint is authoritative. Retry once against that existing book.
@@ -48,7 +51,7 @@ class ImportLibraryIsbn implements ShouldQueue
                     $existing = $book !== null;
                     if (! $book) {
                         if (! $metadata) {
-                            $this->finish('niet_gevonden', 'Geen boekgegevens gevonden bij Open Library.');
+                            $this->finish('niet_gevonden', 'Geen boekgegevens gevonden bij Open Library of Google Books.');
                             return 'niet_gevonden';
                         }
                         $book = LibraryBook::create([
