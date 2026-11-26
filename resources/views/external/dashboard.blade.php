@@ -102,7 +102,7 @@
 @if($can('library.availability.view'))<th>Beschikbaar</th>
 @endif
 </tr></thead><tbody>
-@forelse($books as $book)<tr><td>{{ $book->title }}</td><td>{{ $book->authors }}</td>
+@forelse($books as $book)<tr><td><a href="{{ route($portalRoute,['section'=>'book','book'=>$book->id,'q'=>request('q'),'page'=>request('page')]) }}" style="font-weight:600">{{ $book->title }}</a></td><td>{{ $book->authors }}</td>
 @if($can('library.reserve'))<td><form method="post" action="{{ route($submitRoute) }}">
 @csrf
 <input type="hidden" name="type" value="reserve"><input type="hidden" name="target_id" value="{{ $book->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Reserveren (test)' : 'Reserveren' }}</button></form></td>
@@ -115,6 +115,49 @@
 @endforelse
 </tbody></table></div>
 @include('partials.portal-pagination',['paginator'=>$books])</section>
+@endif
+@if($section==='book' && $book)
+<div class="library-form-actions">
+    <a class="library-button library-button-secondary" href="{{ route($portalRoute,['section'=>'catalog','q'=>request('q'),'page'=>request('page')]) }}">Terug naar catalogus</a>
+    @if($can('library.reserve'))
+    <form method="post" action="{{ route($submitRoute) }}">
+        @csrf
+        <input type="hidden" name="type" value="reserve">
+        <input type="hidden" name="target_id" value="{{ $book->id }}">
+        <button class="library-button library-button-primary" type="submit">{{ session('portal_preview')?'Reserveren (test)':'Boek reserveren' }}</button>
+    </form>
+    @endif
+</div>
+<section class="library-detail-card">
+    <div class="library-detail-cover">
+        @if($book->cover_url && in_array(strtolower((string)parse_url($book->cover_url,PHP_URL_SCHEME)),['https','http'],true))
+        <img src="{{ $book->cover_url }}" alt="Omslag van {{ $book->title }}" referrerpolicy="no-referrer">
+        @else
+        <span aria-hidden="true">▤</span>
+        @endif
+    </div>
+    <div class="library-detail-data">
+        @if($book->subtitle)
+        <h2>{{ $book->subtitle }}</h2>
+        @endif
+        <dl>
+            <div><dt>Auteur(s)</dt><dd>{{ $book->authors ?: 'Onbekend' }}</dd></div>
+            <div><dt>ISBN</dt><dd>{{ $book->isbn ?: '—' }}</dd></div>
+            <div><dt>Uitgever</dt><dd>{{ $book->publisher ?: '—' }}</dd></div>
+            <div><dt>Uitgavejaar</dt><dd>{{ $book->published_year ?: '—' }}</dd></div>
+            <div><dt>Categorie</dt><dd>{{ $book->category ?: '—' }}</dd></div>
+            @if($can('library.availability.view'))
+            <div><dt>Beschikbaarheid</dt><dd>{{ $book->available }} beschikbaar</dd></div>
+            @endif
+        </dl>
+        @if($book->description)
+        <h2>Over dit boek</h2>
+        <p class="library-description" style="white-space:pre-line;line-height:1.6">{{ $book->description }}</p>
+        @else
+        <p class="library-help">Er is nog geen beschrijving beschikbaar.</p>
+        @endif
+    </div>
+</section>
 @endif
 @if($section==='requests')
 <section class="library-form-card"><h2>Mijn aanvragen</h2>
