@@ -27,6 +27,14 @@
                 <p>Boeken registreren via ISBN, met titel, auteur, omslag en meerdere exemplaren.</p>
                 <span class="portal-library-feature-state">Open de catalogus →</span>
             </a>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.manage'))
+                <a href="{{ route('bibliotheek.books.create', ['quick' => 1]) }}" class="portal-library-feature portal-library-feature-active">
+                    <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
+                    <h2>Snel boeken registreren</h2>
+                    <p>Scan ISBN, controleer gegevens en registreer direct het volgende exemplaar.</p>
+                    <span class="portal-library-feature-state">Start inventarisatie →</span>
+                </a>
+            @endif
             <a href="{{ route('bibliotheek.loans.create') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↗</span>
                 <h2>Boek uitlenen</h2>
