@@ -122,6 +122,38 @@ class LibraryBookController extends Controller
         return view('bibliotheek.books.create', ['suggestedBarcode' => LibraryCopy::generateBarcode()]);
     }
 
+    /**
+     * Limited connectivity check for librarians debugging book lookups on live.
+     * Reports only HTTP status/availability, never API credentials.
+     */
+    public function lookupDiagnostics(Request $request): JsonResponse
+    {
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        $results = [];
+        foreach ([
+            'Open Library' => 'https://openlibrary.org/search.json?title=test&limit=1',
+            'Google Books' => 'https://www.googleapis.com/books/v1/volumes?q=intitle:test&maxResults=1',
+        ] as $provider => $url) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::acceptJson()->timeout(6)->get($url);
+                $results[$provider] = [
+                    'reachable' => $response->successful(),
+                    'status' => $response->status(),
+                    'message' => $response->successful() ? 'Bereikbaar' : 'HTTP-fout bij de externe dienst',
+                ];
+            } catch (\Throwable $error) {
+                \Illuminate\Support\Facades\Log::warning('Bibliotheek live opzoektest mislukt', [
+                    'provider' => $provider, 'error' => $error->getMessage(),
+                ]);
+                $results[$provider] = [
+                    'reachable' => false, 'status' => null,
+                    'message' => 'Niet bereikbaar vanaf deze server (controleer verbinding, DNS, TLS en firewall).',
+                ];
+            }
+        }
+        return response()->json(['providers' => $results]);
+    }
+
     public function lookup(Request $request, LibraryIsbnLookup $lookup): JsonResponse
     {
         $isbn = $this->normalizedIsbn((string) $request->query('isbn', ''));
