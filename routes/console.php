@@ -44,3 +44,5 @@ Schedule::command('monitor:scheduled staff_sync')
     ->timezone('Europe/Brussels')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/smartschool_sync_personeel.log'));
+
+Schedule::command('monitor:scheduled secretariat_reminders')->dailyAt('08:15')->timezone('Europe/Brussels')->withoutOverlapping()->appendOutputTo(storage_path('logs/secretariaat_herinneringen.log'));
