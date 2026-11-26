@@ -5,13 +5,18 @@
 @endsection
 @section('content')
 <style>
-.external-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:18px;margin:20px 0}
-.external-card{display:flex;flex-direction:column;gap:8px;min-height:165px;background:#fff;border:1px solid #99d5de;border-radius:15px;padding:22px;text-decoration:none;color:inherit}
-.external-card:hover{border-color:#008599;box-shadow:0 4px 15px #12334a12}
-.external-card h2{font-size:17px;margin:0;color:#12365b}
-.external-card p{margin:0;color:#526b83;font-size:14px}
-.external-card-icon{display:grid;place-items:center;width:42px;height:42px;background:#e2f4f5;border-radius:12px;color:#007e90;font-size:22px}
-.external-number{font-size:30px;color:#12365b}
+.external-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0;max-width:1100px}
+.external-card{display:grid;grid-template-columns:48px minmax(0,1fr) auto;grid-template-rows:auto 1fr;column-gap:16px;row-gap:6px;align-items:start;min-height:125px;background:#fff;border:1px solid #dce5ec;border-radius:14px;padding:20px;text-decoration:none;color:inherit;box-shadow:0 2px 5px #12334a06}
+.external-card:hover,.external-card:focus-visible{border-color:#008599;box-shadow:0 4px 15px #12334a12}
+.external-card h2{grid-column:2;grid-row:1;font-size:17px;line-height:1.4;margin:0;color:#12365b;align-self:center}
+.external-card p{grid-column:2;grid-row:2;margin:0;color:#526b83;font-size:14px;line-height:1.5}
+.external-card-icon{grid-column:1;grid-row:1 / 3;display:grid;place-items:center;width:48px;height:48px;background:#e2f4f5;border-radius:12px;color:#007e90}
+.external-card-icon svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.external-number{grid-column:3;grid-row:1;font-size:25px;line-height:1.4;color:#12365b;font-variant-numeric:tabular-nums}
+.external-card:not(:has(.external-number))::after{content:'→';grid-column:3;grid-row:1;color:#007e90;font-size:20px;align-self:center}
+.external-card-overdue{color:#a91e36!important;font-weight:600}
+@media(max-width:850px){.external-card-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.external-card{padding:14px;column-gap:10px;grid-template-columns:40px minmax(0,1fr) auto}.external-card-icon{width:40px;height:40px}}
 </style>
 <main class="library-page">
 <div class="library-page-head"><div><p class="portal-eyebrow">{{ $role==='staff'?'MIJN BIBLIOTHEEK':'MIJN PORTAAL' }}</p><h1>{{ $titles[$section] }}</h1>
@@ -23,25 +28,25 @@
 @if(in_array($section,['dashboard','library']))
 <div class="external-card-grid">
 @if($section==='dashboard' && $can('profile.view'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'profile']) }}"><span class="external-card-icon">◎</span><h2>{{ $role==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</h2><p>{{ $profile ?? 'Bekijk je profiel' }}</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'profile']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><h2>{{ $role==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</h2><p>{{ $profile ?? 'Bekijk je profiel' }}</p></a>
 @endif
 @if($can('library.view'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'loans']) }}"><span class="external-card-icon">▤</span><strong class="external-number">{{ $loans->count() }}</strong><h2>Openstaande uitleningen</h2><p>{{ $loans->filter(fn($loan)=>$loan->due_date < now('Europe/Brussels')->toDateString())->count() }} te laat</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'loans']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></span><strong class="external-number">{{ $loans->count() }}</strong><h2>Mijn uitleningen</h2><p>{{ $loans->filter(fn($loan)=>$loan->due_date < now('Europe/Brussels')->toDateString())->count() }} te laat · Bekijk je inleverdatums.</p></a>
 @endif
 @if($can('library.catalog.view'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'catalog']) }}"><span class="external-card-icon">▥</span><h2>Boekencatalogus</h2><p>Zoek boeken op titel, auteur of ISBN.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'catalog']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></span><h2>Boekencatalogus</h2><p>Zoek boeken op titel, auteur of ISBN.</p></a>
 @endif
 @if($can('library.history.view'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'history']) }}"><span class="external-card-icon">↶</span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'history']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7M3 12V5m0 7h7m2-5v5l3 2"/></svg></span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
 @endif
 @if($can('library.reserve') || $can('library.renew.request'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'requests']) }}"><span class="external-card-icon">☷</span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Openstaande aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'requests']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6M9 18h4"/></svg></span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Mijn aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
 @endif
 @if($section==='dashboard' && $can('lvs.view') && $can('incidents.view'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'incidents']) }}"><span class="external-card-icon">◎</span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'incidents']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
 @endif
-@if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
-<a class="external-card" href="{{ route('bibliotheek.index') }}"><span class="external-card-icon">▦</span><h2>Bibliotheekbeheer</h2><p>Open de werkruimte voor bibliotheekmedewerkers.</p></a>
+@if($section==='dashboard' && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
+<a class="external-card" href="{{ route('bibliotheek.index') }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><h2>Bibliotheekbeheer</h2><p>Open de werkruimte voor bibliotheekmedewerkers.</p></a>
 @endif
 </div>
 @endif
