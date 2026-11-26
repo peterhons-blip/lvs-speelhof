@@ -8,7 +8,7 @@
 - **Meta4Books**: niet aangesloten; eigen Products API/Zoek API vereisen contract/API-documentatie en credentials. Geen onbevestigde API-adressen of scraping gebruiken.
 - Nieuw berichttype 'overdue' met apart aanpasbaar sjabloon via **Bibliotheek → Smartschool-berichten**.
 - Uitleeninstellingen: eerste herinnering na X dagen te laat, iedere Y dagen herhalen, na Z **succesvol aangeboden** te-laat-herinneringen een eenmalige opvolging voor beleid.
-- **Bibliotheek → Opvolging niet-ingeleverde boeken**: alleen voor medewerkers met `bibliotheek.messages.manage`; openstaande escalaties, behandelende persoon, notitie, afsluiten en historiek. **Er worden geen automatische sancties of Smartschool-berichten aan beleid verzonden.**
+- **Bibliotheek → Opvolging niet-ingeleverde boeken**: alleen voor medewerkers met `bibliotheek.messages.manage`; openstaande escalaties, behandelende persoon, notitie, afsluiten en historiek. Geen automatische sancties; optioneel één Smartschool-bericht aan een expliciet gekozen actief personeelsaccount.
 - Alle nieuwe instellingen zijn standaard `0` = uit. De bestaande globale Smartschool-schakelaar moet bovendien aan staan voor enige herinneringsverzending.
 - Herinneringen gebruiken de bestaande scheduler van 08:00; geen extra cronjob. Het bestaande `library_loan_notifications` unieke kenmerk voorkomt dubbel verzenden voor dezelfde lening/berichttype/dag; mislukte of onzekere calls worden niet automatisch herhaald.
 - Uitgeleende boeken die inmiddels zijn ingeleverd krijgen geen nieuwe herinneringen. Auteurs en barcode van het boek wijzigen niet.
@@ -51,7 +51,9 @@ Gebruik **niet** onbeheerd `php artisan migrate` in dit legacy project wegens mo
 - Meta4Books contract en API-sleutels/documentatie aanvragen.
 - Google Books kan desgewenst met een API-sleutel geconfigureerd worden via `GOOGLE_BOOKS_API_KEY` in de .env op de server; de configuratie leest die via `config/services.php`. Zonder sleutel wordt een publieke lookup geprobeerd, maar die kan door Google op basis van hun voorwaarden of limieten geweigerd worden.
 - Fout in de live boekopzoeking: de code is beter bestand tegen ontbrekende resultaten en heeft een tweede bron; **de exacte oorspronkelijke live fout is niet gereproduceerd** zonder een foutieve ISBN/HTTP-respons en serverlogs.
-- Escalaties naar beleid worden voorlopig als interne opvolging genoteerd; direct automatisch mailen naar een verantwoordelijke is bewust niet geactiveerd zonder vastgelegde ontvangers en beleid.
+- Escalaties worden intern geregistreerd; optioneel kan een eenmalig Smartschool-bericht worden geactiveerd met een expliciete ontvanger.
 
 ## Integratie
-De diagnoseknop en expliciete bronkeuze zijn overgenomen uit de afwerkingsbranch. Handmatige externe zoeklinks blijven behouden. Er is één migratie voor interne beleidopvolging; automatische Smartschool-escalatie naar beleid is nog niet opgenomen. Meta4books wacht op API-toegang.
+De diagnoseknop en expliciete bronkeuze zijn overgenomen uit de afwerkingsbranch. Handmatige externe zoeklinks blijven behouden. Er is één migratie voor interne beleidopvolging; optionele Smartschool-escalatie naar beleid gebruikt de bestaande unieke meldingshistoriek en staat standaard uit. Meta4books wacht op API-toegang.
+
+Bij escalaties tellen uitsluitend succesvol verzonden te-laat-herinneringen. Het optionele beleidssignaal is een afzonderlijke melding (type policy_escalation); de status verschijnt bij het dossier. Activeer dit pas na een test en de keuze van de ontvanger. Ook reeds openstaande dossiers kunnen een signaal krijgen. De testmodus verstuurt geen berichten en schrijft geen escalaties.
