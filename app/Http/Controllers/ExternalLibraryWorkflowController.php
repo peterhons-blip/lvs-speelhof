@@ -42,6 +42,15 @@ class ExternalLibraryWorkflowController extends Controller
         return view('bibliotheek.external-requests',compact('requests'));
     }
 
+    public function cancel(Request $request,LibraryAccess $access,int $id)
+    {
+        $access->requirePermission($request,'bibliotheek.view');
+        $access->requirePermission($request,'bibliotheek.requests.manage');
+        $updated=DB::table('external_library_requests')->where('id',$id)->where('request_type','reserve')->where('status','approved')->whereIn('leerling_id',DB::table('leerlingen')->where('schoolid',1)->select('id'))->update(['status'=>'cancelled','updated_at'=>now()]);
+        abort_unless($updated,409);
+        return back()->with('success','Reservering geannuleerd.');
+    }
+
     public function decide(Request $request,LibraryAccess $access,int $id)
     {
         $access->requirePermission($request,'bibliotheek.view');
