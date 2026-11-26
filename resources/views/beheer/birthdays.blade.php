@@ -8,7 +8,7 @@
 ]])
 @endsection
 @section('content')
-<main class="library-page library-form-page">
+<main class="library-page library-form-page birthday-tab-page">
     <div class="library-page-head">
         <div>
             <p class="portal-eyebrow">BEHEER / GEAUTOMATISEERDE BERICHTEN</p>
@@ -19,6 +19,18 @@
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @php
+        $birthdayTabs = ['felicitaties'=>'Verjaardagsfelicitaties','privacy'=>'Co-accounts','waarschuwing'=>'Voor 18 jaar','meerderjarig'=>'Op 18 jaar','overzichten'=>'Ontvangers overzichten','controle'=>'Ontvangers controleren','voorbeelden'=>'Berichtvoorbeelden','opvolging'=>'Opvolging 18-jarigen'];
+        $birthdayTab = request('tab', request()->has('adult_date') ? 'opvolging' : (request()->has('datum') ? 'controle' : (request()->has('overzicht_school') ? 'overzichten' : (request()->has('privacy') ? 'privacy' : 'felicitaties'))));
+        if (!is_string($birthdayTab) || !array_key_exists($birthdayTab,$birthdayTabs)) $birthdayTab='felicitaties';
+    @endphp
+    <nav class="birthday-tab-nav" aria-label="Verjaardagsbeheer">
+        @foreach($birthdayTabs as $key=>$label)
+            <a href="{{ route('beheer.birthdays.index', array_merge(request()->only(['datum','adult_date','overzicht_school']), ['tab'=>$key])) }}" class="birthday-tab-link {{ $birthdayTab === $key ? 'is-active' : '' }}" @if($birthdayTab === $key) aria-current="page" @endif>{{ $label }}</a>
+        @endforeach
+    </nav>
+    @if($birthdayTab === 'felicitaties')
+    <div class="birthday-tab-panel">
     <form method="post" action="{{ route('beheer.birthdays.update') }}" class="library-form">
         @csrf
         <section class="library-form-card">
@@ -142,6 +154,10 @@
         </section>
         <button type="submit" class="library-button library-button-primary">Verjaardagsinstellingen opslaan</button>
     </form>
+    </div>
+    @endif
+    @if($birthdayTab === 'privacy')
+    <div class="birthday-tab-panel">
     <section class="library-form-card library-birthday-privacy" id="coaccounts-beheer">
         <h2>Automatisch uitschakelen co-accounts op 18 jaar</h2>
         @if(($settings['adult_disable_coaccounts'] ?? '1') === '1')
@@ -196,6 +212,10 @@
         @endif
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'waarschuwing')
+    <div class="birthday-tab-panel">
     <section class="library-form-card library-birthday-warning">
         <h2>Waarschuwing vóór de 18e verjaardag</h2>
         <p class="library-help">De aparte 18-jarigentaak kan de leerling en de gekoppelde ouder-/voogdaccounts vooraf via Smartschool waarschuwen. De co-accounts worden op de 18e verjaardag volgens de bestaande procedure uitgeschakeld. Deze instellingen regelen <strong>alleen de voorafgaande waarschuwing</strong>, niet de verplichte opvolging op de verjaardag zelf.</p>
@@ -254,6 +274,10 @@
         </form>
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'meerderjarig')
+    <div class="birthday-tab-panel">
     <section class="library-form-card library-birthday-adult">
         <h2>Berichten op de 18e verjaardag</h2>
         <p class="library-help">De privacyprocedure schakelt gekoppelde co-accounts automatisch uit, los van de berichten hieronder. Je kunt de communicatie aanpassen, maar <strong>niet</strong> de verplichte uitschakeling uitschakelen.</p>
@@ -314,6 +338,10 @@
         </form>
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'overzichten')
+    <div class="birthday-tab-panel">
     <section class="library-form-card" style="margin-top:20px">
         <h2>4. Ontvangers van het 18-jarigenoverzicht</h2>
         <p class="library-help">Naast de verjaardagsfelicitaties verstuurt de <strong>aparte 18-jarigentaak</strong> een overzicht naar aangewezen medewerkers. Deze ontvangers zijn <strong>per school</strong> instelbaar en staan los van de berichten die leerlingen zelf krijgen.</p>
@@ -366,10 +394,15 @@
         <p class="library-help">De bestaande 18-jarigencontrole gebruikt deze lijsten rechtstreeks. De taak draait om 01.00 uur. Er wordt alleen een Smartschool-overzicht verstuurd wanneer er leerlingen van 18 jaar in het overzicht zitten. Het e-mailoverzicht volgt de bestaande 18-jarigenverwerking. Het opslaan hier verstuurt niets.</p>
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'controle')
+    <div class="birthday-tab-panel">
     <section id="ontvangers-controleren" class="library-form-card" style="margin-top:20px; scroll-margin-top: 100px;">
         <h2>Ontvangers controleren</h2>
         <p>Bekijk vooraf <strong>wie voor een bepaalde datum een felicitatie zou ontvangen</strong>, met het exacte account en eventuele reden voor overslaan. Dit is alleen een controle; er wordt niets verzonden.</p>
         <form method="get" action="{{ route('beheer.birthdays.index') }}#ontvangers-controleren" class="library-birthday-preview-form">
+            <input type="hidden" name="tab" value="controle">
             <input type="hidden" name="adult_date" value="{{ $adultDate }}">
             <div class="library-field">
                 <label for="preview-date">Verjaardagsdatum</label>
@@ -406,6 +439,10 @@
         <p class="library-help">‘Zou verzonden worden’ betekent dat de huidige instellingen en accountgegevens verzending toelaten. Het garandeert niet dat Smartschool of de mailserver het bericht effectief zal bezorgen. Registraties van eerdere pogingen worden meegetoond.</p>
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'voorbeelden')
+    <div class="birthday-tab-panel">
     <section class="library-form-card library-birthday-samples" style="margin-top:24px">
         <h2>Voorbeelden van de berichten</h2>
         <p class="library-help">Hier zie je met fictieve leerlinggegevens hoe de huidige, <strong>opgeslagen</strong> berichten eruitzien. Alleen-lezen: deze voorbeeldweergaven versturen niets en wijzigen geen co-accounts. Sla gewijzigde teksten eerst op.</p>
@@ -421,10 +458,15 @@
         @endforeach
     </section>
 
+    </div>
+    @endif
+    @if($birthdayTab === 'opvolging')
+    <div class="birthday-tab-panel">
     <section id="opvolging-18-jarigen" class="library-form-card library-birthday-history" style="margin-top:24px; scroll-margin-top: 100px;">
         <h2>Opvolging 18-jarigen</h2>
         <p class="library-help">Bekijk per datum welke leerlingen 18 worden en de afzonderlijke acties. Een mislukte of onzekere actie wordt niet automatisch opnieuw uitgevoerd; controleer zulke gevallen handmatig. Deze pagina verstuurt niets.</p>
         <form method="get" action="{{ route('beheer.birthdays.index') }}#opvolging-18-jarigen" class="library-birthday-preview-form">
+            <input type="hidden" name="tab" value="opvolging">
             <input type="hidden" name="datum" value="{{ $previewDate }}">
             <div class="library-field"><label for="adult_date">18e verjaardag op</label>
                 <input type="date" name="adult_date" id="adult_date" value="{{ $adultDate }}" required></div>
@@ -462,6 +504,8 @@
         <p class="library-help">Maximaal 250 records per overzicht. Oudere uitvoeringen van vóór de invoering van deze log verschijnen hier niet.</p>
     </section>
 
+    </div>
+    @endif
 </main>
 @push('scripts')
 <script>
