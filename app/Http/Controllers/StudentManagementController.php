@@ -44,7 +44,7 @@ class StudentManagementController extends Controller
             ->select('leerlingen.id', 'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam',
                 'leerlingen.active', 'leerlingen.geboortedatum', 'klassen.klasnaam')
             ->orderBy($sortColumns[$sort], $direction)
-            ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam')->orderBy('leerlingen.id')
+            ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam', $sort==='leerling'?$direction:'asc')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
         return view('beheer.students.index', compact('students', 'search', 'showInactive','classes','classId'));
     }
