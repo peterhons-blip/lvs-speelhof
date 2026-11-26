@@ -92,6 +92,9 @@
                         </a>
                         @if($bibliotheekActive)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
+                                <a href="{{ route('bibliotheek.requests.index') }}" class="portal-nav-subitem">Aanvragen</a>
+                                @endif
                                 <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
 <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
@@ -135,6 +138,9 @@
                         <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
+                            @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+                            <a href="{{ route('beheer.incident-release.index') }}" class="portal-nav-subitem">Meldingsvrijgave</a>
+                            @endif
                             <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
                             <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
