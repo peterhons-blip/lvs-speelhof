@@ -15,7 +15,9 @@
             <h1>Uitleningen</h1>
             <p>Registreer, verleng en sluit uitleningen af per fysiek exemplaar.</p>
         </div>
-        <a href="{{ route('bibliotheek.loans.create') }}" class="library-button library-button-primary">+ Boek uitlenen</a>
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
+<a href="{{ route('bibliotheek.loans.create') }}" class="library-button library-button-primary">+ Boek uitlenen</a>
+@endif
     </div>
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -34,7 +36,8 @@
 
     <section class="library-form-card">
         <h2>Snel inleveren met barcode</h2>
-        <form method="post" action="{{ route('bibliotheek.loans.return-barcode') }}" class="library-loan-filters">
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.return'))
+<form method="post" action="{{ route('bibliotheek.loans.return-barcode') }}" class="library-loan-filters">
             @csrf
             <div class="library-field">
                 <label for="return-barcode">Scan of typ de barcode van het exemplaar</label>
@@ -42,9 +45,10 @@
             </div>
             <button type="submit" class="library-button library-button-primary">Als ingeleverd registreren</button>
         </form>
+@endif
     </section>
 
-    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.manage'))
+    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.bulk'))
     <section class="library-form-card"><h2>Meerdere uitleningen verwerken</h2>
         <form id="bulk-loans" method="post" action="{{ route('bibliotheek.loans.bulk') }}" onsubmit="return confirm('Geselecteerde uitleningen verwerken?')">@csrf
             <label>Scan meerdere exemplaarcodes (één per regel, maximaal 100; enkel voor inleveren)<textarea name="barcodes" rows="3" maxlength="7000"></textarea></label>
@@ -79,7 +83,7 @@
                     @php($late = !$loan->returned_at && $loan->due_date < now('Europe/Brussels')->toDateString())
                     <tr>
                         <td>
-                            @if(!$loan->returned_at && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.manage'))<label><input class="bulk-loan-check" type="checkbox" form="bulk-loans" name="ids[]" value="{{ $loan->id }}"> Selecteren</label><br>@endif
+                            @if(!$loan->returned_at && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.bulk'))<label><input class="bulk-loan-check" type="checkbox" form="bulk-loans" name="ids[]" value="{{ $loan->id }}"> Selecteren</label><br>@endif
                             @if($loan->staff_user_id)
                                 <strong>{{ trim(($loan->staff_voornaam ?? '').' '.($loan->staff_naam ?? '')) ?: 'Personeelslid #'.$loan->staff_user_id }}</strong>
                                 <div class="library-help">Personeel · {{ $loan->staff_gebruikersnaam ?: 'Geen gebruikersnaam' }}</div>
@@ -105,15 +109,21 @@
                         <td>
                             @unless($loan->returned_at)
                                 <div class="library-copy-actions">
-                                    <form method="post" action="{{ route('bibliotheek.loans.return', $loan->id) }}" onsubmit="return confirm('Exemplaar {{ $loan->barcode }} als ingeleverd registreren?');">
+                                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.return'))
+<form method="post" action="{{ route('bibliotheek.loans.return', $loan->id) }}" onsubmit="return confirm('Exemplaar {{ $loan->barcode }} als ingeleverd registreren?');">
                                         @csrf
                                         <button type="submit" class="library-button library-button-secondary">Inleveren</button>
                                     </form>
-                                    <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.reminders.edit', $loan->id) }}">Herinneringen / bericht sturen</a>
-                                    <form method="post" action="{{ route('bibliotheek.loans.extend', $loan->id) }}">
+@endif
+                                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reminders.edit'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.reminders.edit', $loan->id) }}">Herinneringen / bericht sturen</a>
+@endif
+                                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.extend'))
+<form method="post" action="{{ route('bibliotheek.loans.extend', $loan->id) }}">
                                         @csrf
                                         <button type="submit" class="library-button library-button-secondary">Verlengen ({{ $loan->extensions }})</button>
                                     </form>
+@endif
                                 </div>
                             @endunless
                         </td>
