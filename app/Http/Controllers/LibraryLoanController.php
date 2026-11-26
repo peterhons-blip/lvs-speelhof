@@ -491,8 +491,15 @@ class LibraryLoanController extends Controller
             'extension_days' => ['required', 'integer', 'min:1', 'max:365'],
             'reminder_days_before' => ['required', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['required', 'in:0,1'],
+            'overdue_first_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'overdue_repeat_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'overdue_escalate_after' => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
+        if ((int) $values['overdue_escalate_after'] > 0 && (int) $values['overdue_first_days'] === 0) {
+            return back()->withInput()->withErrors(['overdue_escalate_after' =>
+                'Schakel eerst een herinnering na de inleverdatum in voordat je een escalatie instelt.']);
+        }
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(
                 ['key' => $key],
