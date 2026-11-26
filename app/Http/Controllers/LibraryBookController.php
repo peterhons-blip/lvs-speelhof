@@ -165,6 +165,15 @@ class LibraryBookController extends Controller
             return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
         }
 
+        $existing = LibraryBook::where('isbn', $isbn)->first();
+        if ($existing) {
+            return response()->json([
+                'book' => $existing->only(['isbn', 'title', 'subtitle', 'authors', 'publisher',
+                    'published_year', 'category', 'description', 'cover_url']) + ['source' => 'Eigen bibliotheek'],
+                'existing_book' => true,
+            ]);
+        }
+
         $book = $lookup->findEnriched($isbn);
         if ($book === null) {
             return response()->json(['message' => 'Geen gegevens gevonden. Vul het boek handmatig in.'], 404);
@@ -223,9 +232,15 @@ class LibraryBookController extends Controller
             $input['barcode'] = LibraryCopy::generateBarcode();
         }
 
-        $data = validator($input, [
-            'isbn' => ['nullable', 'string', 'max:13', Rule::unique('library_books', 'isbn')],
-            'title' => ['required', 'string', 'max:255'],
+        $isbn = $input['isbn'];
+        if ($isbn !== '' && ! $this->validIsbn($isbn)) {
+            return back()->withErrors(['isbn' => 'Ongeldig ISBN-controlecijfer.'])->withInput();
+        }
+        $existing = $isbn !== '' && LibraryBook::where('isbn', $isbn)->exists();
+
+        $rules = [
+            'isbn' => ['nullable', 'string', 'max:13'],
+            'title' => [$existing ? 'nullable' : 'required', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:255'],
             'authors' => ['nullable', 'string', 'max:255'],
             'publisher' => ['nullable', 'string', 'max:255'],
@@ -237,31 +252,48 @@ class LibraryBookController extends Controller
             'shelf_location' => ['nullable', 'string', 'max:120'],
             'condition' => ['required', Rule::in(['nieuw', 'goed', 'gebruikt', 'beschadigd'])],
             'notes' => ['nullable', 'string', 'max:2000'],
-        ])->validate();
-
-        if ($data['isbn'] !== '' && ! $this->validIsbn($data['isbn'])) {
-            return back()->withErrors(['isbn' => 'Ongeldig ISBN-controlecijfer.'])->withInput();
+        ];
+        // Existing editions keep their stored metadata; only validate copy fields.
+        if ($existing) {
+            foreach (['title', 'subtitle', 'authors', 'publisher', 'published_year',
+                'category', 'description', 'cover_url'] as $field) unset($rules[$field]);
         }
-        if ($data['isbn'] === '') {
-            $data['isbn'] = null;
-        }
+        $data = validator($input, $rules)->validate();
 
-        $book = DB::transaction(function () use ($data) {
-            $book = LibraryBook::create(collect($data)->only([
-                'isbn','title','subtitle','authors','publisher','published_year',
-                'category','description','cover_url',
-            ])->all());
+        $data['isbn'] = $isbn !== '' ? $isbn : null;
 
-            $book->copies()->create(collect($data)->only([
+        [$book, $copy, $newBook] = DB::transaction(function () use ($data, $existing) {
+            $book = $data['isbn'] !== null
+                ? LibraryBook::where('isbn', $data['isbn'])->first() : null;
+
+            if (! $book) {
+                if ($existing || trim((string) ($data['title'] ?? '')) === '') {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'title' => 'Het bestaande boek is niet meer beschikbaar. Vul de boekgegevens opnieuw in.',
+                    ]);
+                }
+                $metadata = collect($data)->only([
+                    'title', 'subtitle', 'authors', 'publisher', 'published_year',
+                    'category', 'description', 'cover_url',
+                ])->all();
+                $book = $data['isbn'] !== null
+                    ? LibraryBook::firstOrCreate(['isbn' => $data['isbn']], $metadata)
+                    : LibraryBook::create(['isbn' => null] + $metadata);
+                $newBook = $book->wasRecentlyCreated;
+            } else {
+                $newBook = false;
+            }
+
+            $copy = $book->copies()->create(collect($data)->only([
                 'barcode', 'shelf_location', 'condition', 'notes',
             ])->all());
 
-            return $book;
+            return [$book, $copy, $newBook];
         });
 
         return redirect()->route('bibliotheek.books.show', $book)
-            ->with('success', 'Boek en eerste exemplaar geregistreerd.')
-            ->with('new_copy_id', $book->copies()->value('id'));
+            ->with('success', $newBook ? 'Boek en eerste exemplaar geregistreerd.' : 'Extra exemplaar toegevoegd aan het bestaande boek.')
+            ->with('new_copy_id', $copy->id);
     }
 
     public function show(LibraryBook $book): View
