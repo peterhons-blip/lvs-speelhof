@@ -66,6 +66,7 @@
                     <div class="library-edition-navigation"><button type="button" class="library-button library-button-secondary" id="library-edition-prev">Vorige edities</button><span id="library-edition-page"></span><button type="button" class="library-button library-button-secondary" id="library-edition-next">Volgende edities</button></div>
                 </section>
                 <p class="library-help">Selecteer de juiste editie op basis van taal, omslag, uitgever en ISBN. Controleer altijd met het fysieke boek.</p>
+                <p class="library-help">Bronnen: Open Library en, wanneer nodig, Google Books. Meta4books kan later worden aangesloten zodra de school API-toegang heeft.</p>
             </div>
 
             <div class="library-form-grid">
