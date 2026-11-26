@@ -58,6 +58,36 @@ class LibraryIsbnLookup
     }
 
     /**
+     * Merge complementary edition metadata only after querying the same valid
+     * ISBN independently at both providers. Never overwrite non-empty primary
+     * values with data from another source, nor change the requested ISBN.
+     * Never copy Google cover URLs (the catalog only trusts Open Library).
+     */
+    public function findEnriched(string $isbn): ?array
+    {
+        $primary = $this->find($isbn);
+        $secondary = $this->findGoogleBooks($isbn);
+        if ($primary === null) return $secondary;
+        if ($secondary === null) {
+            $primary['source'] = 'Open Library';
+            return $primary;
+        }
+
+        $filled = [];
+        foreach (['subtitle', 'authors', 'publisher', 'published_year', 'category', 'description'] as $field) {
+            if (trim((string) ($primary[$field] ?? '')) === '' &&
+                trim((string) ($secondary[$field] ?? '')) !== '') {
+                $primary[$field] = $secondary[$field];
+                $filled[] = $field;
+            }
+        }
+        $primary['source'] = $filled
+            ? 'Open Library + Google Books (aanvulling: '.implode(', ', $filled).')'
+            : 'Open Library';
+        return $primary;
+    }
+
+    /**
      * Google Books fallback when Open Library cannot find an ISBN.
      * ISBN must be validated by the controller. This never submits student data.
      * Google cover URLs are not persisted: the existing form accepts only Open Library covers.
