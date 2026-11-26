@@ -20,7 +20,7 @@ class LvsReportsController extends Controller
         $start = $data['start'] ?? now('Europe/Brussels')->startOfMonth()->toDateString();
         $end = $data['end'] ?? now('Europe/Brussels')->toDateString();
 
-        $base = DB::table('meldingen as m')
+        $base = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
             ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
             ->join('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
@@ -59,7 +59,7 @@ class LvsReportsController extends Controller
         $start = $data['start'] ?? now('Europe/Brussels')->startOfMonth()->toDateString();
         $end = $data['end'] ?? now('Europe/Brussels')->toDateString();
 
-        $rows = DB::table('meldingen as m')
+        $rows = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
             ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
             ->join('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
