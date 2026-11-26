@@ -48,7 +48,7 @@ class StudentManagementController extends Controller
 
     public function bulkUpdate(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.students.manage');
+        $access->requirePermission($request, 'beheer.students.status');
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
@@ -88,7 +88,7 @@ class StudentManagementController extends Controller
 
     public function update(Request $request, LibraryAccess $access, int $student): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.students.manage');
+        $access->requirePermission($request, 'beheer.students.edit');
         $data = $request->validate([
             'voornaam' => ['required', 'string', 'max:120'],
             'naam' => ['required', 'string', 'max:120'],
