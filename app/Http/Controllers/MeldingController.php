@@ -27,9 +27,10 @@ class MeldingController extends Controller
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
             ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
             ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
-            ->select('m.id', 'm.leerlingId', 'm.comment', 'm.gebeurdop', 'm.created_at',
+            ->select('m.id', 'm.leerlingId', 'm.comment', 'm.vertrouwelijk', 'm.gebeurdop', 'm.created_at',
                 'l.naam', 'l.voornaam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie');
 
+        \App\Services\LvsIncidentVisibility::apply($query,'m.vertrouwelijk');
         if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
             $query->addSelect('m.auteur_gebruikersnaam');
         }
@@ -84,7 +85,7 @@ class MeldingController extends Controller
         $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
             ->has(request(), 'lvs.meldingen.view');
         $meldingen = $canSeeMeldingen
-            ? Melding::with(['soort.categorie'])->where('leerlingId', $leerling->id)
+            ? \App\Services\LvsIncidentVisibility::apply(Melding::with(['soort.categorie']))->where('leerlingId', $leerling->id)
                 ->orderByDesc('created_at')->get()
             : collect();
 
@@ -105,6 +106,7 @@ class MeldingController extends Controller
             'soort_id'     => ['required','exists:meldingssoorten,id'],
             'gebeurdop'    => ['required','date','before_or_equal:today'],
             'comment'      => ['required','min:5'],
+            'vertrouwelijk' => ['nullable','boolean'],
         ]);
 
         // check: soort hoort bij gekozen categorie
@@ -118,7 +120,10 @@ class MeldingController extends Controller
                 ->withInput();
         }
 
+        $confidential = $request->boolean('vertrouwelijk');
+        if ($confidential) app(\App\Services\LibraryAccess::class)->requirePermission($request,'lvs.meldingen.confidential.create');
         $attributes = [
+            'vertrouwelijk'=>$confidential,
             'leerlingId' => $leerling->id,
             'meldingssoortId' => $soort->id,
             'comment' => $validated['comment'],
