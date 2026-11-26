@@ -297,7 +297,9 @@
                 <div class="library-field library-wide"><label for="adult_subject_student">Onderwerp</label>
                     <input id="adult_subject_student" name="adult_subject_student" maxlength="200" required value="{{ old('adult_subject_student', $settings['adult_subject_student']) }}"></div>
                 <div class="library-field library-wide"><label for="adult_body_student">Berichttekst leerling</label>
-                    @php($customBody = (string) old('adult_body_student', $settings['adult_body_student']))
+                    @php
+                        $customBody = (string) old('adult_body_student', $settings['adult_body_student']);
+                    @endphp
                     <textarea id="adult_body_student" name="adult_body_student" maxlength="5000" rows="9" placeholder="Eigen berichttekst" @if($customBody === '') hidden disabled @endif>{{ $customBody }}</textarea>
                     <div id="adult_body_student-defaults" @if($customBody !== '') hidden @endif>
                         @foreach($adultBodyDefaults['adult_body_student'] ?? [] as $default)
@@ -323,7 +325,9 @@
                 <div class="library-field library-wide"><label for="adult_subject_secretariat">Onderwerp</label>
                     <input id="adult_subject_secretariat" name="adult_subject_secretariat" maxlength="200" required value="{{ old('adult_subject_secretariat', $settings['adult_subject_secretariat']) }}"></div>
                 <div class="library-field library-wide"><label for="adult_body_secretariat">Berichttekst secretariaat</label>
-                    @php($customBody = (string) old('adult_body_secretariat', $settings['adult_body_secretariat']))
+                    @php
+                        $customBody = (string) old('adult_body_secretariat', $settings['adult_body_secretariat']);
+                    @endphp
                     <textarea id="adult_body_secretariat" name="adult_body_secretariat" maxlength="5000" rows="9" placeholder="Eigen berichttekst" @if($customBody === '') hidden disabled @endif>{{ $customBody }}</textarea>
                     <div id="adult_body_secretariat-defaults" @if($customBody !== '') hidden @endif>
                         @foreach($adultBodyDefaults['adult_body_secretariat'] ?? [] as $default)
