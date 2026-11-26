@@ -95,6 +95,10 @@
                 @enderror
 
                 <div class="card-footer">
+                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.meldingen.confidential.create'))
+                        <label><input type="checkbox" name="vertrouwelijk" value="1" @checked(old('vertrouwelijk'))> Vertrouwelijke melding</label>
+                        <p class="library-help">Alleen zichtbaar met het afzonderlijke vertrouwelijkheidsrecht. Geen automatische Smartschool-opvolging.</p>
+                    @endif
                     <button type="submit" class="lvs-link-button lvs-link-button-primary">Melding opslaan</button>
                 </div>
             </form>
@@ -130,6 +134,7 @@
                                 </div>
                             </div>
                             <div class="melding-comment">
+                                @if($melding->vertrouwelijk)<strong>Vertrouwelijk</strong><br>@endif
                                 {{ $melding->comment }}
                             </div>
                         </div>
