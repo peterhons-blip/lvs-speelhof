@@ -86,7 +86,7 @@ class LeerlingenController extends Controller
             $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
                 ->has($request, 'lvs.meldingen.view');
             $meldingen = $canSeeMeldingen
-                ? Melding::with(['soort.categorie'])
+                ? \App\Services\LvsIncidentVisibility::apply(Melding::with(['soort.categorie']))
                     ->where('leerlingId', $leerling->id)
                     ->orderByDesc('created_at')->get()
                 : collect();
