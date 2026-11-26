@@ -138,8 +138,8 @@ class LibraryLoanNotifier
             'overdue_repeat' => [
                 'label' => 'Herinnering na vervaldatum',
                 'subject' => 'Bibliotheek: boek nog niet ingeleverd',
-                'body' => $base."Volgens onze administratie is de inleverdatum van je boek verstreken.\\n\\n".$details.
-                    "Breng het boek zo snel mogelijk terug of neem contact op met de schoolbibliotheek.\\n\\n".$footer,
+                'body' => $base."Volgens onze administratie is de inleverdatum van je boek verstreken.\n\n".$details.
+                    "Breng het boek zo snel mogelijk terug of neem contact op met de schoolbibliotheek.\n\n".$footer,
             ],
             'manual' => [
                 'label' => 'Handmatige herinnering',
