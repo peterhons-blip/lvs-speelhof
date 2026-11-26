@@ -29,6 +29,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::get('/bibliotheek/rapportages', [\App\Http\Controllers\LibraryReportController::class, 'index'])
         ->name('bibliotheek.reports.index')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
+    Route::get('/bibliotheek/rapportages/voorraad-export', [\App\Http\Controllers\LibraryReportController::class,'exportStock'])->name('bibliotheek.reports.stock')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
     Route::get('/bibliotheek/rapportages/export', [\App\Http\Controllers\LibraryReportController::class, 'export'])
         ->name('bibliotheek.reports.export')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
