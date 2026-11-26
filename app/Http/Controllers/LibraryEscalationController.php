@@ -25,6 +25,7 @@ class LibraryEscalationController extends Controller
             ->select('e.*', 'l.due_date', 'l.returned_at',
                 'b.title', 'c.barcode', 's.voornaam', 's.naam',
                 'staff.voornaam as staff_voornaam', 'staff.name as staff_naam')
+            ->selectSub(DB::table('library_loan_notifications as n')->select('n.status')->whereColumn('n.loan_id', 'e.loan_id')->where('n.type', 'policy_escalation')->orderByDesc('n.id')->limit(1), 'policy_alert_status')
             ->when(!$all, fn ($q) => $q->where('e.status', 'open'))
             ->orderByDesc('e.created_at')->paginate(30)->withQueryString() : null;
         return view('bibliotheek.loans.escalations', compact('ready', 'items', 'all'));
