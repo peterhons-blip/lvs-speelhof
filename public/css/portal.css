@@ -1004,3 +1004,21 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .lvs-visit-overview {color:#17365d;font-weight:600;text-decoration:none;font-size:.88rem}
 .lvs-visit-overview:hover {text-decoration:underline}
 @media(max-width:760px){.lvs-visit-content{align-items:flex-start;flex-direction:column}}
+
+/* ICT account preview switcher */
+.portal-preview-picker{position:relative;flex-shrink:0;color:#fff}
+.portal-preview-trigger{display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(255,255,255,.45);border-radius:8px;cursor:pointer;font-size:.86rem;font-weight:650;white-space:nowrap;list-style:none}
+.portal-preview-trigger::-webkit-details-marker{display:none}
+.portal-preview-trigger:hover,.portal-preview-picker[open] .portal-preview-trigger{background:rgba(255,255,255,.14)}
+.portal-preview-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:2000;width:340px;max-width:calc(100vw - 24px);padding:14px;background:#fff;color:#17365d;border:1px solid #dce4ed;border-radius:12px;box-shadow:0 12px 35px rgba(15,35,60,.23);text-align:left}
+.portal-preview-menu label{display:block;font-size:.85rem;font-weight:700;margin-bottom:6px}
+.portal-preview-menu input{width:100%;box-sizing:border-box;border:1px solid #b9c7d6;border-radius:7px;padding:10px;color:#17365d;background:#fff}
+.portal-preview-hint{margin:8px 0;color:#627489;font-size:.76rem}
+.portal-preview-list{max-height:min(360px,55vh);overflow-y:auto}
+.portal-preview-list form{margin:0;padding:0}
+.portal-preview-list [hidden]{display:none!important}
+.portal-preview-list button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;width:100%;border:0;border-bottom:1px solid #edf1f5;background:#fff;padding:10px 8px;cursor:pointer;color:#17365d;font:inherit;border-radius:6px}
+.portal-preview-list button:hover,.portal-preview-list button:focus-visible{background:#eef4fa}
+.portal-preview-list button strong{font-size:.88rem}
+.portal-preview-list button small{font-size:.76rem;color:#627489}
+.portal-topbar:has(.portal-preview-picker[open]){z-index:1000;overflow:visible}
