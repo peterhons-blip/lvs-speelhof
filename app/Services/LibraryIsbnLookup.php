@@ -7,15 +7,10 @@ use Illuminate\Support\Facades\Http;
 class LibraryIsbnLookup
 {
     /**
-     * Look up ISBN metadata in Open Library, then Google Books. Returns null if both fail.
+     * Public Open Library book metadata. Returns null for unknown/unavailable books.
      * No personal/student data is ever sent to this external service.
      */
     public function find(string $isbn): ?array
-    {
-        return $this->findOpenLibrary($isbn) ?? $this->findGoogleBooks($isbn);
-    }
-
-    private function findOpenLibrary(string $isbn): ?array
     {
         try {
             $response = Http::acceptJson()->timeout(7)->retry(1, 200)
@@ -63,61 +58,137 @@ class LibraryIsbnLookup
     }
 
     /**
-     * Google Books fallback for valid ISBN lookups.
-     * Metadata is not guaranteed to describe the same edition: staff must verify it.
+     * Merge complementary edition metadata only after querying the same valid
+     * ISBN independently at both providers. Never overwrite non-empty primary
+     * values with data from another source, nor change the requested ISBN.
+     * Never copy Google cover URLs (the catalog only trusts Open Library).
      */
-    private function findGoogleBooks(string $isbn): ?array
+    public function findEnriched(string $isbn): ?array
+    {
+        $primary = $this->find($isbn);
+        $secondary = $this->findGoogleBooks($isbn);
+        if ($primary === null) return $secondary;
+        if ($secondary === null) {
+            $primary['source'] = 'Open Library';
+            return $primary;
+        }
+
+        $filled = [];
+        foreach (['subtitle', 'authors', 'publisher', 'published_year', 'category', 'description'] as $field) {
+            if (trim((string) ($primary[$field] ?? '')) === '' &&
+                trim((string) ($secondary[$field] ?? '')) !== '') {
+                $primary[$field] = $secondary[$field];
+                $filled[] = $field;
+            }
+        }
+        $primary['source'] = $filled
+            ? 'Open Library + Google Books (aanvulling: '.implode(', ', $filled).')'
+            : 'Open Library';
+        return $primary;
+    }
+
+    /**
+     * Google Books fallback when Open Library cannot find an ISBN.
+     * ISBN must be validated by the controller. This never submits student data.
+     * Google cover URLs are not persisted: the existing form accepts only Open Library covers.
+     */
+    public function findGoogleBooks(string $isbn): ?array
     {
         try {
-            $response = Http::acceptJson()->timeout(7)->retry(1, 200)
-                ->get('https://www.googleapis.com/books/v1/volumes', [
-                    'q' => 'isbn:'.$isbn,
-                    'maxResults' => 5,
-                    'printType' => 'books',
-                ]);
-
+            $params = [
+                'q' => 'isbn:'.$isbn,
+                'maxResults' => 5,
+                'printType' => 'books',
+            ];
+            $apiKey = trim((string) config('services.google_books.api_key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)->retry(1, 250)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
             if (! $response->successful()) {
+                \Illuminate\Support\Facades\Log::warning('Google Books ISBN lookup failed', [
+                    'http_status' => $response->status(),
+                ]);
                 return null;
             }
-
-            foreach ((array) $response->json('items', []) as $item) {
-                $info = is_array($item) ? ($item['volumeInfo'] ?? null) : null;
-                if (! is_array($info) || empty($info['title'])) {
-                    continue;
-                }
-
-                // Do not associate an approximate match with a different ISBN.
-                $identifiers = collect((array) ($info['industryIdentifiers'] ?? []))
-                    ->pluck('identifier')
-                    ->map(fn ($value) => strtoupper(preg_replace('/[^0-9X]/i', '', (string) $value)))
-                    ->all();
-                if (! in_array(strtoupper($isbn), $identifiers, true)) {
-                    continue;
-                }
-
-                $published = (string) ($info['publishedDate'] ?? '');
-                $categories = (array) ($info['categories'] ?? []);
-                $description = isset($info['description']) && is_string($info['description'])
-                    ? trim(strip_tags($info['description'])) : '';
-
+            $items = $response->json('items', []);
+            if (! is_array($items)) return null;
+            foreach ($items as $item) {
+                $info = $item['volumeInfo'] ?? null;
+                if (! is_array($info) || empty($info['title'])) continue;
+                $identifiers = (array) ($info['industryIdentifiers'] ?? []);
+                $matches = collect($identifiers)->contains(function ($value) use ($isbn) {
+                    if (! is_array($value)) return false;
+                    $identifier = mb_strtoupper(preg_replace('/[^0-9X]/i', '', (string) ($value['identifier'] ?? '')));
+                    return $identifier === $isbn;
+                });
+                if (! $matches) continue;
                 return [
                     'isbn' => $isbn,
                     'title' => mb_substr((string) $info['title'], 0, 255),
                     'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
-                    'authors' => mb_substr(implode(', ', array_filter((array) ($info['authors'] ?? []), 'is_string')), 0, 255),
+                    'authors' => mb_substr(implode(', ', array_slice((array) ($info['authors'] ?? []), 0, 8)), 0, 255),
                     'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
-                    'published_year' => mb_substr($published, 0, 20),
-                    // Only Open Library cover URLs are currently accepted by the registration form.
+                    'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
                     'cover_url' => null,
-                    'category' => $this->genreFromSubjects($categories),
-                    'description' => mb_substr($description, 0, 5000),
+                    'category' => mb_substr((string) (($info['categories'][0] ?? '') ?: ''), 0, 255),
+                    'description' => mb_substr(trim(strip_tags((string) ($info['description'] ?? ''))), 0, 5000),
+                    'source' => 'Google Books',
                 ];
             }
+            return null;
+        } catch (\Throwable $error) {
+            \Illuminate\Support\Facades\Log::warning('Google Books ISBN lookup unavailable', [
+                'error_type' => get_class($error),
+            ]);
+            return null;
+        }
+    }
 
-            return null;
-        } catch (\Throwable $e) {
-            report($e);
-            return null;
+    /**
+     * Fallback title/author suggestions from Google Books.
+     * Unlike Open Library, these are volume-level results, not work+edition trees.
+     */
+    public function searchGoogleBooksByName(string $query, string $type = 'title'): array
+    {
+        try {
+            $params = [
+                'q' => ($type === 'author' ? 'inauthor:' : 'intitle:').$query,
+                'maxResults' => 12,
+                'printType' => 'books',
+            ];
+            $apiKey = trim((string) config('services.google_books.api_key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)->retry(1, 250)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
+            if (! $response->successful()) return [];
+            return collect($response->json('items', []))
+                ->filter(fn ($item) => is_array($item) && !empty($item['volumeInfo']['title']))
+                ->map(function ($item) {
+                    $info = $item['volumeInfo'];
+                    $isbn = collect($info['industryIdentifiers'] ?? [])
+                        ->pluck('identifier')->map(fn ($i) => mb_strtoupper(
+                            preg_replace('/[^0-9X]/i', '', (string) $i)))
+                        ->first(fn ($i) => $this->isValidIsbn($i)) ?: '';
+                    return [
+                        'source' => 'Google Books',
+                        'work_key' => null,
+                        'edition_count' => 1,
+                        'isbn' => $isbn,
+                        'category' => mb_substr((string) (($info['categories'][0] ?? '') ?: ''), 0, 255),
+                        'title' => mb_substr((string) $info['title'], 0, 255),
+                        'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
+                        'authors' => mb_substr(implode(', ', array_slice((array) ($info['authors'] ?? []), 0, 8)), 0, 255),
+                        'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                        'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
+                        'description' => mb_substr(trim(strip_tags((string) ($info['description'] ?? ''))), 0, 5000),
+                        'cover_url' => null,
+                    ];
+                })->values()->all();
+        } catch (\Throwable $error) {
+            \Illuminate\Support\Facades\Log::warning('Google Books title search unavailable', [
+                'error_type' => get_class($error),
+            ]);
+            return [];
         }
     }
 

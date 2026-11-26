@@ -82,6 +82,9 @@
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
                                 <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
                                 <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
+                                <a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
+                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
                                 <a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
                                 @endif

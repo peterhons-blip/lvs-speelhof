@@ -33,6 +33,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('bibliotheek.reports.export')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
+        Route::get('/opvolging-beleid', [\App\Http\Controllers\LibraryEscalationController::class, 'index'])
+            ->name('escalations.index')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+        Route::post('/opvolging-beleid/{escalation}/afhandelen', [\App\Http\Controllers\LibraryEscalationController::class, 'resolve'])
+            ->whereNumber('escalation')->name('escalations.resolve')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
@@ -70,6 +76,10 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
             ->name('qr-status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
         Route::post('/qr-labels/generated', [\App\Http\Controllers\LibraryBookController::class, 'recordQrGenerated'])
             ->name('qr-generated')->middleware(['throttle:30,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage']);
+        Route::get('/opzoekdienst-test', [\App\Http\Controllers\LibraryBookController::class, 'lookupDiagnostics'])
+            ->middleware('throttle:6,1')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage')
+            ->name('lookup-diagnostics');
         Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
         Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');

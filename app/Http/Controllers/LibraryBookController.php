@@ -122,6 +122,39 @@ class LibraryBookController extends Controller
         return view('bibliotheek.books.create', ['suggestedBarcode' => LibraryCopy::generateBarcode()]);
     }
 
+    /**
+     * Limited connectivity check for librarians debugging book lookups on live.
+     * Reports only HTTP status/availability, never API credentials.
+     */
+    public function lookupDiagnostics(Request $request): JsonResponse
+    {
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        $results = [];
+        foreach ([
+            'Open Library' => ['https://openlibrary.org/search.json', ['title' => 'test', 'limit' => 1]],
+            'Google Books' => ['https://www.googleapis.com/books/v1/volumes', ['q' => 'intitle:test', 'maxResults' => 1]],
+        ] as $provider => [$url, $params]) {
+            try {
+                if ($provider === 'Google Books' && config('services.google_books.api_key')) $params['key'] = config('services.google_books.api_key');
+                $response = \Illuminate\Support\Facades\Http::acceptJson()->timeout(6)->get($url, $params);
+                $results[$provider] = [
+                    'reachable' => $response->successful(),
+                    'status' => $response->status(),
+                    'message' => $response->successful() ? 'Bereikbaar' : 'HTTP-fout bij de externe dienst',
+                ];
+            } catch (\Throwable $error) {
+                \Illuminate\Support\Facades\Log::warning('Bibliotheek live opzoektest mislukt', [
+                    'provider' => $provider, 'error_type' => get_class($error),
+                ]);
+                $results[$provider] = [
+                    'reachable' => false, 'status' => null,
+                    'message' => 'Niet bereikbaar vanaf deze server (controleer verbinding, DNS, TLS en firewall).',
+                ];
+            }
+        }
+        return response()->json(['providers' => $results]);
+    }
+
     public function lookup(Request $request, LibraryIsbnLookup $lookup): JsonResponse
     {
         $isbn = $this->normalizedIsbn((string) $request->query('isbn', ''));
@@ -129,7 +162,7 @@ class LibraryBookController extends Controller
             return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
         }
 
-        $book = $lookup->find($isbn);
+        $book = $lookup->findEnriched($isbn);
         if ($book === null) {
             return response()->json(['message' => 'Geen gegevens gevonden. Vul het boek handmatig in.'], 404);
         }
@@ -142,11 +175,21 @@ class LibraryBookController extends Controller
         $data = $request->validate([
             'q' => ['required', 'string', 'min:2', 'max:120'],
             'type' => ['nullable', Rule::in(['title', 'author'])],
+            'source' => ['nullable', Rule::in(['auto', 'openlibrary', 'google'])],
         ]);
 
-        $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
+        $source = $data['source'] ?? 'auto';
+        $type = $data['type'] ?? 'title';
+        $query = trim($data['q']);
+        $books = $source === 'google' ? [] : $lookup->searchByName($query, $type);
+        if ($source === 'google' || ($source === 'auto' && $books === [])) {
+            $books = $lookup->searchGoogleBooksByName($query, $type);
+        }
 
-        return response()->json(['books' => $books]);
+        return response()->json([
+            'books' => $books,
+            'source' => $books !== [] ? (($books[0]['source'] ?? 'Open Library')) : null,
+        ]);
     }
 
     public function editions(Request $request, LibraryIsbnLookup $lookup): JsonResponse
