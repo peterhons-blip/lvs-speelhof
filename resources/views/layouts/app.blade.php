@@ -57,6 +57,8 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                     </a>
                     @if($isExternal)
                         @include('external.partials.navigation')
+                    @elseif(app(\App\Services\LibraryAccess::class)->has(request(),'persoonlijke_bibliotheek.view'))
+                        @include('external.partials.staff-library-navigation')
                     @endif
                     @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
                     @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
@@ -97,7 +99,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
 @php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
                     <div class="portal-nav-module">
                         <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ $bibliotheekActive ? 'is-current' : '' }}" @if($bibliotheekActive) aria-expanded="true" @endif>
-                            <span class="portal-nav-icon" aria-hidden="true">▤</span> {{ $isExternal ? 'Bibliotheekbeheer' : 'Bibliotheek' }}
+                            <span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheekbeheer
                         </a>
                         @if($bibliotheekActive || $isExternal)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
