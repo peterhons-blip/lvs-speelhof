@@ -31,7 +31,7 @@ return [
         'label' => 'Bibliotheek',
         'permissions' => [
             'bibliotheek.view' => 'Bibliotheek openen',
-            'bibliotheek.requests.manage' => 'Aanvragen en leerlingmedewerkertaken beoordelen',
+            'bibliotheek.requests.manage' => 'Reserveringen en verlengingsaanvragen beoordelen',
             'bibliotheek.books.view' => 'Boekencatalogus bekijken',
             'bibliotheek.import.manage' => 'Boeken importeren',
             'bibliotheek.import.stop' => 'Import stoppen',
