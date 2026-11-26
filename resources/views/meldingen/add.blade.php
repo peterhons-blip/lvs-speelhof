@@ -64,7 +64,7 @@
                     <option value="">— Kies eerst een categorie —</option>
                     @foreach($categorieen as $cat)
                         @foreach($cat->soorten as $s)
-                            <option value="{{ $s->id }}" data-catid="{{ $cat->id }}" style="display:none">
+                            <option value="{{ $s->id }}" data-catid="{{ $cat->id }}" data-student="{{ (int)$s->visible_student }}" data-coaccount="{{ (int)$s->visible_coaccount }}" style="display:none">
                                 {{ $s->naam }}
                             </option>
                         @endforeach
@@ -94,6 +94,10 @@
                 <small style="color:#dc2626">{{ $message }}</small>
                 @enderror
 
+                <fieldset style="padding:12px;margin:12px 0"><legend>Zichtbaarheid in het portaal</legend>
+                    <label><input type="checkbox" id="visible_student" name="visible_student" value="1" @checked(old('visible_student'))> Zichtbaar voor leerling</label>
+                    <label><input type="checkbox" id="visible_coaccount" name="visible_coaccount" value="1" @checked(old('visible_coaccount'))> Zichtbaar voor co-accounts</label>
+                    <p class="library-help">Vertrouwelijke meldingen worden nooit vrijgegeven.</p></fieldset>
                 <div class="card-footer">
                     @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.meldingen.confidential.create'))
                         <label><input type="checkbox" name="vertrouwelijk" value="1" @checked(old('vertrouwelijk'))> Vertrouwelijke melding</label>
@@ -172,7 +176,15 @@
             }
 
             catSel.addEventListener('change', updateSoorten);
+            function defaults(){
+                const o=soortSel.selectedOptions[0];
+                document.getElementById('visible_student').checked=o?.dataset.student==='1';
+                document.getElementById('visible_coaccount').checked=o?.dataset.coaccount==='1';
+            }
+            soortSel.addEventListener('change',defaults);
+            catSel.addEventListener('change',defaults);
             updateSoorten(); // init
+            @unless(old('soort_id')) defaults(); @endunless
         })();
     </script>
 @endsection
