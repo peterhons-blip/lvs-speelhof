@@ -182,13 +182,7 @@ class BirthdaySettingsController extends Controller
             ];
         }
 
-        $recent = Schema::hasTable('birthday_deliveries')
-            ? DB::table('birthday_deliveries')
-                ->select('birthday_date', 'channel', 'status', DB::raw('COUNT(*) as total'))
-                ->groupBy('birthday_date', 'channel', 'status')
-                ->orderByDesc('birthday_date')->limit(30)->get() : collect();
-
-        return view('beheer.birthdays', compact('settings', 'recent', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages', 'canManagePrivacy', 'privacyAudit'));
+        return view('beheer.birthdays', compact('settings', 'previewDate', 'preview', 'schools', 'schoolSmartschoolChoices', 'warningPreviewSchool', 'warningSenderFallback', 'warningStudentDefault', 'warningCoaccountDefault', 'adultDate', 'adultActions', 'adultUpcoming', 'birthdaySenderFallback', 'birthdaySenders', 'exampleMessages', 'canManagePrivacy', 'privacyAudit'));
     }
 
 
