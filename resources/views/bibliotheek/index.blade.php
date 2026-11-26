@@ -27,6 +27,22 @@
                 <p>Boeken registreren via ISBN, met titel, auteur, omslag en meerdere exemplaren.</p>
                 <span class="portal-library-feature-state">Open de catalogus →</span>
             </a>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
+                @php
+                    $today = now()->toDateString();
+                    $todayCopies = \App\Models\LibraryCopy::whereDate('created_at', $today)->count();
+                    $todayBooks = \App\Models\LibraryBook::whereDate('created_at', $today)->count();
+                    $todayUnprinted = \App\Models\LibraryCopy::whereDate('created_at', $today)->whereNull('qr_printed_at')->count();
+                @endphp
+                <a href="{{ route('bibliotheek.books.qr-labels', ['today' => 1, 'qr_status' => 'unprinted', 'sort' => 'registration']) }}" class="portal-library-feature portal-library-feature-active">
+                    <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
+                    <h2>Vandaag geregistreerd</h2>
+                    <p><strong>{{ $todayCopies }}</strong> exemplaren<br>
+                       <strong>{{ $todayBooks }}</strong> nieuwe titels<br>
+                       <strong>{{ $todayUnprinted }}</strong> etiketten nog niet bevestigd</p>
+                    <span class="portal-library-feature-state">Open QR-overzicht van vandaag →</span>
+                </a>
+            @endif
             <a href="{{ route('bibliotheek.loans.create') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↗</span>
                 <h2>Boek uitlenen</h2>
