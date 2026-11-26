@@ -433,6 +433,7 @@ class LibraryBookController extends Controller
             if (DB::table('library_loans')->where('copy_id',$copy->id)->whereNull('returned_at')->exists() || $copy->status==='uitgeleend') {
                 return back()->withErrors(['status'=>'Er staat nog een uitlening open. Sluit die eerst correct af; de ontlener blijft anders uit beeld.']);
             }
+            if ($data['status']!=='beschikbaar' && app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->lockForUpdate()->first()) return back()->withErrors(['status'=>'Dit exemplaar is gereserveerd. Annuleer eerst de reservering.']);
             if ($copy->status===$data['status']) return back()->with('success','Status is ongewijzigd.');
             DB::table('library_copy_events')->insert(['copy_id'=>$copy->id,'old_status'=>$copy->status,'new_status'=>$data['status'],'actor'=>app(\App\Services\LibraryAccess::class)->username($request),'note'=>$data['note'],'created_at'=>now(),'updated_at'=>now()]);
             $values=['status'=>$data['status'],'updated_at'=>now()];
