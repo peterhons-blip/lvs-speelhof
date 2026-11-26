@@ -41,6 +41,25 @@
                 <option value="0" @selected(old('remind_on_due_date', $settings['remind_on_due_date'] ?? '1') == '0')>Neen</option>
             </select>
         </div>
+        <div class="library-wide">
+            <h2>Herinneringen na de inleverdatum</h2>
+            <p class="library-help">Alle nieuwe instellingen staan standaard op 0 (uit). Herinneringen vertrekken alleen als Smartschool-berichten ook globaal ingeschakeld zijn.</p>
+        </div>
+        <div class="library-field">
+            <label for="overdue_first_days">Eerste herinnering na X dagen te laat</label>
+            <input id="overdue_first_days" name="overdue_first_days" type="number" min="0" max="365" required value="{{ old('overdue_first_days', $settings['overdue_first_days'] ?? 0) }}">
+            <p class="library-help">Bijvoorbeeld 3 = de eerste herinnering drie dagen na de inleverdatum. 0 = uit.</p>
+        </div>
+        <div class="library-field">
+            <label for="overdue_repeat_days">Vervolgens om de X dagen opnieuw</label>
+            <input id="overdue_repeat_days" name="overdue_repeat_days" type="number" min="0" max="365" required value="{{ old('overdue_repeat_days', $settings['overdue_repeat_days'] ?? 0) }}">
+            <p class="library-help">Bijvoorbeeld 7 = elke 7 dagen na de eerste herinnering. 0 = niet herhalen.</p>
+        </div>
+        <div class="library-field">
+            <label for="overdue_escalate_after">Na X verzonden herinneringen: opvolging beleid</label>
+            <input id="overdue_escalate_after" name="overdue_escalate_after" type="number" min="0" max="100" required value="{{ old('overdue_escalate_after', $settings['overdue_escalate_after'] ?? 0) }}">
+            <p class="library-help">Maakt een openstaande opvolging aan, geen automatische sanctie of bericht naar beleid. 0 = uit.</p>
+        </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
     <p class="library-help">De tekst en verzending van Smartschool-berichten beheer je via de aparte tegel Smartschool-berichten. Automatische herinneringen lopen via de Laravel scheduler.</p>
