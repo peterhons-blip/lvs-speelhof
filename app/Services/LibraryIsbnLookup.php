@@ -3,9 +3,17 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\PendingRequest;
+use GuzzleHttp\Handler\StreamHandler;
 
 class LibraryIsbnLookup
 {
+    // SRV-WEB can reach Open Library via PHP streams, but its PHP cURL times out.
+    public static function openLibraryHttp(int $timeout = 15): PendingRequest
+    {
+        return Http::acceptJson()->timeout($timeout)->setHandler(new StreamHandler());
+    }
+
     /**
      * Public Open Library book metadata. Returns null for unknown/unavailable books.
      * No personal/student data is ever sent to this external service.
@@ -13,7 +21,7 @@ class LibraryIsbnLookup
     public function find(string $isbn): ?array
     {
         try {
-            $response = Http::acceptJson()->timeout(7)->retry(1, 200)
+            $response = self::openLibraryHttp(15)
                 ->get('https://openlibrary.org/api/books', [
                     'bibkeys' => 'ISBN:'.$isbn,
                     'jscmd' => 'data',
@@ -200,7 +208,7 @@ class LibraryIsbnLookup
     {
         try {
             $parameter = $type === 'author' ? 'author' : 'title';
-            $response = Http::acceptJson()->timeout(8)->retry(1, 200)
+            $response = self::openLibraryHttp(15)
                 ->get('https://openlibrary.org/search.json', [
                     $parameter => $query,
                     'fields' => 'key,title,author_name,first_publish_year,cover_i,publisher,isbn,subject,edition_count',
@@ -260,7 +268,7 @@ class LibraryIsbnLookup
     {
         $limit = 100;
         try {
-            $response = Http::acceptJson()->timeout(12)
+            $response = self::openLibraryHttp(15)
                 ->get('https://openlibrary.org'.$workKey.'/editions.json', [
                     'limit' => $limit,
                     'offset' => $offset,
@@ -337,7 +345,7 @@ class LibraryIsbnLookup
     public function workDetails(string $workKey): array
     {
         try {
-            $response = Http::acceptJson()->timeout(7)
+            $response = self::openLibraryHttp(15)
                 ->get('https://openlibrary.org'.$workKey.'.json');
 
             if (! $response->successful()) {
