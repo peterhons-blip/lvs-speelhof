@@ -16,6 +16,7 @@ class LvsFollowupEngine
 {
     public function evaluate(Melding $incident): void
     {
+        if ($incident->vertrouwelijk) return;
         try {
             if (! Schema::hasTable('lvs_followup_rules') ||
                 ! Schema::hasTable('lvs_followup_events')) return;
@@ -36,6 +37,7 @@ class LvsFollowupEngine
             foreach ($rules as $rule) {
                 $query = DB::table('meldingen as m')
                     ->join('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
+                    ->where('m.vertrouwelijk',0)
                     ->where('m.leerlingId', $incident->leerlingId)
                     ->where('m.id', '<=', $incident->id);
                 if ($rule->category_id !== null) $query->where('s.meldingscategorieId', $rule->category_id);
