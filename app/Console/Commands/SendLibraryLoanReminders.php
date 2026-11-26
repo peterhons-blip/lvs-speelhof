@@ -50,7 +50,7 @@ class SendLibraryLoanReminders extends Command
         foreach ($loans as $loan) {
             $days = $loan->reminder_days_before !== null ? (int) $loan->reminder_days_before : $defaultDays;
             $onDue = $loan->remind_on_due_date !== null ? (bool) $loan->remind_on_due_date : $defaultDue;
-            $due = $calendar->adjust(\Carbon\CarbonImmutable::parse($loan->due_date,'Europe/Brussels'));
+            $due = \Carbon\CarbonImmutable::parse($loan->due_date,'Europe/Brussels');
             $types = [];
             if ($days > 0 && $todayDate->equalTo($calendar->reminderDate($due,$days)) && $todayDate->greaterThanOrEqualTo(\Carbon\CarbonImmutable::parse($loan->loan_date,'Europe/Brussels'))) $types[] = 'before_due';
             if ($onDue && $todayDate->equalTo($due)) $types[] = 'due_today';
