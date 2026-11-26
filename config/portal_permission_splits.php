@@ -18,7 +18,6 @@ return [
     'bibliotheek.lookup.diagnostics' => 'bibliotheek.books.manage',
     'bibliotheek.lookup.use' => 'bibliotheek.books.view',
     'bibliotheek.import.history' => 'bibliotheek.books.view',
-    'bibliotheek.import.manage' => 'bibliotheek.books.view',
     'bibliotheek.import.stop' => 'bibliotheek.import.manage',
     'bibliotheek.books.edit' => 'bibliotheek.books.manage',
     'bibliotheek.books.delete' => 'bibliotheek.books.manage',
