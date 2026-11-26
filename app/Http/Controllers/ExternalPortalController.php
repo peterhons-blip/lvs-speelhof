@@ -16,12 +16,12 @@ class ExternalPortalController extends Controller
         $profile=$can('profile.view') ? DB::table('klassen')->where('id',$student->klasid)->value('klasnaam') : null;
         $books=null; $loans=null; $history=null; $incidents=null;
         if ($can('lvs.view') && $can('incidents.view')) $incidents=DB::table('meldingen as m')->leftJoin('meldingssoorten as s','s.id','=','m.meldingssoortId')->where('m.leerlingId',$student->id)->where('m.vertrouwelijk',0)->where($role==='leerling'?'m.visible_student':'m.visible_coaccount',1)->select('m.gebeurdop','m.comment','s.naam as soort')->orderByDesc('m.gebeurdop')->paginate(20,['*'],'meldingen')->withQueryString();
-        $requests=($can('library.reserve') || $can('library.renew.request') || $can('library.help')) ? DB::table('external_library_requests')->where('leerling_id',$student->id)->where('principal_type',$role)->whereIn('request_type',array_values(array_filter(['reserve','renew','helper'],fn($t)=>$t==='reserve'?$can('library.reserve'):($t==='renew'?$can('library.renew.request'):$can('library.help')))))->orderByDesc('id')->limit(50)->get() : collect();
+        $requests=($can('library.reserve') || $can('library.renew.request')) ? DB::table('external_library_requests')->where('leerling_id',$student->id)->where('principal_type',$role)->whereIn('request_type',array_values(array_filter(['reserve','renew'],fn($t)=>$t==='reserve'?$can('library.reserve'):$can('library.renew.request'))))->orderByDesc('id')->limit(50)->get() : collect();
         if ($can('library.catalog.view')) {
             $q=mb_substr(trim((string)$request->query('q','')),0,100);
             $query=DB::table('library_books')->select('id','title','authors','isbn');
             if ($q!=='') $query->where(fn($x)=>$x->where('title','like','%'.$q.'%')->orWhere('authors','like','%'.$q.'%')->orWhere('isbn','like','%'.$q.'%'));
-            if ($can('library.availability.view')) $query->selectSub(DB::table('library_copies')->whereColumn('book_id','library_books.id')->where('status','beschikbaar')->selectRaw('count(*)'),'available');
+            if ($can('library.availability.view')) $query->selectSub(app(\App\Services\LibraryReservations::class)->available(DB::table('library_copies')->whereColumn('book_id','library_books.id')->where('status','beschikbaar'))->selectRaw('count(*)'),'available');
             $books=$query->orderBy('title')->paginate(20)->withQueryString();
         }
         $base=fn()=>DB::table('library_loans as l')->join('library_copies as c','c.id','=','l.copy_id')->join('library_books as b','b.id','=','c.book_id')->where('l.leerling_id',$student->id)->whereNull('l.staff_user_id')->select('l.id','b.title','l.due_date','l.returned_at');

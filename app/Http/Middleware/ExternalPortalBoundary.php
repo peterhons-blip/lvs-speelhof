@@ -23,7 +23,7 @@ class ExternalPortalBoundary
             return redirect()->route('home')->with('error','Je toegang tot dit portaal is niet (meer) toegestaan.');
         }
         if ($request->routeIs('home')) return redirect()->route('external.dashboard');
-        abort_unless($request->routeIs('external.*'),403);
+        abort_unless($request->routeIs('external.*') || ($role==='leerling' && $request->routeIs('bibliotheek.*') && app(\App\Services\LibraryAccess::class)->has($request,'bibliotheek.view')),403);
         $request->attributes->set('external_student',$student);
         $response=$next($request);
         $response->headers->set('Cache-Control','private, no-store');

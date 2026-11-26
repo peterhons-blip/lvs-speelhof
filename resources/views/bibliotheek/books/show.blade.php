@@ -68,7 +68,7 @@
                 <thead><tr><th>Barcode</th><th>Locatie</th><th>Staat</th><th>Status</th><th>QR-etiket</th><th>Opmerking</th><th>Actie</th></tr></thead>
                 <tbody>
                     @foreach($book->copies as $copy)
-                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ ucfirst($copy->status) }}</span></td>
+                        <tr><td><strong>{{ $copy->barcode }}</strong></td><td>{{ $copy->shelf_location ?: '—' }}</td><td>{{ ucfirst($copy->condition) }}</td><td><span class="library-pill">{{ app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->exists() ? 'Gereserveerd' : ucfirst($copy->status) }}</span></td>
                             <td>{{ $copy->qr_printed_at ? 'Etiket bevestigd' : ($copy->qr_generated_at ? 'QR gemaakt' : 'Nog niet gemaakt') }}</td>
                             <td>{{ $copy->notes ?: '—' }}</td><td>
                             <div class="library-copy-actions">

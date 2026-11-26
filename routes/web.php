@@ -22,6 +22,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
     Route::post('/beheer/preview-external/{role}/{student}', [\App\Http\Controllers\PortalPreviewController::class,'startExternal'])->whereNumber('student')->name('portal-preview.external');
     Route::get('/bibliotheek/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'index'])->name('bibliotheek.requests.index');
+    Route::post('/bibliotheek/aanvragen/{id}/annuleren', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'cancel'])->whereNumber('id')->name('bibliotheek.requests.cancel');
     Route::post('/bibliotheek/aanvragen/{id}', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'decide'])->whereNumber('id')->name('bibliotheek.requests.decide');
     Route::get('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'index'])->name('beheer.incident-release.index');
     Route::post('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'save'])->name('beheer.incident-release.save');

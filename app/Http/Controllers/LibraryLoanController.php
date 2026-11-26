@@ -208,9 +208,11 @@ class LibraryLoanController extends Controller
                     ->whereColumn('loans.copy_id', 'copies.id')
                     ->whereNull('loans.returned_at');
             })
-            ->select('copies.barcode', 'copies.shelf_location', 'copies.condition')
+            ->select('copies.id','copies.barcode', 'copies.shelf_location', 'copies.condition')
             ->orderBy('copies.barcode')->limit(100)->get();
 
+        $reserved=app(\App\Services\LibraryReservations::class)->active()->whereIn('reserved_copy_id',$copies->pluck('id'))->pluck('reserved_copy_id')->all();
+        $copies->each(fn($copy)=>$copy->reserved=in_array($copy->id,$reserved));
         return response()->json($copies);
     }
 
@@ -232,6 +234,8 @@ class LibraryLoanController extends Controller
             || DB::table('library_loans')->where('copy_id', $copy->id)->whereNull('returned_at')->exists()) {
             return response()->json(['message' => 'Dit exemplaar is momenteel niet beschikbaar.'], 409);
         }
+        $hold=app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->exists();
+        $copy->reserved=$hold;
         return response()->json(['copy' => $copy]);
     }
 
@@ -297,6 +301,11 @@ class LibraryLoanController extends Controller
                         "Exemplaar {$barcode} is niet beschikbaar. Geen van de boeken werd uitgeleend."]);
                 }
 
+                $hold=app(\App\Services\LibraryReservations::class)->active()->where('reserved_copy_id',$copy->id)->lockForUpdate()->first();
+                if ($hold && (!$student || (int)$hold->leerling_id!==(int)$student->id)) {
+                    throw ValidationException::withMessages(['barcodes'=>"Exemplaar {$barcode} is gereserveerd voor een andere leerling."]);
+                }
+                if ($hold) DB::table('external_library_requests')->where('id',$hold->id)->update(['status'=>'fulfilled','updated_at'=>now()]);
                 $id = DB::table('library_loans')->insertGetId([
                     'copy_id' => $copy->id,
                     'leerling_id' => $student?->id,
@@ -451,6 +460,8 @@ class LibraryLoanController extends Controller
             if ((int) $item->extensions >= $this->setting('max_extensions', 2)) {
                 return back()->withErrors(['extend' => 'Maximaal aantal verlengingen bereikt.']);
             }
+            $book=DB::table('library_copies')->where('id',$item->copy_id)->value('book_id');
+            if (DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$book)->where(fn($q)=>$q->where('status','pending')->orWhere(fn($x)=>$x->where('status','approved')->where('reserved_until','>=',now('Europe/Brussels')->toDateString())))->when($item->leerling_id,fn($q)=>$q->where('leerling_id','<>',$item->leerling_id))->exists()) return back()->withErrors(['extend'=>'Een andere leerling wacht op dit boek.']);
             $old = CarbonImmutable::parse($item->due_date, 'Europe/Brussels');
             $base = $old->isAfter(CarbonImmutable::today('Europe/Brussels')) ? $old : CarbonImmutable::today('Europe/Brussels');
             $newDue = app(\App\Services\LibraryCalendar::class)->due($base, $this->setting('extension_days', 21))->toDateString();
