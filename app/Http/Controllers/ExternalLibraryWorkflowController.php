@@ -8,14 +8,28 @@ use Illuminate\Support\Facades\DB;
 
 class ExternalLibraryWorkflowController extends Controller
 {
+    public function submitStaff(Request $request,LibraryAccess $access)
+    {
+        $access->requirePermission($request,'persoonlijke_bibliotheek.view');
+        $id=$access->staffId($request);
+        abort_unless($id,403);
+        return $this->submitFor($request,$id,'staff',fn($p)=>$access->personalLibraryCan($request,$p),'personal-library.index');
+    }
+
     public function submit(Request $request,ExternalPortalAccess $access)
     {
         $student=$request->attributes->get('external_student');
         abort_unless($student,403);
-        $simulate=$request->session()->has('portal_preview');
         $role=$request->session()->get('ss_user.principal_type');
+        return $this->submitFor($request,(int)$student->id,$role,fn($p)=>$access->has($role,$p,(int)$student->id),'external.dashboard');
+    }
+
+    private function submitFor(Request $request,int $id,string $role,\Closure $can,string $portalRoute)
+    {
+        $simulate=$request->session()->has('portal_preview');
+        $staff=$role==='staff';
+        $owner=$staff?'staff_user_id':'leerling_id';
         $data=$request->validate(['type'=>'required|in:reserve,renew','target_id'=>'required|integer|min:1']);
-        $can=fn($p)=>$access->has($role,$p,(int)$student->id);
         $target=$data['target_id']??null;
         $payload=null;
         if ($data['type']==='reserve') {
@@ -23,25 +37,25 @@ class ExternalLibraryWorkflowController extends Controller
             abort_unless($target && DB::table('library_books')->where('id',$target)->exists(),404);
         } elseif ($data['type']==='renew') {
             abort_unless($can('library.renew.request') && $can('library.view'),403);
-            abort_unless($target && DB::table('library_loans')->where('id',$target)->where('leerling_id',$student->id)->whereNull('staff_user_id')->whereNull('returned_at')->exists(),404);
+            abort_unless($target && DB::table('library_loans')->where('id',$target)->where($owner,$id)->whereNull($staff?'leerling_id':'staff_user_id')->whereNull('returned_at')->exists(),404);
         }
         if ($simulate) return back()->with('success','Testmodus: aanvraag is geldig. Er is geen echte aanvraag opgeslagen.');
-        DB::transaction(function()use($student,$role,$data,$target,$payload){
-            DB::table('leerlingen')->where('id',$student->id)->lockForUpdate()->first();
-            $pending=DB::table('external_library_requests')->where('leerling_id',$student->id)->where('status','pending');
+        DB::transaction(function()use($id,$role,$data,$target,$payload,$staff,$owner){
+            DB::table($staff?'users':'leerlingen')->where('id',$id)->lockForUpdate()->first();
+            $pending=DB::table('external_library_requests')->where($owner,$id)->where('status','pending');
             if ((clone $pending)->count()>=20) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Je hebt te veel openstaande aanvragen.']);
             if ((clone $pending)->where('request_type',$data['type'])->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Er bestaat al een openstaande aanvraag voor dit boek.']);
-            if ($data['type']==='reserve' && app(\App\Services\LibraryReservations::class)->active()->where('leerling_id',$student->id)->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Dit boek is al voor jou gereserveerd.']);
-            DB::table('external_library_requests')->insert(['leerling_id'=>$student->id,'request_type'=>$data['type'],'target_id'=>$target,'principal_type'=>$role,'payload'=>$payload,'status'=>'pending','created_at'=>now(),'updated_at'=>now()]);
+            if ($data['type']==='reserve' && app(\App\Services\LibraryReservations::class)->active()->where($owner,$id)->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Dit boek is al voor jou gereserveerd.']);
+            DB::table('external_library_requests')->insert(['leerling_id'=>$staff?null:$id,'staff_user_id'=>$staff?$id:null,'request_type'=>$data['type'],'target_id'=>$target,'principal_type'=>$role,'payload'=>$payload,'status'=>'pending','created_at'=>now(),'updated_at'=>now()]);
         });
-        return redirect()->route('external.dashboard',['section'=>'requests'])->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
+        return redirect()->route($portalRoute,['section'=>'requests'])->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
     }
 
     public function index(Request $request,LibraryAccess $access)
     {
         $access->requirePermission($request,'bibliotheek.view');
         $access->requirePermission($request,'bibliotheek.requests.manage');
-        $requests=DB::table('external_library_requests as r')->join('leerlingen as l','l.id','=','r.leerling_id')->where('l.schoolid',1)->whereIn('r.request_type',['reserve','renew'])->select('r.*','l.voornaam','l.naam')->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByDesc('r.id')->paginate(30);
+        $requests=DB::table('external_library_requests as r')->leftJoin('leerlingen as l','l.id','=','r.leerling_id')->leftJoin('users as u','u.id','=','r.staff_user_id')->where(fn($q)=>$q->where('l.schoolid',1)->orWhere('u.schoolid',1))->whereIn('r.request_type',['reserve','renew'])->select('r.*')->selectRaw('COALESCE(u.voornaam,l.voornaam) as voornaam, COALESCE(u.name,l.naam) as naam')->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByDesc('r.id')->paginate(30);
         return view('bibliotheek.external-requests',compact('requests'));
     }
 
@@ -49,7 +63,7 @@ class ExternalLibraryWorkflowController extends Controller
     {
         $access->requirePermission($request,'bibliotheek.view');
         $access->requirePermission($request,'bibliotheek.requests.manage');
-        $updated=DB::table('external_library_requests')->where('id',$id)->where('request_type','reserve')->where('status','approved')->whereIn('leerling_id',DB::table('leerlingen')->where('schoolid',1)->select('id'))->update(['status'=>'cancelled','updated_at'=>now()]);
+        $updated=DB::table('external_library_requests')->where('id',$id)->where('request_type','reserve')->where('status','approved')->where(fn($q)=>$q->whereIn('leerling_id',DB::table('leerlingen')->where('schoolid',1)->select('id'))->orWhereIn('staff_user_id',DB::table('users')->where('schoolid',1)->select('id')))->update(['status'=>'cancelled','updated_at'=>now()]);
         abort_unless($updated,409);
         return back()->with('success','Reservering geannuleerd.');
     }
@@ -62,7 +76,15 @@ class ExternalLibraryWorkflowController extends Controller
         $result=DB::transaction(function()use($id,$data,$access,$request){
             $row=DB::table('external_library_requests')->where('id',$id)->where('status','pending')->whereIn('request_type',['reserve','renew'])->lockForUpdate()->first();
             abort_unless($row,409);
-            abort_unless(DB::table('leerlingen')->where('id',$row->leerling_id)->where('schoolid',1)->where('active',1)->exists(),422,'Leerling is niet actief.');
+            $staff=$row->principal_type==='staff';
+            $owner=$staff?'staff_user_id':'leerling_id';
+            abort_unless($row->$owner && DB::table($staff?'users':'leerlingen')->where('id',$row->$owner)->where('schoolid',1)->exists(),404);
+            if ($data['status']==='approved') {
+                $active=DB::table($staff?'users':'leerlingen')->where('id',$row->$owner)->where('schoolid',1);
+                if($staff) $active->where('allowed_login',1)->where(fn($q)=>$q->whereNull('smartschool_active')->orWhere('smartschool_active',1));
+                else $active->where('active',1);
+                abort_unless($active->exists(),422,'Ontlener is niet actief.');
+            }
             $values=['status'=>$data['status'],'decision_note'=>$data['note']??null,'decided_by'=>$access->username($request),'decided_at'=>now(),'updated_at'=>now()];
             $result=null;
             if ($data['status']==='approved') {
@@ -75,12 +97,12 @@ class ExternalLibraryWorkflowController extends Controller
                     $values['reserved_until']=app(\App\Services\SchoolCalendar::class)->shift(\Carbon\CarbonImmutable::today('Europe/Brussels'),5)->toDateString();
                 } else {
                     $access->requirePermission($request,'bibliotheek.loans.extend');
-                    $loan=DB::table('library_loans')->where('id',$row->target_id)->where('leerling_id',$row->leerling_id)->whereNull('staff_user_id')->whereNull('returned_at')->lockForUpdate()->first();
+                    $loan=DB::table('library_loans')->where('id',$row->target_id)->where($owner,$row->$owner)->whereNull($staff?'leerling_id':'staff_user_id')->whereNull('returned_at')->lockForUpdate()->first();
                     abort_unless($loan,422,'Geen openstaande uitlening.');
                     $calendar=app(\App\Services\LibraryCalendar::class);
-                    if ((int)$loan->extensions>=max(1,(int)$calendar->setting('max_extensions','2'))) throw \Illuminate\Validation\ValidationException::withMessages(['renew'=>'Maximaal aantal verlengingen bereikt.']);
+                    if ((int)$loan->extensions>=max(0,(int)$calendar->setting('max_extensions','2'))) throw \Illuminate\Validation\ValidationException::withMessages(['renew'=>'Maximaal aantal verlengingen bereikt.']);
                     $book=DB::table('library_copies')->where('id',$loan->copy_id)->value('book_id');
-                    if (DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$book)->where('leerling_id','<>',$row->leerling_id)->where(fn($q)=>$q->where('status','pending')->orWhere(fn($x)=>$x->where('status','approved')->where('reserved_until','>=',now('Europe/Brussels')->toDateString())))->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['renew'=>'Een andere leerling wacht op dit boek.']);
+                    if (DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$book)->where(fn($q)=>$q->whereNull($owner)->orWhere($owner,'<>',$row->$owner))->where(fn($q)=>$q->where('status','pending')->orWhere(fn($x)=>$x->where('status','approved')->where('reserved_until','>=',now('Europe/Brussels')->toDateString())))->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['renew'=>'Een andere ontlener wacht op dit boek.']);
                     $today=\Carbon\CarbonImmutable::today('Europe/Brussels');
                     $old=\Carbon\CarbonImmutable::parse($loan->due_date,'Europe/Brussels');
                     $due=$calendar->due($old->gt($today)?$old:$today,max(1,(int)$calendar->setting('extension_days','21')))->toDateString();
