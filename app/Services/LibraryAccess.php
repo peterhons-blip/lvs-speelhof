@@ -78,6 +78,13 @@ class LibraryAccess
 
     public function has(Request $request, string $permission): bool
     {
+        $principal=$request->session()->get('ss_user.principal_type');
+        if ($principal==='leerling') {
+            if (!array_key_exists($permission,config('portal_permissions.bibliotheek.permissions',[]))) return false;
+            $student=app(ExternalPortalAccess::class)->current($request);
+            if (!$student || !app(ExternalPortalAccess::class)->has('leerling','library.help',(int)$student->id)) return false;
+            return (bool)DB::table('portal_student_permissions')->where('leerling_id',$student->id)->where('permission',$permission)->value('allowed');
+        }
         $role = $this->role($request);
         if ($role === null) return false;
 
