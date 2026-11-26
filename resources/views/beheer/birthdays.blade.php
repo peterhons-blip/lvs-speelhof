@@ -245,6 +245,7 @@
                     <label for="warning_sender">Smartschool-afzender waarschuwing</label>
                     <input id="warning_sender" name="warning_sender" maxlength="120"
                         value="{{ old('warning_sender', $settings['warning_sender']) }}" placeholder="Leeg = bestaande schoolafzender gebruiken">
+                    <div class="library-help">Automatisch per school: @foreach($adultSenderDefaults as $sender)<div>{{ $sender['school'] }}: <strong>{{ $sender['secretariat'] }}</strong></div>@endforeach</div>
                     <p class="library-help">
                         @if($warningSenderFallback)
                             Huidig automatisch account voor {{ $warningPreviewSchool->schoolnaam }}: <strong>{{ $warningSenderFallback }}</strong>.
@@ -291,12 +292,22 @@
                         <option value="0" @selected(old('adult_student_notice', $settings['adult_student_notice']) === '0')>Nee</option>
                     </select></div>
                 <div class="library-field"><label for="adult_sender_student">Afzender Smartschool</label>
-                    <input id="adult_sender_student" name="adult_sender_student" maxlength="120" value="{{ old('adult_sender_student', $settings['adult_sender_student']) }}" placeholder="Automatisch: algemene schoolafzender"></div>
+                    <input id="adult_sender_student" name="adult_sender_student" maxlength="120" value="{{ old('adult_sender_student', $settings['adult_sender_student']) }}" placeholder="Automatisch: algemene schoolafzender">
+                    <div class="library-help">Automatisch per school: @foreach($adultSenderDefaults as $sender)<div>{{ $sender['school'] }}: <strong>{{ $sender['general'] }}</strong></div>@endforeach</div></div>
                 <div class="library-field library-wide"><label for="adult_subject_student">Onderwerp</label>
                     <input id="adult_subject_student" name="adult_subject_student" maxlength="200" required value="{{ old('adult_subject_student', $settings['adult_subject_student']) }}"></div>
                 <div class="library-field library-wide"><label for="adult_body_student">Berichttekst leerling</label>
-                    <textarea id="adult_body_student" name="adult_body_student" maxlength="5000" rows="5" placeholder="Leeg laten = bestaande Smartschool-template van de school">{{ old('adult_body_student', $settings['adult_body_student']) }}</textarea>
-                    <p class="library-help">Leeg laten behoudt het huidige schoolbericht. Gebruik indien gewenst {voornaam}, {naam} en {school}.</p>
+                    @php($customBody = (string) old('adult_body_student', $settings['adult_body_student']))
+                    <textarea id="adult_body_student" name="adult_body_student" maxlength="5000" rows="9" placeholder="Eigen berichttekst" @if($customBody === '') hidden disabled @endif>{{ $customBody }}</textarea>
+                    <div id="adult_body_student-defaults" @if($customBody !== '') hidden @endif>
+                        @foreach($adultBodyDefaults['adult_body_student'] ?? [] as $default)
+                            <label>{{ $default['school'] }} — huidige standaardtekst</label>
+                            <textarea rows="9" readonly aria-label="Standaardtekst {{ $default['school'] }}">{{ $default['text'] }}</textarea>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="adult_body_student" value="" id="adult_body_student-automatic" @if($customBody !== '') disabled @endif>
+                    <button type="button" class="library-button library-button-secondary adult-template-toggle" data-field="adult_body_student" data-default="{{ $adultBodyDefaults['adult_body_student'][0]['text'] ?? '' }}">{{ $customBody === '' ? 'Eigen tekst aanpassen' : 'Standaardtekst gebruiken' }}</button>
+                    <p class="library-help">De standaardtekst blijft actief totdat je een eigen tekst opslaat. Variabelen: {voornaam}, {naam} en {school}.</p>
                 </div>
             </div>
             <h3>Uitnodiging leerlingensecretariaat</h3>
@@ -307,11 +318,21 @@
                         <option value="0" @selected(old('adult_secretariat_notice', $settings['adult_secretariat_notice']) === '0')>Nee</option>
                     </select></div>
                 <div class="library-field"><label for="adult_sender_secretariat">Afzender Smartschool</label>
-                    <input id="adult_sender_secretariat" name="adult_sender_secretariat" maxlength="120" value="{{ old('adult_sender_secretariat', $settings['adult_sender_secretariat']) }}" placeholder="Automatisch: secretariaatsaccount"></div>
+                    <input id="adult_sender_secretariat" name="adult_sender_secretariat" maxlength="120" value="{{ old('adult_sender_secretariat', $settings['adult_sender_secretariat']) }}" placeholder="Automatisch: secretariaatsaccount">
+                    <div class="library-help">Automatisch per school: @foreach($adultSenderDefaults as $sender)<div>{{ $sender['school'] }}: <strong>{{ $sender['secretariat'] }}</strong></div>@endforeach</div></div>
                 <div class="library-field library-wide"><label for="adult_subject_secretariat">Onderwerp</label>
                     <input id="adult_subject_secretariat" name="adult_subject_secretariat" maxlength="200" required value="{{ old('adult_subject_secretariat', $settings['adult_subject_secretariat']) }}"></div>
                 <div class="library-field library-wide"><label for="adult_body_secretariat">Berichttekst secretariaat</label>
-                    <textarea id="adult_body_secretariat" name="adult_body_secretariat" maxlength="5000" rows="5" placeholder="Leeg laten = bestaande Smartschool-template van de school">{{ old('adult_body_secretariat', $settings['adult_body_secretariat']) }}</textarea>
+                    @php($customBody = (string) old('adult_body_secretariat', $settings['adult_body_secretariat']))
+                    <textarea id="adult_body_secretariat" name="adult_body_secretariat" maxlength="5000" rows="9" placeholder="Eigen berichttekst" @if($customBody === '') hidden disabled @endif>{{ $customBody }}</textarea>
+                    <div id="adult_body_secretariat-defaults" @if($customBody !== '') hidden @endif>
+                        @foreach($adultBodyDefaults['adult_body_secretariat'] ?? [] as $default)
+                            <label>{{ $default['school'] }} — huidige standaardtekst</label>
+                            <textarea rows="9" readonly aria-label="Standaardtekst {{ $default['school'] }}">{{ $default['text'] }}</textarea>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="adult_body_secretariat" value="" id="adult_body_secretariat-automatic" @if($customBody !== '') disabled @endif>
+                    <button type="button" class="library-button library-button-secondary adult-template-toggle" data-field="adult_body_secretariat" data-default="{{ $adultBodyDefaults['adult_body_secretariat'][0]['text'] ?? '' }}">{{ $customBody === '' ? 'Eigen tekst aanpassen' : 'Standaardtekst gebruiken' }}</button>
                 </div>
             </div>
             <h3>Dagelijkse overzichten voor medewerkers</h3>
@@ -329,11 +350,12 @@
                 <div class="library-field library-wide"><label for="adult_overview_smartschool_subject">Onderwerp Smartschool-overzicht</label>
                     <input id="adult_overview_smartschool_subject" name="adult_overview_smartschool_subject" maxlength="200" required value="{{ old('adult_overview_smartschool_subject', $settings['adult_overview_smartschool_subject']) }}"></div>
                 <div class="library-field"><label for="adult_overview_sender">Afzender Smartschool-overzicht</label>
-                    <input id="adult_overview_sender" name="adult_overview_sender" maxlength="120" value="{{ old('adult_overview_sender', $settings['adult_overview_sender']) }}" placeholder="Automatisch: algemene schoolafzender"></div>
+                    <input id="adult_overview_sender" name="adult_overview_sender" maxlength="120" value="{{ old('adult_overview_sender', $settings['adult_overview_sender']) }}" placeholder="Automatisch: algemene schoolafzender">
+                    <div class="library-help">Automatisch per school: @foreach($adultSenderDefaults as $sender)<div>{{ $sender['school'] }}: <strong>{{ $sender['general'] }}</strong></div>@endforeach</div></div>
                 <div class="library-field"><label for="adult_overview_email_subject">Onderwerp e-mailoverzicht</label>
-                    <input id="adult_overview_email_subject" name="adult_overview_email_subject" maxlength="200" value="{{ old('adult_overview_email_subject', $settings['adult_overview_email_subject']) }}" placeholder="Leeg = bestaand onderwerp behouden"></div>
+                    <input id="adult_overview_email_subject" name="adult_overview_email_subject" maxlength="200" value="{{ old('adult_overview_email_subject', $settings['adult_overview_email_subject']) }}" placeholder="{{ $adultEmailSubjectDefault }}"></div>
             </div>
-            <p class="library-help">De ontvangerslijsten voor de overzichten wijzig je hieronder, per school. De inhoud van het overzicht blijft de bestaande leerling- en actiegegevens tonen.</p>
+            <p class="library-help">De ontvangerslijsten wijzig je in het tabblad Ontvangers overzichten. De inhoud van het overzicht blijft de bestaande leerling- en actiegegevens tonen.</p>
             <button type="submit" class="library-button library-button-primary">Berichten en overzichten opslaan</button>
         </form>
     </section>
@@ -509,6 +531,19 @@
 </main>
 @push('scripts')
 <script>
+document.querySelectorAll('.adult-template-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+        const field=document.getElementById(button.dataset.field);
+        const defaults=document.getElementById(button.dataset.field+'-defaults');
+        const automatic=document.getElementById(button.dataset.field+'-automatic');
+        const editing=field.disabled;
+        field.disabled=!editing; field.hidden=!editing;
+        automatic.disabled=editing; defaults.hidden=editing;
+        if(editing && !field.value) field.value=button.dataset.default;
+        button.textContent=editing?'Standaardtekst gebruiken':'Eigen tekst aanpassen';
+        if(editing) field.focus();
+    });
+});
 document.querySelectorAll('.library-birthday-staff-search').forEach(search => {
     const container = document.getElementById(search.dataset.list);
     if (!container) return;
