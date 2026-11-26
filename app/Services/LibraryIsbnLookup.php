@@ -58,6 +58,97 @@ class LibraryIsbnLookup
     }
 
     /**
+     * Google Books fallback when Open Library does not know a valid ISBN.
+     * We use only the exact ISBN response, never another edition's metadata.
+     */
+    public function findGoogle(string $isbn): ?array
+    {
+        try {
+            $params = ['q' => 'isbn:'.$isbn, 'maxResults' => 10, 'printType' => 'books'];
+            $apiKey = trim((string) config('services.google_books.key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
+            if (! $response->successful()) {
+                \Illuminate\Support\Facades\Log::warning('Google Books ISBN-verzoek mislukt', [
+                    'status' => $response->status(), 'isbn' => $isbn,
+                ]);
+                return null;
+            }
+            foreach ((array) $response->json('items', []) as $item) {
+                $info = (array) ($item['volumeInfo'] ?? []);
+                $identifiers = (array) ($info['industryIdentifiers'] ?? []);
+                $match = collect($identifiers)->contains(function ($id) use ($isbn) {
+                    $value = strtoupper(preg_replace('/[^0-9X]/', '', (string) ($id['identifier'] ?? '')) ?? '');
+                    return $value === $isbn;
+                });
+                if (! $match || empty($info['title'])) continue;
+                // Third-party thumbnails are not auto-saved: the model currently
+                // permits only trusted Open Library cover URLs.
+                return [
+                    'isbn' => $isbn,
+                    'title' => mb_substr((string) $info['title'], 0, 255),
+                    'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
+                    'authors' => mb_substr(implode(', ', (array) ($info['authors'] ?? [])), 0, 255),
+                    'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                    'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
+                    'cover_url' => null,
+                    'category' => $this->genreFromSubjects((array) ($info['categories'] ?? [])),
+                    'description' => mb_substr(strip_tags((string) ($info['description'] ?? '')), 0, 5000),
+                    'source' => 'Google Books',
+                ];
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Google Books niet bereikbaar', [
+                'isbn' => $isbn, 'error' => $e->getMessage(),
+            ]);
+        }
+        return null;
+    }
+
+    public function findWithFallback(string $isbn): ?array
+    {
+        $book = $this->find($isbn);
+        if ($book !== null) return $book + ['source' => 'Open Library'];
+        return $this->findGoogle($isbn);
+    }
+
+    public function searchGoogleByName(string $query, string $type = 'title'): array
+    {
+        try {
+            $prefix = $type === 'author' ? 'inauthor:' : 'intitle:';
+            $params = ['q' => $prefix.$query, 'maxResults' => 12, 'printType' => 'books'];
+            $apiKey = trim((string) config('services.google_books.key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
+            if (! $response->successful()) return [];
+            return collect($response->json('items', []))->filter(fn($item) => is_array($item))
+                ->map(function ($item) {
+                    $info = (array) ($item['volumeInfo'] ?? []);
+                    if (empty($info['title'])) return null;
+                    $id = collect((array) ($info['industryIdentifiers'] ?? []))
+                        ->first(fn($value) => ($value['type'] ?? '') === 'ISBN_13');
+                    return [
+                        'work_key' => null,
+                        'edition_count' => 0,
+                        'isbn' => (string) ($id['identifier'] ?? ''),
+                        'category' => $this->genreFromSubjects((array) ($info['categories'] ?? [])),
+                        'title' => mb_substr((string) $info['title'], 0, 255),
+                        'authors' => mb_substr(implode(', ', (array) ($info['authors'] ?? [])), 0, 255),
+                        'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                        'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
+                        'cover_url' => null,
+                        'source' => 'Google Books',
+                    ];
+                })->filter()->values()->all();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Google Books zoeken mislukt', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
      * Search at work level by title or author. A suggested ISBN may belong to
      * another edition: always ask the user to verify the number on their book.
      */
