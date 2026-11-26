@@ -988,3 +988,19 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .birthday-tab-panel > .library-form-card:first-child { margin-top:0 !important; }
 .birthday-tab-panel .library-form-card > p:last-child { margin-bottom:0; }
 @media(max-width:650px){ .birthday-tab-nav {gap:4px;padding:8px;} .birthday-tab-link {padding:9px 10px;font-size:.82rem;} }
+
+/* Administrative follow-up on the student profile */
+.lvs-secretariat-card .lvs-panel-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.lvs-visit-status {display:inline-flex;align-items:center;white-space:nowrap;border-radius:999px;padding:5px 12px;font-size:.8rem;font-weight:650;background:#edf1f5;color:#43566b}
+.lvs-visit-status.is-open {background:#fff1da;color:#855710}
+.lvs-visit-status.is-done {background:#e5f4ea;color:#216443}
+.lvs-visit-content {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid #e1e8ef;text-align:left}
+.lvs-visit-content > div:first-child {flex:1;min-width:0;margin:0;padding:0;text-align:left}
+.lvs-visit-content p {margin:6px 0 0;text-align:left;color:#52657a}
+.lvs-visit-actions {display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lvs-visit-actions form {margin:0;padding:0}
+.lvs-visit-button {display:inline-flex;align-items:center;justify-content:center;border:1px solid #c90050;background:#c90050;color:#fff;border-radius:8px;padding:10px 16px;font:inherit;font-weight:650;cursor:pointer}
+.lvs-visit-button.is-secondary {background:#fff;color:#17365d;border-color:#d2dce7}
+.lvs-visit-overview {color:#17365d;font-weight:600;text-decoration:none;font-size:.88rem}
+.lvs-visit-overview:hover {text-decoration:underline}
+@media(max-width:760px){.lvs-visit-content{align-items:flex-start;flex-direction:column}}
