@@ -17,6 +17,8 @@ Route::get('/logout', [SmartschoolController::class, 'logout'])->name('logout');
 
 // ===== Protected (na SSO) =====
 Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
+    Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
+    Route::post('/beheer/preview-stop', [\App\Http\Controllers\PortalPreviewController::class,'stop'])->name('portal-preview.stop');
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::view('/bibliotheek', 'bibliotheek.index')->name('bibliotheek.index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view');
 
