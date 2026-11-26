@@ -6,7 +6,8 @@
         'loans'=>$personalAccess->personalLibraryCan(request(),'library.view')?'Mijn uitleningen':null,
         'history'=>$personalAccess->personalLibraryCan(request(),'library.history.view')?'Historiek':null,
         'catalog'=>$personalAccess->personalLibraryCan(request(),'library.catalog.view')?'Catalogus':null,
-        'requests'=>($personalAccess->personalLibraryCan(request(),'library.reserve')||$personalAccess->personalLibraryCan(request(),'library.renew.request'))?'Mijn aanvragen':null,
+        'reservations'=>$personalAccess->personalLibraryCan(request(),'library.reserve')?'Reserveringen':null,
+        'renewals'=>$personalAccess->personalLibraryCan(request(),'library.renew.request')?'Verlengingsaanvragen':null,
     ]);
     asort($personalItems, SORT_NATURAL | SORT_FLAG_CASE);
 @endphp
