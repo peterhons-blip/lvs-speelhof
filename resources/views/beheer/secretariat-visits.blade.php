@@ -14,5 +14,5 @@
 <input type="hidden" name="completed" value="{{ $row->completed_at ? '0' : '1' }}"><button class="library-button library-button-secondary">{{ $row->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button></form>
 @if($row->completed_at)<small>{{ $row->completed_at }} · {{ $row->completed_by }}</small>@endif
 </td></tr>@empty<tr><td colspan="5">Geen leerlingen gevonden.</td></tr>@endforelse
-</tbody></table></div>{{ $rows->links() }}</section></main>
+</tbody></table></div>@include('partials.portal-pagination', ['paginator'=>$rows,'label'=>'Leerlingen'])</section></main>
 @endsection
