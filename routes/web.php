@@ -24,8 +24,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::get('/bibliotheek/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'index'])->name('bibliotheek.requests.index');
     Route::post('/bibliotheek/aanvragen/{id}/annuleren', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'cancel'])->whereNumber('id')->name('bibliotheek.requests.cancel');
     Route::post('/bibliotheek/aanvragen/{id}', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'decide'])->whereNumber('id')->name('bibliotheek.requests.decide');
-    Route::get('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'index'])->name('beheer.incident-release.index');
-    Route::post('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'save'])->name('beheer.incident-release.save');
+    Route::get('/lvs/instellingen/meldingssoorten', [\App\Http\Controllers\IncidentReleaseController::class,'index'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.taxonomy.manage')->name('beheer.incident-release.index');
+    Route::post('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'save'])->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.taxonomy.manage')->name('beheer.incident-release.save');
     Route::post('/beheer/preview-stop', [\App\Http\Controllers\PortalPreviewController::class,'stop'])->name('portal-preview.stop');
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view')->group(function () {
