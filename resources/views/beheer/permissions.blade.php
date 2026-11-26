@@ -53,6 +53,7 @@
                 if (array_key_exists($role,\App\Services\LibraryAccess::EXTERNAL_ROLES)) {
                     $roleModules = [];
                     foreach (($modules[$role]['permissions'] ?? []) as $key => $label) {
+                        if($key==='leerling.library.help') continue;
                         $parts = explode(' · ', $label, 2);
                         $section = count($parts) === 2 ? $parts[0] : 'Algemeen';
                         $roleModules[$section]['label'] = $section;
