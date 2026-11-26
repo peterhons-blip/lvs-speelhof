@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=40">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=41">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
 </head>
 <body class="portal-body">
@@ -30,10 +30,21 @@
                     <strong>{{ trim(($ss_user['voornaam'] ?? '') . ' ' . ($ss_user['naam'] ?? '')) }}</strong>
                     <small>{{ $ss_user['groupname'] ?? 'Personeelslid' }}</small>
                 </span>
+                @if(!session('portal_preview') && app(\App\Services\LibraryAccess::class)->role(request()) === 'ict_coordinator')
+                    @include('partials.portal-preview-picker')
+                @endif
                 <a href="{{ route('logout') }}" class="portal-logout">Uitloggen</a>
             </div>
         </header>
 
+        @if(session('portal_preview'))
+        <div role="status" style="background:#fff1d5;border-bottom:1px solid #e5bf72;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#604000">
+            <div><strong>Testmodus: {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}</strong> · Alleen-lezen · {{ $ss_user['groupname'] ?? '' }}
+                @if(session('preview_warning'))<div>{{ session('preview_warning') }}</div>@endif
+            </div>
+            <form method="post" action="{{ route('portal-preview.stop') }}">@csrf<button type="submit" class="library-button library-button-secondary">Terug naar ICT</button></form>
+        </div>
+        @endif
         <div class="portal-workspace">
             <aside class="portal-sidebar" aria-label="Hoofdnavigatie">
                 <span class="portal-sidebar-label">WERKOMGEVING</span>
@@ -81,27 +92,45 @@
                         @if($bibliotheekActive)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
                                 <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
-                                <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+<a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+@endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
-                                <a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.escalations.view'))
+<a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
+@endif
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
-                                <a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
+<a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
+@endif
                                 @endif
-                                <a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
+<a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
+@endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.settings.manage'))
                                 <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.settings') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.settings')) aria-current="page" @endif>Uitleeninstellingen</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
                                 <a href="{{ route('bibliotheek.messages.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.messages.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.messages.*')) aria-current="page" @endif>Smartschool-berichten</a>
                                 @endif
-                                <a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
+<a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
+@endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
-                                <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.qr-labels') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.qr-labels')) aria-current="page" @endif>QR-codes en etiketten</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.qr-labels') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.qr-labels')) aria-current="page" @endif>QR-codes en etiketten</a>
+@endif
                                 @endif
-                                <a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
-                                <a href="{{ route('bibliotheek.books.import.history') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show')) aria-current="page" @endif>Importhistoriek</a>
-                                <a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.manage'))
+<a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
+@endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.history'))
+<a href="{{ route('bibliotheek.books.import.history') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show')) aria-current="page" @endif>Importhistoriek</a>
+@endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.create'))
+<a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
+@endif
                             </nav>
                         @endif
                     </div>
