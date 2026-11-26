@@ -65,6 +65,14 @@
                     <span class="portal-module-footer">Open de toepassing <span aria-hidden="true">→</span></span>
                 </a>
                 @endif
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'persoonlijke_bibliotheek.view'))
+                <a class="portal-module portal-module-active" href="{{ route('personal-library.index') }}">
+                    <span class="portal-module-icon" aria-hidden="true">▤</span>
+                    <strong>Bibliotheek</strong>
+                    <p>Bekijk de catalogus, reserveer boeken en volg je eigen uitleningen en aanvragen op.</p>
+                    <span class="portal-module-footer">Open mijn bibliotheek <span aria-hidden="true">→</span></span>
+                </a>
+                @endif
                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
 <a class="portal-module portal-module-active" href="{{ route('bibliotheek.index') }}">
                     <span class="portal-module-icon" aria-hidden="true">▤</span>
