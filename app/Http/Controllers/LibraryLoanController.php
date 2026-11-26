@@ -486,7 +486,15 @@ class LibraryLoanController extends Controller
             })
             ->select('voornaam', 'name', 'smartschool_gebruikersnaam')
             ->orderBy('name')->orderBy('voornaam')->get();
-        return view('bibliotheek.loans.settings', compact('settings', 'staffOptions'));
+        $recentEscalations = \Illuminate\Support\Facades\Schema::hasTable('library_escalations')
+            ? DB::table('library_escalations as e')
+                ->leftJoin('library_loans as l', 'l.id', '=', 'e.loan_id')
+                ->leftJoin('library_copies as c', 'c.id', '=', 'l.copy_id')
+                ->leftJoin('library_books as b', 'b.id', '=', 'c.book_id')
+                ->select('e.*', 'b.title', 'c.barcode')
+                ->orderByDesc('e.id')->limit(30)->get()
+            : collect();
+        return view('bibliotheek.loans.settings', compact('settings', 'staffOptions', 'recentEscalations'));
     }
 
     public function saveSettings(Request $request): RedirectResponse
