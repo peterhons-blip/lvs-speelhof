@@ -33,13 +33,6 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::get('/bibliotheek/rapportages/export', [\App\Http\Controllers\LibraryReportController::class, 'export'])
         ->name('bibliotheek.reports.export')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
-    Route::prefix('bibliotheek/inventaris')->name('bibliotheek.inventory.')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage')->group(function(){
-        Route::get('/',[\App\Http\Controllers\LibraryInventoryController::class,'index'])->name('index');
-        Route::post('/',[\App\Http\Controllers\LibraryInventoryController::class,'store'])->name('store');
-        Route::get('/{run}',[\App\Http\Controllers\LibraryInventoryController::class,'show'])->whereNumber('run')->name('show');
-        Route::post('/{run}/scan',[\App\Http\Controllers\LibraryInventoryController::class,'scan'])->whereNumber('run')->name('scan');
-        Route::post('/{run}/finish',[\App\Http\Controllers\LibraryInventoryController::class,'finish'])->whereNumber('run')->name('finish');
-    });
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
         Route::get('/opvolging-beleid', [\App\Http\Controllers\LibraryEscalationController::class, 'index'])
             ->name('escalations.index')
