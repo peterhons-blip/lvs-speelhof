@@ -88,7 +88,7 @@ class LibraryBookController extends Controller
 
     public function recordQrGenerated(Request $request): JsonResponse
     {
-        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.qr.track');
         $data = $request->validate([
             'copies' => ['required', 'array', 'min:1', 'max:500'],
             'copies.*' => ['required', 'integer', 'min:1', 'distinct'],
@@ -101,7 +101,7 @@ class LibraryBookController extends Controller
 
     public function confirmQrPrinted(Request $request): RedirectResponse
     {
-        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.qr.track');
         $data = $request->validate([
             'copies' => ['required', 'array', 'min:1', 'max:500'],
             'copies.*' => ['required', 'integer', 'min:1', 'distinct'],
@@ -140,7 +140,7 @@ class LibraryBookController extends Controller
      */
     public function lookupDiagnostics(Request $request): JsonResponse
     {
-        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.books.manage');
+        app(\App\Services\LibraryAccess::class)->requirePermission($request, 'bibliotheek.lookup.diagnostics');
         $results = [];
         foreach ([
             'Open Library' => ['https://openlibrary.org/search.json', ['title' => 'test', 'limit' => 1]],
