@@ -478,7 +478,10 @@ class LibraryLoanController extends Controller
     {
         $this->authorizeSettings(request());
         $settings = DB::table('library_settings')->pluck('value', 'key');
-        return view('bibliotheek.loans.settings', compact('settings'));
+        $staffOptions = DB::table('users')->where('schoolid', 1)->where('smartschool_active', 1)
+            ->whereNotNull('smartschool_gebruikersnaam')->where('smartschool_gebruikersnaam', '<>', '')
+            ->select('voornaam', 'name', 'smartschool_gebruikersnaam')->orderBy('name')->get();
+        return view('bibliotheek.loans.settings', compact('settings', 'staffOptions'));
     }
 
     public function saveSettings(Request $request): RedirectResponse
@@ -494,6 +497,8 @@ class LibraryLoanController extends Controller
             'overdue_first_days' => ['required', 'integer', 'min:0', 'max:365'],
             'overdue_repeat_days' => ['required', 'integer', 'min:0', 'max:365'],
             'overdue_escalate_after' => ['required', 'integer', 'min:0', 'max:100'],
+            'policy_alert_enabled' => ['required', 'in:0,1'],
+            'policy_alert_recipient' => ['nullable', 'string', 'max:120'],
         ]);
 
         if ((int) $values['overdue_escalate_after'] > 1 && (int) $values['overdue_repeat_days'] === 0) {
@@ -504,6 +509,10 @@ class LibraryLoanController extends Controller
             return back()->withInput()->withErrors(['overdue_escalate_after' =>
                 'Schakel eerst een herinnering na de inleverdatum in voordat je een escalatie instelt.']);
         }
+        if ($values['policy_alert_enabled'] === '1' && ((int) $values['overdue_escalate_after'] === 0 || ! DB::table('users')->where('schoolid', 1)->where('smartschool_active', 1)->where('smartschool_gebruikersnaam', $values['policy_alert_recipient'] ?? '')->exists())) {
+            return back()->withInput()->withErrors(['policy_alert_recipient' => 'Stel een escalatiedrempel in en kies een actief personeelsaccount als ontvanger.']);
+        }
+        $values['policy_alert_recipient'] = $values['policy_alert_recipient'] ?? '';
         foreach ($values as $key => $value) {
             DB::table('library_settings')->updateOrInsert(
                 ['key' => $key],
