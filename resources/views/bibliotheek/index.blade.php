@@ -22,7 +22,8 @@
 
         <div class="portal-library-feature-grid" aria-label="Bibliotheekfuncties">
             @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
-            <a href="{{ route('bibliotheek.requests.index') }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">☷</span><h2>Aanvragen</h2><p>Reserveringen en verlengingsaanvragen beoordelen.</p></a>
+            <a href="{{ route('bibliotheek.requests.index',['type'=>'reserve']) }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">☷</span><h2>Reserveringen</h2><p>Beheer aanvragen, wachtlijsten en af te halen boeken.</p></a>
+            <a href="{{ route('bibliotheek.requests.index',['type'=>'renew']) }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">↻</span><h2>Verlengingsaanvragen</h2><p>Beoordeel aanvragen voor een langere uitleentermijn.</p></a>
             @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
 <a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
