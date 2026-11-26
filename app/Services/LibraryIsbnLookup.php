@@ -115,6 +115,54 @@ class LibraryIsbnLookup
     }
 
     /**
+     * Fallback title/author suggestions from Google Books.
+     * Unlike Open Library, these are volume-level results, not work+edition trees.
+     */
+    public function searchGoogleBooksByName(string $query, string $type = 'title'): array
+    {
+        try {
+            $params = [
+                'q' => ($type === 'author' ? 'inauthor:' : 'intitle:').$query,
+                'maxResults' => 12,
+                'printType' => 'books',
+            ];
+            $apiKey = trim((string) config('services.google_books.api_key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)->retry(1, 250)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
+            if (! $response->successful()) return [];
+            return collect($response->json('items', []))
+                ->filter(fn ($item) => is_array($item) && !empty($item['volumeInfo']['title']))
+                ->map(function ($item) {
+                    $info = $item['volumeInfo'];
+                    $isbn = collect($info['industryIdentifiers'] ?? [])
+                        ->pluck('identifier')->map(fn ($i) => mb_strtoupper(
+                            preg_replace('/[^0-9X]/i', '', (string) $i)))
+                        ->first(fn ($i) => $this->isValidIsbn($i)) ?: '';
+                    return [
+                        'source' => 'Google Books',
+                        'work_key' => null,
+                        'edition_count' => 1,
+                        'isbn' => $isbn,
+                        'category' => mb_substr((string) (($info['categories'][0] ?? '') ?: ''), 0, 255),
+                        'title' => mb_substr((string) $info['title'], 0, 255),
+                        'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
+                        'authors' => mb_substr(implode(', ', array_slice((array) ($info['authors'] ?? []), 0, 8)), 0, 255),
+                        'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                        'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
+                        'description' => mb_substr(trim(strip_tags((string) ($info['description'] ?? ''))), 0, 5000),
+                        'cover_url' => null,
+                    ];
+                })->values()->all();
+        } catch (\Throwable $error) {
+            \Illuminate\Support\Facades\Log::warning('Google Books title search unavailable', [
+                'error' => $error->getMessage(),
+            ]);
+            return [];
+        }
+    }
+
+    /**
      * Search at work level by title or author. A suggested ISBN may belong to
      * another edition: always ask the user to verify the number on their book.
      */
