@@ -23,6 +23,7 @@ return [
             'lvs.reports.export' => 'Klassenraad exporteren',
             'lvs.followups.view' => 'Opvolging en sanctievoorstellen bekijken',
             'lvs.followups.resolve' => 'Opvolging afhandelen',
+            'lvs.taxonomy.manage' => 'Categorieën, meldingssoorten en standaardvrijgave beheren',
             'lvs.settings.manage' => 'LVS-opvolgregels, meldingsdrempels en Smartschool-acties beheren',
         ],
     ],
