@@ -34,7 +34,7 @@ class LvsFollowupsController extends Controller
 
     public function resolve(Request $request, LibraryAccess $access, int $event): RedirectResponse
     {
-        $access->requirePermission($request, 'lvs.followups.view');
+        $access->requirePermission($request, 'lvs.followups.resolve');
         abort_unless(Schema::hasTable('lvs_followup_events'), 503);
         $data = $request->validate([
             'decision' => ['required', 'in:resolved,dismissed'],

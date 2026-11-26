@@ -48,7 +48,8 @@
                             · {{ $entry->klasnaam ?: 'Geen klas' }}
                         </p>
                         @if($entry->status === 'pending')
-                            <form method="post" action="{{ route('lvs.followups.resolve', $entry->id) }}" class="lvs-followup-resolution">
+                            @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.followups.resolve'))
+<form method="post" action="{{ route('lvs.followups.resolve', $entry->id) }}" class="lvs-followup-resolution">
                                 @csrf
                                 <label for="followup-note-{{ $entry->id }}">Opvolging / beslissing (verplicht)</label>
                                 <textarea id="followup-note-{{ $entry->id }}" name="note" maxlength="1000" minlength="5" rows="3" required placeholder="Welke stappen zijn ondernomen?"></textarea>
@@ -57,6 +58,7 @@
                                     <button type="submit" name="decision" value="dismissed" class="library-button library-button-secondary">Geen verdere actie</button>
                                 </div>
                             </form>
+@endif
                         @else
                             <p><strong>Afgehandeld door:</strong> {{ $entry->resolved_by ?: '—' }}
                                 ({{ $entry->resolved_at ?: '—' }})</p>

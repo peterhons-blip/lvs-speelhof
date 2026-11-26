@@ -34,7 +34,8 @@
                     $todayBooks = \App\Models\LibraryBook::whereDate('created_at', $today)->count();
                     $todayUnprinted = \App\Models\LibraryCopy::whereDate('created_at', $today)->whereNull('qr_printed_at')->count();
                 @endphp
-                <a href="{{ route('bibliotheek.books.qr-labels', ['today' => 1, 'qr_status' => 'unprinted', 'sort' => 'registration']) }}" class="portal-library-feature portal-library-feature-active">
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a href="{{ route('bibliotheek.books.qr-labels', ['today' => 1, 'qr_status' => 'unprinted', 'sort' => 'registration']) }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
                     <h2>Vandaag geregistreerd</h2>
                     <p><strong>{{ $todayCopies }}</strong> exemplaren<br>
@@ -42,13 +43,16 @@
                        <strong>{{ $todayUnprinted }}</strong> etiketten nog niet bevestigd</p>
                     <span class="portal-library-feature-state">Open QR-overzicht van vandaag →</span>
                 </a>
+@endif
             @endif
-            <a href="{{ route('bibliotheek.loans.create') }}" class="portal-library-feature portal-library-feature-active">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
+<a href="{{ route('bibliotheek.loans.create') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↗</span>
                 <h2>Boek uitlenen</h2>
                 <p>Scan een exemplaar of zoek op titel/ISBN. Leen uit aan leerlingen of personeel.</p>
                 <span class="portal-library-feature-state">Start een uitlening →</span>
             </a>
+@endif
             <a href="{{ route('bibliotheek.loans.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↩</span>
                 <h2>Inleveren en verlengen</h2>
@@ -73,20 +77,24 @@
                 </a>
             @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
-                <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-library-feature portal-library-feature-active">
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">▦</span>
                     <h2>QR-codes en etiketten</h2>
                     <p>Selecteer exemplaren, download QR-codes of druk 21 etiketten per A4-vel af.</p>
                     <span class="portal-library-feature-state">QR-codes maken →</span>
                 </a>
+@endif
             @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
-                <a href="{{ route('bibliotheek.reports.index') }}" class="portal-library-feature portal-library-feature-active">
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
+<a href="{{ route('bibliotheek.reports.index') }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
                     <h2>Rapportages</h2>
                     <p>Voorraad, uitleningen per periode, populaire boeken, QR-status en export naar CSV.</p>
                     <span class="portal-library-feature-state">Rapportages bekijken →</span>
                 </a>
+@endif
             @endif
             <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">⚙</span>

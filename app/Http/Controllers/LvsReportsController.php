@@ -50,7 +50,7 @@ class LvsReportsController extends Controller
     }
     public function export(Request $request, LibraryAccess $access): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $access->requirePermission($request, 'lvs.reports.view');
+        $access->requirePermission($request, 'lvs.reports.export');
         $data = $request->validate([
             'start' => ['nullable', 'date_format:Y-m-d'],
             'end' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start'],

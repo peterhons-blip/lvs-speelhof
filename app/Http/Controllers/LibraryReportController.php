@@ -46,7 +46,7 @@ class LibraryReportController extends Controller
 
     public function index(Request $request, LibraryAccess $access): View
     {
-        $access->requirePermission($request, 'bibliotheek.loans.view');
+        $access->requirePermission($request, 'bibliotheek.reports.view');
         [$from, $to, $status, $borrower] = $this->filters($request);
 
         $stats = [
@@ -100,7 +100,7 @@ class LibraryReportController extends Controller
 
     public function exportStock(Request $request, LibraryAccess $access): StreamedResponse
     {
-        $access->requirePermission($request,'bibliotheek.books.view');
+        $access->requirePermission($request,'bibliotheek.stock.export');
         return response()->streamDownload(function(){
             $h=fopen('php://output','w'); fwrite($h,"\xEF\xBB\xBF");
             fputcsv($h,['Titel','ISBN','Auteur','Barcode','Status','Staat','Locatie','Registratiedatum'],';');
@@ -113,7 +113,7 @@ class LibraryReportController extends Controller
 
     public function export(Request $request, LibraryAccess $access): StreamedResponse
     {
-        $access->requirePermission($request, 'bibliotheek.loans.view');
+        $access->requirePermission($request, 'bibliotheek.reports.export');
         [$from, $to, $status, $borrower] = $this->filters($request);
         $query = $this->loans($from, $to, $status, $borrower)
             ->select('loans.id', 'loans.loan_date', 'loans.due_date', 'loans.returned_at',

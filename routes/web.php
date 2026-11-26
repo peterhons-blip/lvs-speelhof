@@ -30,84 +30,84 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
     Route::get('/bibliotheek/rapportages', [\App\Http\Controllers\LibraryReportController::class, 'index'])
         ->name('bibliotheek.reports.index')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
-    Route::get('/bibliotheek/rapportages/voorraad-export', [\App\Http\Controllers\LibraryReportController::class,'exportStock'])->name('bibliotheek.reports.stock')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reports.view');
+    Route::get('/bibliotheek/rapportages/voorraad-export', [\App\Http\Controllers\LibraryReportController::class,'exportStock'])->name('bibliotheek.reports.stock')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.stock.export');
     Route::get('/bibliotheek/rapportages/export', [\App\Http\Controllers\LibraryReportController::class, 'export'])
         ->name('bibliotheek.reports.export')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reports.export');
     Route::prefix('bibliotheek/uitleningen')->name('bibliotheek.loans.')->group(function () {
         Route::get('/opvolging-beleid', [\App\Http\Controllers\LibraryEscalationController::class, 'index'])
             ->name('escalations.index')
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.escalations.view');
         Route::post('/opvolging-beleid/{escalation}/afhandelen', [\App\Http\Controllers\LibraryEscalationController::class, 'resolve'])
             ->whereNumber('escalation')->name('escalations.resolve')
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.messages.manage');
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.escalations.resolve');
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
-        Route::post('/bulk',[\App\Http\Controllers\LibraryLoanController::class,'bulk'])->name('bulk')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::post('/{loan}/pauze',[\App\Http\Controllers\LibraryLoanController::class,'pause'])->whereNumber('loan')->name('pause')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::get('/inleverdatum-preview', [\App\Http\Controllers\LibraryLoanController::class, 'duePreview'])->name('due-preview')->middleware(['throttle:120,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage']);
-        Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('student-scan');
-        Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('copy-scan');
+        Route::post('/bulk',[\App\Http\Controllers\LibraryLoanController::class,'bulk'])->name('bulk')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.bulk');
+        Route::post('/{loan}/pauze',[\App\Http\Controllers\LibraryLoanController::class,'pause'])->whereNumber('loan')->name('pause')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reminders.pause');
+        Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create');
+        Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create');
+        Route::get('/inleverdatum-preview', [\App\Http\Controllers\LibraryLoanController::class, 'duePreview'])->name('due-preview')->middleware(['throttle:120,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create']);
+        Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create'])->name('student-scan');
+        Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create'])->name('copy-scan');
         Route::get('/boeken-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'searchBooks'])
-            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])
+            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create'])
             ->name('books-search');
         Route::get('/boeken/{book}/beschikbare-exemplaren', [\App\Http\Controllers\LibraryLoanController::class, 'availableCopies'])
             ->whereNumber('book')
-            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])
+            ->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create'])
             ->name('available-copies');
-        Route::post('/inleveren-met-barcode', [\App\Http\Controllers\LibraryLoanController::class, 'returnByBarcode'])->name('return-barcode')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::post('/inleveren-met-barcode', [\App\Http\Controllers\LibraryLoanController::class, 'returnByBarcode'])->name('return-barcode')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.return');
+        Route::get('/leerlingen-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'students'])->middleware('throttle:40,1')->name('students')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create');
         Route::get('/personeel-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'staff'])
-            ->middleware(['throttle:40,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])
+            ->middleware(['throttle:40,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.create'])
             ->name('staff');
         Route::get('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'settings'])->name('settings')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.settings.manage');
         Route::post('/instellingen', [\App\Http\Controllers\LibraryLoanController::class, 'saveSettings'])->name('settings.save')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.settings.manage');
-        Route::get('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'editReminders'])->whereNumber('loan')->name('reminders.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::put('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'updateReminders'])->whereNumber('loan')->name('reminders.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::get('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'editReminders'])->whereNumber('loan')->name('reminders.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reminders.edit');
+        Route::put('/{loan}/herinneringen', [\App\Http\Controllers\LibraryLoanController::class, 'updateReminders'])->whereNumber('loan')->name('reminders.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reminders.edit');
         Route::post('/{loan}/herinnering-versturen', [\App\Http\Controllers\LibraryLoanController::class, 'sendManualReminder'])
             ->whereNumber('loan')->name('reminders.send')
-            ->middleware(['throttle:10,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage']);
-        Route::post('/{loan}/inleveren', [\App\Http\Controllers\LibraryLoanController::class, 'returnLoan'])->whereNumber('loan')->name('return')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
-        Route::post('/{loan}/verlengen', [\App\Http\Controllers\LibraryLoanController::class, 'extend'])->whereNumber('loan')->name('extend')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+            ->middleware(['throttle:10,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.reminders.send']);
+        Route::post('/{loan}/inleveren', [\App\Http\Controllers\LibraryLoanController::class, 'returnLoan'])->whereNumber('loan')->name('return')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.return');
+        Route::post('/{loan}/verlengen', [\App\Http\Controllers\LibraryLoanController::class, 'extend'])->whereNumber('loan')->name('extend')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.extend');
     });
 
     Route::prefix('bibliotheek/boeken')->name('bibliotheek.books.')->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryBookController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+        Route::get('/nieuw', [\App\Http\Controllers\LibraryBookController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.create');
         Route::get('/qr-labels', [\App\Http\Controllers\LibraryBookController::class, 'qrLabels'])
-            ->name('qr-labels')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
+            ->name('qr-labels')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.qr.view');
         Route::post('/qr-labels/status', [\App\Http\Controllers\LibraryBookController::class, 'confirmQrPrinted'])
-            ->name('qr-status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+            ->name('qr-status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.qr.track');
         Route::post('/qr-labels/generated', [\App\Http\Controllers\LibraryBookController::class, 'recordQrGenerated'])
-            ->name('qr-generated')->middleware(['throttle:30,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage']);
+            ->name('qr-generated')->middleware(['throttle:30,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.qr.track']);
         Route::get('/opzoekdienst-test', [\App\Http\Controllers\LibraryBookController::class, 'lookupDiagnostics'])
             ->middleware('throttle:6,1')
-            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage')
+            ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.lookup.diagnostics')
             ->name('lookup-diagnostics');
-        Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/werkbeschrijving', [\App\Http\Controllers\LibraryBookController::class, 'workDetails'])->middleware('throttle:30,1')->name('work-details')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/importhistoriek', [\App\Http\Controllers\LibraryImportController::class, 'history'])->name('import.history')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/importeren', [\App\Http\Controllers\LibraryImportController::class, 'create'])->name('import.create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
+        Route::get('/isbn-opzoeken', [\App\Http\Controllers\LibraryBookController::class, 'lookup'])->middleware('throttle:30,1')->name('lookup')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.lookup.use');
+        Route::get('/zoeken-op-naam', [\App\Http\Controllers\LibraryBookController::class, 'searchExternal'])->middleware('throttle:20,1')->name('search-external')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.lookup.use');
+        Route::get('/edities', [\App\Http\Controllers\LibraryBookController::class, 'editions'])->middleware('throttle:30,1')->name('editions')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.lookup.use');
+        Route::get('/werkbeschrijving', [\App\Http\Controllers\LibraryBookController::class, 'workDetails'])->middleware('throttle:30,1')->name('work-details')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.lookup.use');
+        Route::get('/importhistoriek', [\App\Http\Controllers\LibraryImportController::class, 'history'])->name('import.history')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.history');
+        Route::get('/importeren', [\App\Http\Controllers\LibraryImportController::class, 'create'])->name('import.create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.manage');
         Route::post('/importeren', [\App\Http\Controllers\LibraryImportController::class, 'store'])->name('import.store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.manage');
-        Route::get('/importeren/{batch}', [\App\Http\Controllers\LibraryImportController::class, 'show'])->whereNumber('batch')->name('import.show')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::get('/importeren/{batch}/status', [\App\Http\Controllers\LibraryImportController::class, 'status'])->whereNumber('batch')->name('import.status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
+        Route::get('/importeren/{batch}', [\App\Http\Controllers\LibraryImportController::class, 'show'])->whereNumber('batch')->name('import.show')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.history');
+        Route::get('/importeren/{batch}/status', [\App\Http\Controllers\LibraryImportController::class, 'status'])->whereNumber('batch')->name('import.status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.history');
         Route::post('/importeren/{batch}/stop', [\App\Http\Controllers\LibraryImportController::class, 'stop'])
             ->whereNumber('batch')->name('import.stop')
-            ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.manage', 'throttle:10,1']);
-        Route::get('/{book}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'edit'])->whereNumber('book')->name('edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::put('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'update'])->whereNumber('book')->name('update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::delete('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'destroy'])->whereNumber('book')->name('destroy')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::post('/', [\App\Http\Controllers\LibraryBookController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+            ->middleware([\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.import.stop', 'throttle:10,1']);
+        Route::get('/{book}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'edit'])->whereNumber('book')->name('edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.edit');
+        Route::put('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'update'])->whereNumber('book')->name('update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.edit');
+        Route::delete('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'destroy'])->whereNumber('book')->name('destroy')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.delete');
+        Route::post('/', [\App\Http\Controllers\LibraryBookController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.create');
         Route::get('/{book}', [\App\Http\Controllers\LibraryBookController::class, 'show'])->whereNumber('book')->name('show')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.view');
-        Route::post('/{book}/exemplaren/{copy}/status',[\App\Http\Controllers\LibraryBookController::class,'copyStatus'])->whereNumber(['book','copy'])->name('copies.status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::get('/{book}/exemplaren/{copy}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'editCopy'])->whereNumber(['book', 'copy'])->name('copies.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::put('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'updateCopy'])->whereNumber(['book', 'copy'])->name('copies.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
-        Route::delete('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'destroyCopy'])->whereNumber(['book', 'copy'])->name('copies.destroy')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.books.manage');
+        Route::post('/{book}/exemplaren/{copy}/status',[\App\Http\Controllers\LibraryBookController::class,'copyStatus'])->whereNumber(['book','copy'])->name('copies.status')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.status');
+        Route::post('/{book}/exemplaren', [\App\Http\Controllers\LibraryBookController::class, 'addCopy'])->whereNumber('book')->name('copies.store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.create');
+        Route::get('/{book}/exemplaren/{copy}/bewerken', [\App\Http\Controllers\LibraryBookController::class, 'editCopy'])->whereNumber(['book', 'copy'])->name('copies.edit')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.edit');
+        Route::put('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'updateCopy'])->whereNumber(['book', 'copy'])->name('copies.update')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.edit');
+        Route::delete('/{book}/exemplaren/{copy}', [\App\Http\Controllers\LibraryBookController::class, 'destroyCopy'])->whereNumber(['book', 'copy'])->name('copies.destroy')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.copies.delete');
 
     });
 
@@ -125,16 +125,16 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
         ->name('beheer.birthdays.update');
     Route::post('/beheer/verjaardagsberichten/coaccounts', [\App\Http\Controllers\BirthdaySettingsController::class, 'updatePrivacy'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.privacy')
         ->name('beheer.birthdays.privacy.update');
     Route::post('/beheer/verjaardagsberichten/vandaag-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateAdult'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.adult')
         ->name('beheer.birthdays.adult.update');
     Route::post('/beheer/verjaardagsberichten/waarschuwing-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateWarning'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.warning')
         ->name('beheer.birthdays.warning.update');
     Route::post('/beheer/verjaardagsberichten/overzicht-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateOverviewRecipients'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.recipients')
         ->name('beheer.birthdays.overview.update');
     Route::prefix('beheer/schoolkalender')->name('beheer.school-calendar.')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->group(function () {
         Route::get('/', [\App\Http\Controllers\SchoolCalendarController::class, 'index'])->name('index');
@@ -173,7 +173,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.scheduled_tasks.view')
         ->name('beheer.scheduled-tasks.index');
     Route::get('/beheer/geplande-taken/{task}/log', [\App\Http\Controllers\ScheduledTasksController::class, 'log'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.scheduled_tasks.view')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.scheduled_tasks.logs')
         ->where('task', '[a-z0-9_]+')
         ->name('beheer.scheduled-tasks.log');
 
@@ -182,7 +182,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.index');
     Route::post('/beheer/leerlingen/bulk', [\App\Http\Controllers\StudentManagementController::class, 'bulkUpdate'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.status')
         ->name('beheer.students.bulk');
     Route::get('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'show'])
         ->whereNumber('student')
@@ -190,7 +190,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('beheer.students.show');
     Route::put('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'update'])
         ->whereNumber('student')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.edit')
         ->name('beheer.students.update');
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
@@ -215,7 +215,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('lvs.followups.index');
     Route::post('/lvs/opvolging/{event}/afhandelen', [\App\Http\Controllers\LvsFollowupsController::class, 'resolve'])
         ->whereNumber('event')
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.view')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.followups.resolve')
         ->name('lvs.followups.resolve');
     Route::get('/lvs/instellingen', [\App\Http\Controllers\LvsSettingsController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.settings.manage')
@@ -231,7 +231,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
         ->name('lvs.dashboard');
     Route::get('/lvs/klassenraad/export', [\App\Http\Controllers\LvsReportsController::class, 'export'])
-        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')
+        ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.export')
         ->name('lvs.reports.export');
     Route::get('/lvs/klassenraad', [\App\Http\Controllers\LvsReportsController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.view')

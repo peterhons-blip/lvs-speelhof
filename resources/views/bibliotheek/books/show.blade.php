@@ -20,19 +20,27 @@
     @if(session('success'))<div class="library-message" role="status">
         {{ session('success') }}
         @if(session('new_copy_id'))
-            <a class="library-button library-button-primary" style="margin-left:12px" href="{{ route('bibliotheek.books.qr-labels', ['copy' => session('new_copy_id')]) }}">QR-etiket voor nieuw exemplaar maken</a>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a class="library-button library-button-primary" style="margin-left:12px" href="{{ route('bibliotheek.books.qr-labels', ['copy' => session('new_copy_id')]) }}">QR-etiket voor nieuw exemplaar maken</a>
+@endif
         @endif
     </div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="library-form-actions">
-        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['book' => $book->id]) }}">Alle QR-codes van dit boek</a>
-        <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.edit', $book) }}">Boek bewerken</a>
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['book' => $book->id]) }}">Alle QR-codes van dit boek</a>
+@endif
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.edit'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.edit', $book) }}">Boek bewerken</a>
+@endif
         @if($book->copies->every(fn ($copy) => $copy->status === 'beschikbaar'))
-            <form method="post" action="{{ route('bibliotheek.books.destroy', $book) }}" onsubmit="return confirm('Dit boek en alle bijbehorende exemplaren definitief verwijderen? Dit kan niet ongedaan gemaakt worden.');">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.delete'))
+<form method="post" action="{{ route('bibliotheek.books.destroy', $book) }}" onsubmit="return confirm('Dit boek en alle bijbehorende exemplaren definitief verwijderen? Dit kan niet ongedaan gemaakt worden.');">
                 @csrf
                 @method('DELETE')
                 <button class="library-button library-button-secondary" type="submit">Boek verwijderen</button>
             </form>
+@endif
         @else
             <span class="library-help">Verwijderen niet mogelijk: een exemplaar is niet beschikbaar of uitgeleend.</span>
         @endif
@@ -65,25 +73,33 @@
                             <td>{{ $copy->notes ?: '—' }}</td><td>
                             <div class="library-copy-actions">
                                 @if($copy->status === 'beschikbaar')
-                                    <a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
+                                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
+<a class="library-button library-button-primary" href="{{ route('bibliotheek.loans.create', ['barcode' => $copy->barcode]) }}" aria-label="Exemplaar {{ $copy->barcode }} uitlenen">Uitlenen</a>
+@endif
                                 @endif
-                                <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['copy' => $copy->id]) }}">Etiket afdrukken</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['copy' => $copy->id]) }}">Etiket afdrukken</a>
+@endif
                                 <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" data-copy-id="{{ $copy->id }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
-                                <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.copies.edit'))
+<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
+@endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
                                     <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.index',['filter'=>'all','copy_id'=>$copy->id]) }}">Uitleenhistoriek</a>
                                 @endif
-                                @if($copy->status !== 'uitgeleend' && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.manage'))
+                                @if($copy->status !== 'uitgeleend' && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.copies.status'))
                                     <form method="post" action="{{ route('bibliotheek.books.copies.status',[$book,$copy]) }}">@csrf
                                     <select name="status">@foreach(['beschikbaar','beschadigd','verloren','afgevoerd'] as $status)<option @selected($copy->status===$status)>{{ $status }}</option>@endforeach</select>
                                     <input name="note" required maxlength="2000" placeholder="Reden statuswijziging"><button class="library-button library-button-secondary">Status wijzigen</button></form>
                                 @endif
                                 @if($copy->status === 'beschikbaar')
-                                    <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
+                                    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.copies.delete'))
+<form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="library-button library-button-secondary" aria-label="Exemplaar {{ $copy->barcode }} verwijderen">Verwijderen</button>
                                     </form>
+@endif
                                 @else
                                     <small class="library-help">Niet verwijderbaar zolang het exemplaar niet beschikbaar is.</small>
                                 @endif
@@ -96,7 +112,8 @@
     </section>
     <section class="library-form-card">
         <h2>Extra exemplaar registreren</h2>
-        <form method="post" action="{{ route('bibliotheek.books.copies.store', $book) }}" class="library-form-grid">
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.copies.create'))
+<form method="post" action="{{ route('bibliotheek.books.copies.store', $book) }}" class="library-form-grid">
             @csrf
             <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer *</label><input id="barcode" name="barcode" value="{{ old('barcode', $suggestedBarcode) }}" required maxlength="60"></div>
             <p class="library-help library-wide">De barcode is automatisch ingevuld. Je kunt die aanpassen als het exemplaar al een eigen nummer heeft.</p>
@@ -105,6 +122,7 @@
             <div class="library-field library-wide"><label for="notes">Opmerkingen</label><textarea id="notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea></div>
             <div class="library-wide"><button type="submit" class="library-button library-button-primary">Exemplaar toevoegen</button></div>
         </form>
+@endif
     </section>
 </main>
 @endsection
