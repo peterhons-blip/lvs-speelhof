@@ -58,6 +58,63 @@ class LibraryIsbnLookup
     }
 
     /**
+     * Google Books fallback when Open Library cannot find an ISBN.
+     * ISBN must be validated by the controller. This never submits student data.
+     * Google cover URLs are not persisted: the existing form accepts only Open Library covers.
+     */
+    public function findGoogleBooks(string $isbn): ?array
+    {
+        try {
+            $params = [
+                'q' => 'isbn:'.$isbn,
+                'maxResults' => 5,
+                'printType' => 'books',
+            ];
+            $apiKey = trim((string) config('services.google_books.api_key', ''));
+            if ($apiKey !== '') $params['key'] = $apiKey;
+            $response = Http::acceptJson()->timeout(8)->retry(1, 250)
+                ->get('https://www.googleapis.com/books/v1/volumes', $params);
+            if (! $response->successful()) {
+                \Illuminate\Support\Facades\Log::warning('Google Books ISBN lookup failed', [
+                    'http_status' => $response->status(),
+                ]);
+                return null;
+            }
+            $items = $response->json('items', []);
+            if (! is_array($items)) return null;
+            foreach ($items as $item) {
+                $info = $item['volumeInfo'] ?? null;
+                if (! is_array($info) || empty($info['title'])) continue;
+                $identifiers = (array) ($info['industryIdentifiers'] ?? []);
+                $matches = collect($identifiers)->contains(function ($value) use ($isbn) {
+                    if (! is_array($value)) return false;
+                    $identifier = mb_strtoupper(preg_replace('/[^0-9X]/i', '', (string) ($value['identifier'] ?? '')));
+                    return $identifier === $isbn;
+                });
+                if (! $matches) continue;
+                return [
+                    'isbn' => $isbn,
+                    'title' => mb_substr((string) $info['title'], 0, 255),
+                    'subtitle' => mb_substr((string) ($info['subtitle'] ?? ''), 0, 255),
+                    'authors' => mb_substr(implode(', ', array_slice((array) ($info['authors'] ?? []), 0, 8)), 0, 255),
+                    'publisher' => mb_substr((string) ($info['publisher'] ?? ''), 0, 255),
+                    'published_year' => mb_substr((string) ($info['publishedDate'] ?? ''), 0, 20),
+                    'cover_url' => null,
+                    'category' => mb_substr((string) (($info['categories'][0] ?? '') ?: ''), 0, 255),
+                    'description' => mb_substr(trim(strip_tags((string) ($info['description'] ?? ''))), 0, 5000),
+                    'source' => 'Google Books',
+                ];
+            }
+            return null;
+        } catch (\Throwable $error) {
+            \Illuminate\Support\Facades\Log::warning('Google Books ISBN lookup unavailable', [
+                'error' => $error->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Search at work level by title or author. A suggested ISBN may belong to
      * another edition: always ask the user to verify the number on their book.
      */
