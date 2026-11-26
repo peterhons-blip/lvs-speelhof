@@ -61,7 +61,24 @@
         <div class="library-field">
             <label for="overdue_escalate_after">Na X verzonden herinneringen: opvolging beleid</label>
             <input id="overdue_escalate_after" name="overdue_escalate_after" type="number" min="0" max="100" required value="{{ old('overdue_escalate_after', $settings['overdue_escalate_after'] ?? 0) }}">
-            <p class="library-help">Maakt een openstaande opvolging aan, geen automatische sanctie of bericht naar beleid. 0 = uit.</p>
+            <p class="library-help">Maakt een openstaande opvolging aan. 0 = uit. Een optioneel beleidssignaal stel je hieronder in.</p>
+        </div>
+        <div class="library-field">
+            <label for="policy_alert_enabled">Smartschool-bericht naar beleid bij escalatie</label>
+            <select id="policy_alert_enabled" name="policy_alert_enabled">
+                <option value="0" @selected(old('policy_alert_enabled', $settings['policy_alert_enabled'] ?? '0') == '0')>Uitgeschakeld</option>
+                <option value="1" @selected(old('policy_alert_enabled', $settings['policy_alert_enabled'] ?? '0') == '1')>Ingeschakeld</option>
+            </select>
+            <p class="library-help">Maximaal één bericht per uitlening. Ook bestaande openstaande opvolgingen kunnen een bericht krijgen na inschakelen.</p>
+        </div>
+        <div class="library-field">
+            <label for="policy_alert_recipient">Ontvanger beleid (actief personeelsaccount)</label>
+            <select id="policy_alert_recipient" name="policy_alert_recipient">
+                <option value="">Geen ontvanger</option>
+                @foreach($staffOptions as $staff)
+                    <option value="{{ $staff->smartschool_gebruikersnaam }}" @selected(old('policy_alert_recipient', $settings['policy_alert_recipient'] ?? '') === $staff->smartschool_gebruikersnaam)>{{ $staff->voornaam }} {{ $staff->name }} ({{ $staff->smartschool_gebruikersnaam }})</option>
+                @endforeach
+            </select>
         </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
