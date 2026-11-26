@@ -30,7 +30,7 @@ class PortalPreview
             }
             if ($request->routeIs('logout')) { $request->session()->forget('portal_preview'); return $next($request); }
             if (!in_array($request->method(),['GET','HEAD'],true)) return redirect()->route('external.dashboard');
-            if (!$request->routeIs('external.dashboard','home')) abort(403);
+            if (!$request->routeIs('external.dashboard','home','bibliotheek.*')) abort(403);
             $request->session()->put('ss_user',['id'=>$student->id,'voornaam'=>$role==='leerling'?$student->voornaam:'Co-account','naam'=>$role==='leerling'?$student->naam:'(testmodus)','gebruikersnaam'=>$student->gebruikersnaam,'principal_type'=>$role,'leerling_id'=>$student->id,'platform'=>$actor['platform']??null,'groupname'=>$role]);
             try {
                 $response=$next($request);
