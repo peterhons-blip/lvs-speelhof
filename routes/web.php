@@ -15,6 +15,7 @@ Route::get('/login', [SmartschoolController::class, 'redirect'])->name('login');
 Route::get('/auth/smartschool/callback', [SmartschoolController::class, 'callback'])->name('smartschool.callback');
 Route::get('/logout', [SmartschoolController::class, 'logout'])->name('logout');
 
+Route::get('/mijn-portaal', [\App\Http\Controllers\ExternalPortalController::class,'index'])->name('external.dashboard');
 // ===== Protected (na SSO) =====
 Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
