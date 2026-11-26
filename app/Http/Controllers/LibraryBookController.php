@@ -174,11 +174,15 @@ class LibraryBookController extends Controller
         $data = $request->validate([
             'q' => ['required', 'string', 'min:2', 'max:120'],
             'type' => ['nullable', Rule::in(['title', 'author'])],
+            'source' => ['nullable', Rule::in(['auto', 'openlibrary', 'google'])],
         ]);
 
-        $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
-        if ($books === []) {
-            $books = $lookup->searchGoogleByName(trim($data['q']), $data['type'] ?? 'title');
+        $source = $data['source'] ?? 'auto';
+        $type = $data['type'] ?? 'title';
+        $query = trim($data['q']);
+        $books = $source === 'google' ? [] : $lookup->searchByName($query, $type);
+        if ($source === 'google' || ($source === 'auto' && $books === [])) {
+            $books = $lookup->searchGoogleByName($query, $type);
         }
 
         return response()->json([
