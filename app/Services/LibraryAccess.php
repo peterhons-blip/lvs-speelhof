@@ -76,6 +76,19 @@ class LibraryAccess
         return null;
     }
 
+    public function staffId(Request $request): ?int
+    {
+        if ($this->role($request)===null) return null;
+        $ids=DB::table('users')->where('schoolid',1)->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->where(fn($q)=>$q->whereNull('smartschool_active')->orWhere('smartschool_active',1))->limit(2)->pluck('id');
+        return $ids->count()===1?(int)$ids->first():null;
+    }
+
+    public function personalLibraryCan(Request $request,string $permission): bool
+    {
+        $map=['library.catalog.view'=>'catalog.view','library.availability.view'=>'availability.view','library.view'=>'loans.view','library.history.view'=>'history.view','library.reserve'=>'reserve','library.renew.request'=>'renew.request'];
+        return isset($map[$permission]) && $this->has($request,'persoonlijke_bibliotheek.view') && $this->has($request,'persoonlijke_bibliotheek.'.$map[$permission]);
+    }
+
     public function has(Request $request, string $permission): bool
     {
         $principal=$request->session()->get('ss_user.principal_type');
