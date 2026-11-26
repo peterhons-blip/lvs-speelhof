@@ -1022,3 +1022,13 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 .portal-preview-list button strong{font-size:.88rem}
 .portal-preview-list button small{font-size:.76rem;color:#627489}
 .portal-topbar:has(.portal-preview-picker[open]){z-index:1000;overflow:visible}
+
+
+/* Shared registration summary for staff and pupil library operators. */
+.portal-today-summary .portal-today-summary-title{font-size:16px;font-weight:700;color:#12365b;margin:0 0 14px;line-height:1.4}
+.portal-today-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.portal-today-summary-stat{display:flex;flex-direction:column;gap:5px;background:#f1f7f8;border:1px solid #dcebed;border-radius:10px;padding:12px 16px;min-width:0}
+.portal-today-summary-stat strong{font-size:26px;line-height:1.15;color:#12365b;font-variant-numeric:tabular-nums}
+.portal-today-summary-stat span{font-size:13px;line-height:1.45;color:#526b83}
+.portal-today-summary .portal-today-summary-help{margin:16px 0 0;padding-top:14px;border-top:1px solid #e2e9ef;font-size:14px;line-height:1.6;color:#526b83}
+@media(max-width:600px){.portal-today-summary-grid{grid-template-columns:1fr}.portal-today-summary-stat{flex-direction:row;align-items:center;gap:12px}}
