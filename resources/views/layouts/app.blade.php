@@ -55,45 +55,47 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                     <a href="{{ route('home') }}" class="portal-nav-link {{ (request()->routeIs('home') || (request()->routeIs('external.dashboard') && request('section','dashboard')==='dashboard')) ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
                     </a>
-                    @if($isExternal)
-                        @include('external.partials.navigation')
-                    @elseif(app(\App\Services\LibraryAccess::class)->has(request(),'persoonlijke_bibliotheek.view'))
-                        @include('external.partials.staff-library-navigation')
-                    @endif
-                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
-                    @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
+                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
                     <div class="portal-nav-module">
-                        <a href="{{ route('lvs.dashboard') }}" class="portal-nav-link {{ $lvsActive ? 'is-current' : '' }}" @if($lvsActive) aria-expanded="true" @endif>
-                            <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
-                        </a>
-                        @if($lvsActive)
-                            <nav class="portal-nav-submenu" aria-label="LVS-subnavigatie">
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.taxonomy.manage'))
-                                <a href="{{ route('beheer.incident-release.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.incident-release.*') ? 'is-active' : '' }}">Categorieën en meldingssoorten</a>
+                        <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
+                        @if(request()->routeIs('beheer.*'))
+                        <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
+                                <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
+                                <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
                                 @endif
-                                <a href="{{ route('lvs.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('lvs.dashboard')) aria-current="page" @endif>Dashboard</a>
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
-                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingenoverzicht</a>
-                                <a href="{{ route('leerlingen.verjaardagen') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.verjaardagen') ? 'is-active' : '' }}">Verjaardagen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
+                                <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.view'))
-                                <a href="{{ route('meldingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.index') ? 'is-active' : '' }}">Alle meldingen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
+                                <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.create'))
-                                <a href="{{ route('meldingen.select-student') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.select-student') || request()->routeIs('meldingen.create') ? 'is-active' : '' }}">Nieuwe melding</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
+                                <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.reports.view'))
-                                <a href="{{ route('lvs.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.reports.*') ? 'is-active' : '' }}">Klassenraadoverzicht</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
+                                <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.followups.view'))
-                                <a href="{{ route('lvs.followups.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.followups.*') ? 'is-active' : '' }}">Opvolging</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
+                                <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.settings.manage'))
-                                <a href="{{ route('lvs.settings.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.settings.*') ? 'is-active' : '' }}">Instellingen</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
+                                <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
+                                <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.sent_items.view'))
+                                <a href="{{ route('beheer.sent-items.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.sent-items.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.sent-items.*')) aria-current="page" @endif>Verzonden items</a>
                                 @endif
                             </nav>
                         @endif
                     </div>
+                    @endif
+                    @if($isExternal)
+                        @include('external.partials.navigation')
+                    @elseif(app(\App\Services\LibraryAccess::class)->has(request(),'persoonlijke_bibliotheek.view'))
+                        @include('external.partials.staff-library-navigation')
                     @endif
                     @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
 @php($bibliotheekActive = request()->routeIs('bibliotheek.*'))
@@ -103,82 +105,81 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                         </a>
                         @if($bibliotheekActive || $isExternal)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
+                                <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
                                 <a href="{{ route('bibliotheek.requests.index') }}" class="portal-nav-subitem">Aanvragen</a>
                                 @endif
-                                <a href="{{ route('bibliotheek.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.index')) aria-current="page" @endif>Overzicht</a>
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
-<a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.escalations.view'))
-<a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
-<a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
-@endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.create'))
+                                <a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
+                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.create'))
-<a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.settings.manage'))
-                                <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.settings') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.settings')) aria-current="page" @endif>Uitleeninstellingen</a>
+                                <a href="{{ route('bibliotheek.loans.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.create')) aria-current="page" @endif>Boek uitlenen</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
+                                <a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.history'))
+                                <a href="{{ route('bibliotheek.books.import.history') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show')) aria-current="page" @endif>Importhistoriek</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.manage'))
+                                <a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.escalations.view'))
+                                <a href="{{ route('bibliotheek.loans.escalations.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.escalations.*') ? 'is-active' : '' }}">Opvolging niet-ingeleverde boeken</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+                                <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.qr-labels') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.qr-labels')) aria-current="page" @endif>QR-codes en etiketten</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
+                                <a href="{{ route('bibliotheek.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.reports.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.reports.*')) aria-current="page" @endif>Rapportages</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
                                 <a href="{{ route('bibliotheek.messages.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.messages.*') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.messages.*')) aria-current="page" @endif>Smartschool-berichten</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
-<a href="{{ route('bibliotheek.books.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show') || request()->routeIs('bibliotheek.books.edit') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.index') || request()->routeIs('bibliotheek.books.show')) aria-current="page" @endif>Boekencatalogus</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
-<a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.qr-labels') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.qr-labels')) aria-current="page" @endif>QR-codes en etiketten</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.manage'))
-<a href="{{ route('bibliotheek.books.import.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.create')) aria-current="page" @endif>ISBN-lijst importeren</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.import.history'))
-<a href="{{ route('bibliotheek.books.import.history') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.import.history') || request()->routeIs('bibliotheek.books.import.show')) aria-current="page" @endif>Importhistoriek</a>
-@endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.create'))
-<a href="{{ route('bibliotheek.books.create') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.books.create') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.books.create')) aria-current="page" @endif>Boek toevoegen</a>
-@endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.settings.manage'))
+                                <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.settings') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.settings')) aria-current="page" @endif>Uitleeninstellingen</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+                                <a href="{{ route('bibliotheek.loans.index') }}" class="portal-nav-subitem {{ request()->routeIs('bibliotheek.loans.index') ? 'is-active' : '' }}" @if(request()->routeIs('bibliotheek.loans.index')) aria-current="page" @endif>Uitleningen</a>
+                                @endif
                             </nav>
                         @endif
                     </div>
                     @endif
-                    @if(app(\App\Services\LibraryAccess::class)->isManager(request()))
+                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
+                    @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
                     <div class="portal-nav-module">
-                        <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
-                        @if(request()->routeIs('beheer.*'))
-                        <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                            
-                            <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
-                            <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
-                            <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.permissions.manage'))
-                            <a href="{{ route('beheer.permissions.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.permissions.*') ? 'is-active' : '' }}">Rollen en rechten</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.smartschool_test.send'))
-                            <a href="{{ route('beheer.smartschool-test.create') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-test.*') ? 'is-active' : '' }}">Smartschool-testbericht</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.student_sync.manage'))
-                            <a href="{{ route('beheer.smartschool-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.smartschool-sync.*') ? 'is-active' : '' }}">Leerlingensynchronisatie</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff_sync.manage'))
-                            <a href="{{ route('beheer.staff-sync.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.staff-sync.*') ? 'is-active' : '' }}">Personeelssynchronisatie</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.birthdays.manage'))
-                            <a href="{{ route('beheer.birthdays.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.birthdays.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.birthdays.*')) aria-current="page" @endif>Verjaardagsberichten</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.sent_items.view'))
-                            <a href="{{ route('beheer.sent-items.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.sent-items.*') ? 'is-active' : '' }}" @if(request()->routeIs('beheer.sent-items.*')) aria-current="page" @endif>Verzonden items</a>
-                            @endif
-                            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
-                            <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
-                            @endif
-                        </nav>
+                        <a href="{{ route('lvs.dashboard') }}" class="portal-nav-link {{ $lvsActive ? 'is-current' : '' }}" @if($lvsActive) aria-expanded="true" @endif>
+                            <span class="portal-nav-icon" aria-hidden="true">◎</span> LVS
+                        </a>
+                        @if($lvsActive)
+                            <nav class="portal-nav-submenu" aria-label="LVS-subnavigatie">
+                                <a href="{{ route('lvs.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('lvs.dashboard')) aria-current="page" @endif>Dashboard</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.view'))
+                                <a href="{{ route('meldingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.index') ? 'is-active' : '' }}">Alle meldingen</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.taxonomy.manage'))
+                                <a href="{{ route('beheer.incident-release.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.incident-release.*') ? 'is-active' : '' }}">Categorieën en meldingssoorten</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.settings.manage'))
+                                <a href="{{ route('lvs.settings.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.settings.*') ? 'is-active' : '' }}">Instellingen</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.reports.view'))
+                                <a href="{{ route('lvs.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.reports.*') ? 'is-active' : '' }}">Klassenraadoverzicht</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
+                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingenoverzicht</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.create'))
+                                <a href="{{ route('meldingen.select-student') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.select-student') || request()->routeIs('meldingen.create') ? 'is-active' : '' }}">Nieuwe melding</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.followups.view'))
+                                <a href="{{ route('lvs.followups.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.followups.*') ? 'is-active' : '' }}">Opvolging</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
+                                <a href="{{ route('leerlingen.verjaardagen') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.verjaardagen') ? 'is-active' : '' }}">Verjaardagen</a>
+                                @endif
+                            </nav>
                         @endif
                     </div>
                     @endif
