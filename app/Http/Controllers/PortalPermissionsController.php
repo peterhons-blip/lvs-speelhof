@@ -25,7 +25,7 @@ class PortalPermissionsController extends Controller
     {
         $access->requirePermission($request, 'beheer.permissions.manage');
         $modules = config('portal_permissions', []);
-        $roles = LibraryAccess::LABELS;
+        $roles = LibraryAccess::LABELS + LibraryAccess::EXTERNAL_ROLES;
         $stored = DB::table('portal_role_permissions')->get()->groupBy('role')
             ->map(fn ($rows) => $rows->pluck('permission')->all())->all();
         return view('beheer.permissions', compact('modules', 'roles', 'stored'));
@@ -35,7 +35,7 @@ class PortalPermissionsController extends Controller
     {
         $access->requireIctManager($request);
         $data = $request->validate([
-            'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES))],
+            'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES + LibraryAccess::EXTERNAL_ROLES))],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['string', 'max:100'],
         ]);
@@ -45,9 +45,13 @@ class PortalPermissionsController extends Controller
         $valid = collect(config('portal_permissions', []))
             ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))->all();
         $requested = array_values(array_unique($data['permissions'] ?? []));
+        $external=array_key_exists($role,LibraryAccess::EXTERNAL_ROLES);
+        $valid=array_values(array_filter($valid,fn($p)=>$external ? str_starts_with($p,$role.'.') : !str_starts_with($p,'leerling.') && !str_starts_with($p,'coaccount.')));
         abort_unless(count(array_diff($requested, $valid)) === 0, 422, 'Onbekend recht.');
 
-        DB::transaction(function () use ($role, $requested) {
+        DB::transaction(function () use ($role, $requested, $request, $access) {
+            $before=DB::table('portal_role_permissions')->where('role',$role)->pluck('permission')->all();
+            DB::table('portal_permission_audit')->insert(['actor'=>$access->username($request),'target'=>'rol:'.$role,'changes'=>json_encode(['before'=>$before,'after'=>$requested]),'created_at'=>now(),'updated_at'=>now()]);
             DB::table('portal_role_permissions')->where('role', $role)->delete();
             foreach ($requested as $permission) {
                 DB::table('portal_role_permissions')->insert([
@@ -56,7 +60,7 @@ class PortalPermissionsController extends Controller
                 ]);
             }
         });
-        return back()->with('success', 'Rechten voor '.LibraryAccess::LABELS[$role].' opgeslagen.');
+        return back()->with('success', 'Rechten voor '.(LibraryAccess::LABELS + LibraryAccess::EXTERNAL_ROLES)[$role].' opgeslagen.');
     }
 
     public function users(Request $request, LibraryAccess $access): View
