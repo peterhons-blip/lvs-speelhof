@@ -48,7 +48,7 @@ class ExternalLibraryWorkflowController extends Controller
             if ($data['type']==='reserve' && app(\App\Services\LibraryReservations::class)->active()->where($owner,$id)->where('target_id',$target)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['request'=>'Dit boek is al voor jou gereserveerd.']);
             DB::table('external_library_requests')->insert(['leerling_id'=>$staff?null:$id,'staff_user_id'=>$staff?$id:null,'request_type'=>$data['type'],'target_id'=>$target,'principal_type'=>$role,'payload'=>$payload,'status'=>'pending','created_at'=>now(),'updated_at'=>now()]);
         });
-        return redirect()->route($portalRoute,['section'=>'requests'])->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
+        return redirect()->route($portalRoute,['section'=>$data['type']==='reserve'?'reservations':'renewals'])->with('success','Aanvraag doorgestuurd naar de bibliotheek.');
     }
 
     public function index(Request $request,LibraryAccess $access)
