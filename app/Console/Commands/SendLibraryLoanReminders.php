@@ -33,6 +33,10 @@ class SendLibraryLoanReminders extends Command
         $repeatDays = max(1, (int) $notifier->setting('overdue_repeat_days', '7'));
         $escalationEnabled = $notifier->setting('escalation_enabled', '0') === '1';
         $escalateAfter = max(1, (int) $notifier->setting('escalation_after_reminders', '3'));
+        if ($escalationEnabled && !Schema::hasTable('library_escalations')) {
+            $this->warn('Escalaties staan aan, maar de migratie library_escalations ontbreekt. Herinneringen lopen door; escalaties worden overgeslagen.');
+            $escalationEnabled = false;
+        }
         $sent = 0;
         $planned = 0;
 
@@ -73,7 +77,9 @@ class SendLibraryLoanReminders extends Command
                     ->where('loan_id', $loan->id)
                     ->whereIn('type', ['before_due', 'due_today', 'overdue_repeat', 'manual'])
                     ->where('status', 'sent')->count();
-                if ($successful >= $escalateAfter) {
+                $alreadyEscalated = DB::table('library_escalations')
+                    ->where('loan_id', $loan->id)->exists();
+                if ($successful >= $escalateAfter && !$alreadyEscalated) {
                     if ($dryRun) {
                         $this->line("TEST: escalatie loan={$loan->id} na {$successful} herinneringen (geen bericht)");
                     } else {
