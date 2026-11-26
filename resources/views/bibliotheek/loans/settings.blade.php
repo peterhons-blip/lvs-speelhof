@@ -41,6 +41,56 @@
                 <option value="0" @selected(old('remind_on_due_date', $settings['remind_on_due_date'] ?? '1') == '0')>Neen</option>
             </select>
         </div>
+        <div class="library-wide library-reminder-heading">
+            <h2>Herinneringen na de inleverdatum</h2>
+            <p class="library-help">Bepaal wanneer een ontlener voor het eerst een extra herinnering ontvangt en hoe vaak die herhaald wordt. Deze functie staat standaard UIT en vereist ook dat Smartschool-berichten aanstaan.</p>
+        </div>
+        <div class="library-field">
+            <label for="overdue_reminders_enabled">Herinneringen na vervaldatum</label>
+            <select id="overdue_reminders_enabled" name="overdue_reminders_enabled">
+                <option value="0" @selected(old('overdue_reminders_enabled', $settings['overdue_reminders_enabled'] ?? '0') == '0')>Uitgeschakeld</option>
+                <option value="1" @selected(old('overdue_reminders_enabled', $settings['overdue_reminders_enabled'] ?? '0') == '1')>Ingeschakeld</option>
+            </select>
+        </div>
+        <div class="library-field">
+            <label for="overdue_first_days">Eerste extra herinnering na (dagen)</label>
+            <input type="number" id="overdue_first_days" name="overdue_first_days" min="1" max="90" required
+                value="{{ old('overdue_first_days', $settings['overdue_first_days'] ?? 3) }}">
+        </div>
+        <div class="library-field">
+            <label for="overdue_repeat_days">Daarna elke X dagen opnieuw</label>
+            <input type="number" id="overdue_repeat_days" name="overdue_repeat_days" min="1" max="90" required
+                value="{{ old('overdue_repeat_days', $settings['overdue_repeat_days'] ?? 7) }}">
+        </div>
+        <div class="library-wide library-reminder-heading">
+            <h2>Escalatie naar beleid</h2>
+            <p class="library-help">Verstuur maximaal één Smartschool-overzicht naar het geselecteerde beleidsaccount zodra voldoende herinneringen <strong>succesvol verzonden</strong> zijn en het boek nog niet is ingeleverd. Er wordt geen automatische sanctie opgelegd.</p>
+        </div>
+        <div class="library-field">
+            <label for="escalation_enabled">Automatische escalatie</label>
+            <select id="escalation_enabled" name="escalation_enabled">
+                <option value="0" @selected(old('escalation_enabled', $settings['escalation_enabled'] ?? '0') == '0')>Uitgeschakeld</option>
+                <option value="1" @selected(old('escalation_enabled', $settings['escalation_enabled'] ?? '0') == '1')>Ingeschakeld</option>
+            </select>
+        </div>
+        <div class="library-field">
+            <label for="escalation_after_reminders">Escaleren na hoeveel verzonden herinneringen?</label>
+            <input type="number" id="escalation_after_reminders" name="escalation_after_reminders" min="1" max="30" required
+                value="{{ old('escalation_after_reminders', $settings['escalation_after_reminders'] ?? 3) }}">
+        </div>
+        <div class="library-field library-wide">
+            <label for="escalation_recipient">Ontvanger beleid / leerlingbegeleiding (Smartschool)</label>
+            <select id="escalation_recipient" name="escalation_recipient">
+                <option value="">Selecteer een personeelslid</option>
+                @foreach($staffOptions as $person)
+                    @php($username = (string) $person->smartschool_gebruikersnaam)
+                    <option value="{{ $username }}" @selected(old('escalation_recipient', $settings['escalation_recipient'] ?? '') === $username)>
+                        {{ trim(($person->voornaam ?? '').' '.($person->name ?? '')) }} ({{ $username }})
+                    </option>
+                @endforeach
+            </select>
+            <p class="library-help">Alleen actieve personeelsaccounts. Afzender van de escalatie is <strong>bib</strong>. De ontvanger krijgt boek, ontlener, barcode en inleverdatum te zien.</p>
+        </div>
         <div class="library-wide"><button type="submit" class="library-button library-button-primary">Instellingen opslaan</button></div>
     </form>
     <p class="library-help">De tekst en verzending van Smartschool-berichten beheer je via de aparte tegel Smartschool-berichten. Automatische herinneringen lopen via de Laravel scheduler.</p>
