@@ -6,13 +6,13 @@
 <th>Acties</th></tr></thead><tbody>
 @forelse($books as $book)
 <tr>
-<td><a class="personal-catalog-title" href="{{ route($portalRoute,['section'=>'book','book'=>$book->id,'q'=>request('q'),'page'=>request('page')]) }}">{{ $book->title }}</a><small class="personal-catalog-isbn">{{ $book->isbn }}</small></td>
+<td><a class="personal-catalog-title" href="{{ route($portalRoute,array_merge(request()->only(['q','category','authors','publisher','published_year','availability','sort','page']),['section'=>'book','book'=>$book->id])) }}">{{ $book->title }}</a><small class="personal-catalog-isbn">{{ $book->isbn }}</small></td>
 <td>{{ $book->authors ?: '—' }}</td>
 @if($can('library.availability.view'))
 <td><span class="personal-catalog-stock {{ $book->available>0?'is-available':'is-unavailable' }}">{{ $book->available>0?$book->available.' beschikbaar':'Niet beschikbaar' }}</span></td>
 @endif
 <td><div class="personal-catalog-actions">
-<a class="library-button library-button-secondary personal-catalog-detail" href="{{ route($portalRoute,['section'=>'book','book'=>$book->id,'q'=>request('q'),'page'=>request('page')]) }}">Details <span aria-hidden="true">→</span></a>
+<a class="library-button library-button-secondary personal-catalog-detail" href="{{ route($portalRoute,array_merge(request()->only(['q','category','authors','publisher','published_year','availability','sort','page']),['section'=>'book','book'=>$book->id])) }}">Details <span aria-hidden="true">→</span></a>
 @if($can('library.reserve'))
 <form method="post" action="{{ route($submitRoute) }}">
 @csrf
