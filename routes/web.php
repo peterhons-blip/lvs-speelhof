@@ -16,9 +16,15 @@ Route::get('/auth/smartschool/callback', [SmartschoolController::class, 'callbac
 Route::get('/logout', [SmartschoolController::class, 'logout'])->name('logout');
 
 Route::get('/mijn-portaal', [\App\Http\Controllers\ExternalPortalController::class,'index'])->name('external.dashboard');
+Route::post('/mijn-portaal/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'submit'])->name('external.requests.submit')->middleware('throttle:20,1');
 // ===== Protected (na SSO) =====
 Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
+    Route::post('/beheer/preview-external/{role}/{student}', [\App\Http\Controllers\PortalPreviewController::class,'startExternal'])->whereNumber('student')->name('portal-preview.external');
+    Route::get('/bibliotheek/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'index'])->name('bibliotheek.requests.index');
+    Route::post('/bibliotheek/aanvragen/{id}', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'decide'])->whereNumber('id')->name('bibliotheek.requests.decide');
+    Route::get('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'index'])->name('beheer.incident-release.index');
+    Route::post('/beheer/meldingsvrijgave', [\App\Http\Controllers\IncidentReleaseController::class,'save'])->name('beheer.incident-release.save');
     Route::post('/beheer/preview-stop', [\App\Http\Controllers\PortalPreviewController::class,'stop'])->name('portal-preview.stop');
     // Bibliotheek: voorlopig alleen de afgeschermde startpagina.
     Route::middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.view')->group(function () {
