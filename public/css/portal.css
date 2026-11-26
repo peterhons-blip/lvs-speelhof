@@ -966,3 +966,15 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
  .library-name-search-row{flex-wrap:wrap}
  .library-name-search-row .library-name-search-input{flex:1 1 220px}
 }
+
+/* Verjaardagsbeheer: toelichtingen mogen niet tegen tabellen of invoervelden kleven. */
+.library-page:has(.library-birthday-warning) .library-form-card > p.library-help {
+    margin: 12px 0 18px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+.library-page:has(.library-birthday-warning) .library-form-card > h2 + p.library-help { margin-top: 0; }
+.library-page:has(.library-birthday-warning) .library-table-wrap + p.library-help { margin-top: 20px; }
+.library-page:has(.library-birthday-warning) .library-table-wrap + h3 { margin-top: 24px; }
+.library-page:has(.library-birthday-warning) .library-field > p.library-help { margin: 8px 0 4px; line-height: 1.6; }
+.library-page:has(.library-birthday-warning) .library-form-card > p.library-help:last-child { margin-bottom: 0; }
