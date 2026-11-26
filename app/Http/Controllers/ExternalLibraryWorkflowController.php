@@ -55,8 +55,35 @@ class ExternalLibraryWorkflowController extends Controller
     {
         $access->requirePermission($request,'bibliotheek.view');
         $access->requirePermission($request,'bibliotheek.requests.manage');
-        $requests=DB::table('external_library_requests as r')->leftJoin('leerlingen as l','l.id','=','r.leerling_id')->leftJoin('users as u','u.id','=','r.staff_user_id')->where(fn($q)=>$q->where('l.schoolid',1)->orWhere('u.schoolid',1))->whereIn('r.request_type',['reserve','renew'])->select('r.*')->selectSub(DB::table('library_books')->whereColumn('library_books.id','r.target_id')->select('title'),'requested_book')->selectSub(DB::table('library_loans as rqloan')->join('library_copies as rqcopy','rqcopy.id','=','rqloan.copy_id')->join('library_books as rqbook','rqbook.id','=','rqcopy.book_id')->whereColumn('rqloan.id','r.target_id')->select('rqbook.title'),'renew_book')->selectRaw('COALESCE(u.voornaam,l.voornaam) as voornaam, COALESCE(u.name,l.naam) as naam')->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByDesc('r.id')->paginate(30);
-        return view('bibliotheek.external-requests',compact('requests'));
+        $base=DB::table('external_library_requests as r')->leftJoin('leerlingen as l','l.id','=','r.leerling_id')->leftJoin('users as u','u.id','=','r.staff_user_id')->where(fn($q)=>$q->where('l.schoolid',1)->orWhere('u.schoolid',1))->whereIn('r.request_type',['reserve','renew'])->select('r.*')->selectSub(DB::table('library_books')->whereColumn('library_books.id','r.target_id')->select('title'),'requested_book')->selectSub(DB::table('library_loans as rqloan')->join('library_copies as rqcopy','rqcopy.id','=','rqloan.copy_id')->join('library_books as rqbook','rqbook.id','=','rqcopy.book_id')->whereColumn('rqloan.id','r.target_id')->select('rqbook.title'),'renew_book')->selectRaw('COALESCE(u.voornaam,l.voornaam) as voornaam, COALESCE(u.name,l.naam) as naam');
+        $today=now('Europe/Brussels')->toDateString();
+        $active=fn($q)=>$q->where('r.status','approved')->where('r.request_type','reserve')->where('r.reserved_until','>=',$today);
+        $counts=['pending'=>(clone $base)->where('r.status','pending')->count(),'pickup'=>$active(clone $base)->count(),'all'=>(clone $base)->count()];
+        $status=(string)$request->query('status','pending');
+        if (!in_array($status,['pending','pickup','history','all'],true)) $status='pending';
+        $query=clone $base;
+        if ($status==='pending') $query->where('r.status','pending');
+        if ($status==='pickup') $active($query);
+        if ($status==='history') $query->where('r.status','<>','pending')->where(fn($q)=>$q->where('r.status','<>','approved')->orWhere('r.request_type','<>','reserve')->orWhereNull('r.reserved_until')->orWhere('r.reserved_until','<',$today));
+        $type=(string)$request->query('type','');
+        if (in_array($type,['reserve','renew'],true)) $query->where('r.request_type',$type);
+        $principal=(string)$request->query('principal','');
+        if (in_array($principal,['staff','leerling','coaccount'],true)) $query->where('r.principal_type',$principal);
+        $search=mb_substr(trim((string)$request->query('q','')),0,100);
+        if ($search!=='') {
+            $term='%'.$search.'%';
+            $query->where(function($q)use($term){
+                $q->whereRaw("CONCAT_WS(' ',COALESCE(u.voornaam,l.voornaam),COALESCE(u.name,l.naam)) LIKE ?",[$term])
+                  ->orWhereRaw("CONCAT_WS(' ',COALESCE(u.name,l.naam),COALESCE(u.voornaam,l.voornaam)) LIKE ?",[$term])
+                  ->orWhereExists(DB::table('library_books')->selectRaw('1')->whereColumn('library_books.id','r.target_id')->where('r.request_type','reserve')->where('title','like',$term))
+                  ->orWhereExists(DB::table('library_loans as sl')->join('library_copies as sc','sc.id','=','sl.copy_id')->join('library_books as sb','sb.id','=','sc.book_id')->selectRaw('1')->whereColumn('sl.id','r.target_id')->where('r.request_type','renew')->where('sb.title','like',$term));
+            });
+        }
+        $query->selectSub(DB::table('library_copies')->whereColumn('library_copies.id','r.reserved_copy_id')->select('barcode'),'reserved_barcode');
+        $query->selectSub(app(\App\Services\LibraryReservations::class)->available(DB::table('library_copies')->whereColumn('book_id','r.target_id')->where('status','beschikbaar'))->selectRaw('count(*)'),'available');
+        $query->selectSub(DB::table('external_library_requests as older')->whereColumn('older.target_id','r.target_id')->whereColumn('older.id','<','r.id')->where('older.request_type','reserve')->where('older.status','pending')->selectRaw('count(*)'),'ahead');
+        $requests=$query->orderByRaw("CASE WHEN r.status='pending' THEN 0 ELSE 1 END")->orderByRaw("CASE WHEN r.status='pending' THEN r.id END ASC")->orderByDesc('r.id')->paginate(30)->withQueryString();
+        return view('bibliotheek.external-requests',compact('requests','counts','status','type','principal','search','today'));
     }
 
     public function cancel(Request $request,LibraryAccess $access,int $id)
@@ -91,6 +118,7 @@ class ExternalLibraryWorkflowController extends Controller
                 $holds=app(\App\Services\LibraryReservations::class);
                 if ($row->request_type==='reserve') {
                     $copies=DB::table('library_copies')->where('book_id',$row->target_id)->where('status','beschikbaar')->orderBy('id')->lockForUpdate()->get();
+                    if(DB::table('external_library_requests')->where('request_type','reserve')->where('target_id',$row->target_id)->where('status','pending')->where('id','<',$row->id)->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['reserve'=>'Behandel eerst de oudere reserveringsaanvraag voor dit boek.']);
                     $copy=$copies->first(fn($c)=>!(clone $holds->active())->where('reserved_copy_id',$c->id)->lockForUpdate()->first() && !DB::table('library_loans')->where('copy_id',$c->id)->whereNull('returned_at')->exists());
                     if (!$copy) throw \Illuminate\Validation\ValidationException::withMessages(['reserve'=>'Geen vrij exemplaar beschikbaar. De aanvraag blijft open.']);
                     $values['reserved_copy_id']=$copy->id;
