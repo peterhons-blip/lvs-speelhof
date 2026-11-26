@@ -62,8 +62,11 @@
 @if($can('library.history.view'))
 <a class="external-card" href="{{ route($portalRoute,['section'=>'history']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7M3 12V5m0 7h7m2-5v5l3 2"/></svg></span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
 @endif
-@if($can('library.reserve') || $can('library.renew.request'))
-<a class="external-card" href="{{ route($portalRoute,['section'=>'requests']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6M9 18h4"/></svg></span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Mijn aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
+@if($can('library.reserve'))
+<a class="external-card" href="{{ route($portalRoute,['section'=>'reservations']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span><strong class="external-number">{{ $requests->where('request_type','reserve')->where('status','pending')->count() }}</strong><h2>Mijn reserveringen</h2><p>Volg je aanvragen en af te halen boeken op.</p></a>
+@endif
+@if($can('library.renew.request'))
+<a class="external-card" href="{{ route($portalRoute,['section'=>'renewals']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg></span><strong class="external-number">{{ $requests->where('request_type','renew')->where('status','pending')->count() }}</strong><h2>Mijn verlengingsaanvragen</h2><p>Volg aanvragen voor een langere uitleentermijn op.</p></a>
 @endif
 @if($section==='dashboard' && $can('lvs.view') && $can('incidents.view'))
 <a class="external-card" href="{{ route($portalRoute,['section'=>'incidents']) }}"><span class="external-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
@@ -209,12 +212,11 @@
     @endif
 </section>
 @endif
-@if($section==='requests')
-<section class="library-form-card"><h2>Mijn aanvragen</h2>
-<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Boek</th><th>Type</th><th>Datum</th><th>Status</th><th>Toelichting</th></tr></thead><tbody>
+@if(in_array($section,['reservations','renewals'],true))
+<section class="library-form-card"><h2>{{ $titles[$section] }}</h2>
+<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Boek</th><th>Datum</th><th>Status</th><th>Toelichting</th></tr></thead><tbody>
 @forelse($requests as $item)
 <tr><td><strong>{{ ($item->request_type==='reserve'?$item->requested_book:$item->renew_book) ?? 'Boek niet beschikbaar' }}</strong></td>
-<td>{{ $item->request_type==='reserve'?'Reservering':'Verlenging' }}</td>
 <td>{{ \Illuminate\Support\Carbon::parse($item->created_at)->format('d/m/Y') }}</td>
 <td><span class="library-pill">{{ $item->status==='approved' && $item->reserved_until && $item->reserved_until < now('Europe/Brussels')->toDateString() ? 'Verlopen' : (['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd','fulfilled'=>'Opgehaald','cancelled'=>'Geannuleerd'][$item->status] ?? '') }}</span>
 @if($item->reserved_until && $item->status==='approved')
@@ -222,7 +224,7 @@
 @endif
 </td><td>{{ $item->decision_note ?? '—' }}</td></tr>
 @empty
-<tr><td colspan="5">Je hebt nog geen aanvragen.</td></tr>
+<tr><td colspan="4">{{ $section==='reservations'?'Je hebt nog geen reserveringen.':'Je hebt nog geen verlengingsaanvragen.' }}</td></tr>
 @endforelse
 </tbody></table></div></section>
 @endif
