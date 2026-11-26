@@ -41,8 +41,10 @@ class LibraryBookController extends Controller
         if ($copyId !== null && (! ctype_digit((string) $copyId) || (int) $copyId < 1)) abort(404);
         $qrStatus = (string) $request->query('qr_status', 'all');
         if (! in_array($qrStatus, ['all', 'unprinted', 'printed', 'not_generated', 'generated_unprinted'], true)) $qrStatus = 'all';
+        $todayOnly = $request->boolean('today');
+        $sort = $request->query('sort') === 'registration' ? 'registration' : 'title';
         $mode = (string) $request->query('select', 'all');
-        if (! in_array($mode, ['all', 'latest5', 'selected'], true)) $mode = 'all';
+        if (! in_array($mode, ['all', 'latest5', 'next21', 'selected'], true)) $mode = 'all';
         if ($bookId !== null && (! ctype_digit((string) $bookId) || (int) $bookId < 1)) abort(404);
 
         $query = DB::table('library_copies as copies')
@@ -61,6 +63,7 @@ class LibraryBookController extends Controller
             });
         }
 
+        if ($todayOnly) $query->whereDate('copies.created_at', now()->toDateString());
         if ($qrStatus === 'unprinted') $query->whereNull('copies.qr_printed_at');
         if ($qrStatus === 'printed') $query->whereNotNull('copies.qr_printed_at');
         if ($qrStatus === 'not_generated') $query->whereNull('copies.qr_generated_at');
@@ -70,15 +73,17 @@ class LibraryBookController extends Controller
 
         if ($mode === 'latest5') {
             $query->orderByDesc('copies.created_at')->orderByDesc('copies.id');
+        } elseif ($mode === 'next21' || $sort === 'registration') {
+            $query->orderBy('copies.id');
         } else {
             $query->orderBy('books.title')->orderBy('copies.barcode');
         }
 
         $total = (clone $query)->count();
-        $copies = $query->limit($mode === 'latest5' ? 5 : 500)
+        $copies = $query->limit($mode === 'latest5' ? 5 : ($mode === 'next21' ? 21 : 500))
             ->get(['copies.id', 'copies.barcode', 'books.title', 'copies.created_at', 'copies.qr_printed_at', 'copies.qr_generated_at']);
 
-        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'copyId', 'mode', 'qrStatus'));
+        return view('bibliotheek.books.qr-labels', compact('copies', 'total', 'search', 'bookId', 'copyId', 'mode', 'qrStatus', 'todayOnly', 'sort'));
     }
 
     public function recordQrGenerated(Request $request): JsonResponse
@@ -118,9 +123,16 @@ class LibraryBookController extends Controller
             ? 'gemarkeerd als voorzien van QR-etiket.' : 'waarvan de volledige QR-status is gewist.'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('bibliotheek.books.create', ['suggestedBarcode' => LibraryCopy::generateBarcode()]);
+        $today = now()->toDateString();
+        return view('bibliotheek.books.create', [
+            'suggestedBarcode' => LibraryCopy::generateBarcode(),
+            'quick' => $request->boolean('quick'),
+            'todayCopies' => LibraryCopy::whereDate('created_at', $today)->count(),
+            'todayBooks' => LibraryBook::whereDate('created_at', $today)->count(),
+            'todayUnprinted' => LibraryCopy::whereDate('created_at', $today)->whereNull('qr_printed_at')->count(),
+        ]);
     }
 
     /**
@@ -291,6 +303,12 @@ class LibraryBookController extends Controller
 
             return [$book, $copy, $newBook];
         });
+
+        if ($request->boolean('next_book')) {
+            return redirect()->route('bibliotheek.books.create', ['quick' => 1])
+                ->with('success', ($newBook ? 'Nieuw boek geregistreerd: ' : 'Extra exemplaar geregistreerd: ').$book->title)
+                ->with('last_barcode', $copy->barcode);
+        }
 
         return redirect()->route('bibliotheek.books.show', $book)
             ->with('success', $newBook ? 'Boek en eerste exemplaar geregistreerd.' : 'Extra exemplaar toegevoegd aan het bestaande boek.')
