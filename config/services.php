@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    // Optional server-side key; book lookup also works when public access is allowed.
+    'google_books' => [
+        'key' => env('GOOGLE_BOOKS_API_KEY', ''),
+    ],
+
     'smartschool' => [
         'client_id' => env('SMARTSCHOOL_CLIENT_ID'),
         'client_secret' => env('SMARTSCHOOL_CLIENT_SECRET'),
