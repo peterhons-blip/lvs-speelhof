@@ -87,6 +87,8 @@
         const params = new URLSearchParams(window.location.search);
         const term = search.value.trim();
         if (term) params.set('zoek', term); else params.delete('zoek');
+        const classFilter=root.querySelector('#student-class');
+        if(classFilter){if(classFilter.value) params.set('klas',classFilter.value);else params.delete('klas');}
         params.delete('page');
         const qs = params.toString();
         return window.location.pathname + (qs ? '?' + qs : '');
@@ -101,6 +103,7 @@
         timer = setTimeout(() => load(searchUrl()), 250);
     });
     root.addEventListener('change', e => {
+        if(e.target.matches('#student-class')) {clearTimeout(timer);load(searchUrl());}
         if (e.target.matches('[data-bulk-id]')) updateSelection();
         if (e.target.matches('[data-select-all]')) {
             results.querySelectorAll('[data-bulk-id]').forEach(box => { box.checked = e.target.checked; });
