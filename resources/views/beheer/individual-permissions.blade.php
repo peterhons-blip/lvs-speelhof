@@ -6,7 +6,7 @@
 @if(session('success'))<div class="library-message">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="library-errors">{{ $errors->first() }}</div>@endif
 <section class="library-form-card"><form method="get" class="library-loan-filters"><input name="q" value="{{ $q }}" placeholder="Naam of gebruikersnaam"><button class="library-button library-button-secondary">Zoeken</button></form>
-<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Medewerker</th><th>Schoolrol</th><th></th></tr></thead><tbody>@foreach($users as $user)<tr><td>{{ $user->voornaam }} {{ $user->name }}</td><td>{{ $user->groupname }}</td><td><a href="{{ route('beheer.permissions.individual',['user_id'=>$user->id,'q'=>$q]) }}#individuele-instellingen">Rechten bekijken</a></td></tr>@endforeach</tbody></table></div>{{ $users->links() }}</section>
+<div class="library-table-wrap"><table class="library-table"><thead><tr><th>Medewerker</th><th>Schoolrol</th><th></th></tr></thead><tbody>@foreach($users as $user)<tr><td>{{ $user->voornaam }} {{ $user->name }}</td><td>{{ $user->groupname }}</td><td style="text-align:right;white-space:nowrap"><a class="library-button library-button-secondary" href="{{ route('beheer.permissions.individual',['user_id'=>$user->id,'q'=>$q]) }}#individuele-instellingen">Rechten bekijken <span aria-hidden="true">→</span></a></td></tr>@endforeach</tbody></table></div>{{ $users->links() }}</section>
 @if($selected)
 <section id="individuele-instellingen" class="library-form-card" style="scroll-margin-top:100px"><h2>{{ $selected->voornaam }} {{ $selected->name }}</h2>
 @if($role==='ict_coordinator')<p>ICT heeft vaste volledige toegang.</p>
