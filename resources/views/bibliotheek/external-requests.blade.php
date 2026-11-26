@@ -17,7 +17,11 @@
 <label>Toelichting <input name="note" maxlength="500"></label>
 <button class="library-button library-button-primary" name="status" value="approved">Goedkeuren</button>
 <button class="library-button library-button-secondary" name="status" value="rejected">Weigeren</button></form>
-@else <p>{{ $item->decision_note }}</p>@endif
+@else <p>{{ $item->decision_note }}</p>
+@if($item->request_type==='reserve' && $item->status==='approved' && $item->reserved_until >= now('Europe/Brussels')->toDateString())
+<form method="post" action="{{ route('bibliotheek.requests.cancel',$item->id) }}">@csrf<button class="library-button library-button-secondary">Reservering annuleren</button></form>
+@endif
+@endif
 </section>
 @endforeach
 @include('partials.portal-pagination',['paginator'=>$requests])
