@@ -57,6 +57,7 @@
             <div class="library-report-stat"><span>{{ $title }}</span><strong>{{ $value }}</strong></div>
         @endforeach
     </div>
+    <section class="library-form-card"><h2>Uitleningen per huidige klas</h2><p class="library-help">Gebaseerd op de huidige klas in LVS, niet de klas op de uitleendatum.</p>@forelse($classes as $row)<p>{{ $row->klasnaam ?: 'Onbekende klas' }} · {{ $row->total }} uitleningen</p>@empty<p>Geen gegevens.</p>@endforelse</section>
     <section class="library-form-card"><h2>Voorraad per status</h2>@foreach($stockStatus as $row)<p>{{ ucfirst($row->status) }}: <strong>{{ $row->total }}</strong></p>@endforeach
     @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))<a class="library-button library-button-secondary" href="{{ route('bibliotheek.reports.stock') }}">Voorraad exporteren (CSV voor Excel)</a>@endif</section>
     <section class="library-form-card"><h2>Meest uitgeleende auteurs</h2>@forelse($authors as $row)<p>{{ $row->authors }} · {{ $row->total }} uitleningen</p>@empty<p>Geen gegevens.</p>@endforelse</section>
