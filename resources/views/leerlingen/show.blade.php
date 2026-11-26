@@ -42,18 +42,43 @@
     </section>
 
     @if($canManageVisit && $leerling->geboortedatum && $leerling->geboortedatum->age >= 18)
-    <section class="card lvs-panel lvs-section-gap">
-        <div class="lvs-panel-heading"><div><p class="portal-eyebrow">ADMINISTRATIEVE OPVOLGING</p><h2>Secretariaatsbezoek – 18 jaar</h2></div></div>
-        @if($adultVisit)
-            <p>{{ $adultVisit->completed_at ? 'Langsgekomen op '.$adultVisit->completed_at.' · '.$adultVisit->completed_by : 'Nog niet langsgekomen' }}</p>
-            <form method="post" action="{{ route('secretariat-visits.update',$adultVisit->id) }}">@csrf
-                <input type="hidden" name="completed" value="{{ $adultVisit->completed_at ? '0' : '1' }}"><button type="submit" class="lvs-link-button {{ $adultVisit->completed_at ? '' : 'lvs-link-button-primary' }}">{{ $adultVisit->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button>
-            </form>
-        @else
-            <p>Nog geen opvolging geregistreerd. Start alleen als deze leerling nog moet langskomen.</p>
-            <form method="post" action="{{ route('secretariat-visits.register',$leerling->id) }}">@csrf<button type="submit" class="lvs-link-button lvs-link-button-primary">+ Opvolging starten</button></form>
-        @endif
-        <div style="margin-top:12px"><a class="lvs-link-button" href="{{ route('secretariat-visits.index') }}">Alle secretariaatsbezoeken bekijken →</a></div>
+    <section class="card lvs-panel lvs-section-gap lvs-secretariat-card">
+        <div class="lvs-panel-heading">
+            <div>
+                <p class="portal-eyebrow">ADMINISTRATIEVE OPVOLGING</p>
+                <h2>Secretariaatsbezoek – 18 jaar</h2>
+            </div>
+            <span class="lvs-visit-status {{ $adultVisit && $adultVisit->completed_at ? 'is-done' : ($adultVisit ? 'is-open' : 'is-new') }}">
+                {{ $adultVisit && $adultVisit->completed_at ? 'Afgehandeld' : ($adultVisit ? 'Openstaand' : 'Niet gestart') }}
+            </span>
+        </div>
+        <div class="lvs-visit-content">
+            <div>
+                <strong>Ondertekening administratieve documenten</strong>
+                @if($adultVisit && $adultVisit->completed_at)
+                    <p>Langsgekomen op {{ \Carbon\Carbon::parse($adultVisit->completed_at)->format('d/m/Y H:i') }} · {{ $adultVisit->completed_by }}</p>
+                @elseif($adultVisit)
+                    <p>De leerling moet nog langskomen bij het secretariaat.</p>
+                @else
+                    <p>Start de opvolging alleen als de leerling nog moet langskomen.</p>
+                @endif
+            </div>
+            <div class="lvs-visit-actions">
+                @if($adultVisit)
+                    <form method="post" action="{{ route('secretariat-visits.update',$adultVisit->id) }}">
+                        @csrf
+                        <input type="hidden" name="completed" value="{{ $adultVisit->completed_at ? '0' : '1' }}">
+                        <button type="submit" class="lvs-visit-button {{ $adultVisit->completed_at ? 'is-secondary' : '' }}">{{ $adultVisit->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button>
+                    </form>
+                @else
+                    <form method="post" action="{{ route('secretariat-visits.register',$leerling->id) }}">
+                        @csrf
+                        <button type="submit" class="lvs-visit-button">+ Opvolging starten</button>
+                    </form>
+                @endif
+                <a class="lvs-visit-overview" href="{{ route('secretariat-visits.index') }}">Alle bezoeken bekijken <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
     </section>
     @endif
     @if($canSeeMeldingen)
