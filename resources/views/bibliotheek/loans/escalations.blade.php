@@ -33,7 +33,7 @@
                         <td><strong>{{ $item->title }}</strong><small style="display:block">{{ $item->barcode }}</small></td>
                         <td>{{ trim(($item->voornaam ?? $item->staff_voornaam ?? '').' '.($item->naam ?? $item->staff_naam ?? '')) }}</td>
                         <td>{{ $item->due_date }} @if($item->returned_at)<small style="display:block">Ingeleverd</small>@endif</td>
-                        <td>{{ $item->reminder_count }}</td>
+                        <td>{{ $item->reminder_count }}<small style="display:block">Beleidssignaal: {{ ['sent' => 'Verzonden', 'failed' => 'Mislukt', 'processing' => 'Onzeker / bezig'][$item->policy_alert_status ?? ''] ?? 'Niet verzonden' }}</small></td>
                         <td>
                             @if($item->status === 'open')
                             <form method="post" action="{{ route('bibliotheek.loans.escalations.resolve', $item->id) }}" class="library-form">
