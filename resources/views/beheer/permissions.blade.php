@@ -22,11 +22,6 @@
     @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-    <div class="portal-roles-intro">
-        <span aria-hidden="true" class="portal-roles-intro-icon">✓</span>
-        <p>Open een schoolrol en vink de gewenste rechten aan, inclusief <strong>Bibliotheekrapportages en CSV</strong>, <strong>QR-labelbeheer</strong>, <strong>Smartschool-berichtsjablonen</strong> en <strong>Verjaardagsberichten beheren</strong>. Nieuwe rechten worden niet automatisch aan bestaande rollen toegekend. <strong>Niet aangevinkt = geen toegang.</strong></p>
-    </div>
-
     <section class="library-form-card" style="margin-bottom:22px">
         <h2>Individuele uitzonderingen</h2>
         <p>De schoolrol is de basis. Een individuele toestemming of weigering heeft voorrang. ICT behoudt volledige toegang.</p>
