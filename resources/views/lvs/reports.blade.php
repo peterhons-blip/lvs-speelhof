@@ -13,7 +13,9 @@
         <div><p class="portal-eyebrow">LVS / OPVOLGING</p><h1>Klassenraadoverzicht</h1><p>Een voorbereidende telling van meldingen per klas en categorie. Geen automatische sancties of meldingen naar ouders.</p></div>
         <div class="lvs-dashboard-header-actions">
             @if($canSeeNotifications)<a href="{{ route('meldingen.index') }}" class="library-button library-button-secondary">Alle meldingen</a>@endif
-            <a href="{{ route('lvs.reports.export', ['start' => $start, 'end' => $end, 'klas' => $data['klas'] ?? '']) }}" class="library-button library-button-primary">CSV exporteren</a>
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.reports.export'))
+<a href="{{ route('lvs.reports.export', ['start' => $start, 'end' => $end, 'klas' => $data['klas'] ?? '']) }}" class="library-button library-button-primary">CSV exporteren</a>
+@endif
         </div>
     </div>
     <section class="library-form-card">
