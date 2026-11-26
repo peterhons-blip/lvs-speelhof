@@ -99,7 +99,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                         <a href="{{ route('bibliotheek.index') }}" class="portal-nav-link {{ $bibliotheekActive ? 'is-current' : '' }}" @if($bibliotheekActive) aria-expanded="true" @endif>
                             <span class="portal-nav-icon" aria-hidden="true">▤</span> {{ $isExternal ? 'Bibliotheekbeheer' : 'Bibliotheek' }}
                         </a>
-                        @if($bibliotheekActive)
+                        @if($bibliotheekActive || $isExternal)
                             <nav class="portal-nav-submenu" aria-label="Bibliotheek-subnavigatie">
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.requests.manage'))
                                 <a href="{{ route('bibliotheek.requests.index') }}" class="portal-nav-subitem">Aanvragen</a>
