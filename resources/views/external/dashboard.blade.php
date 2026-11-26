@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title',$titles[$section])
 @section('breadcrumbs')
-@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('external.dashboard')],['label'=>$titles[$section]]]])
+@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('home')],['label'=>$titles[$section]]]])
 @endsection
 @section('content')
 <style>
@@ -14,7 +14,7 @@
 .external-number{font-size:30px;color:#12365b}
 </style>
 <main class="library-page">
-<div class="library-page-head"><div><p class="portal-eyebrow">MIJN PORTAAL</p><h1>{{ $titles[$section] }}</h1>
+<div class="library-page-head"><div><p class="portal-eyebrow">{{ $role==='staff'?'MIJN BIBLIOTHEEK':'MIJN PORTAAL' }}</p><h1>{{ $titles[$section] }}</h1>
 @if($role==='coaccount')
 <p>Portaal van {{ $student->voornaam }} {{ $student->naam }}</p>
 @endif
@@ -23,22 +23,22 @@
 @if(in_array($section,['dashboard','library']))
 <div class="external-card-grid">
 @if($section==='dashboard' && $can('profile.view'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'profile']) }}"><span class="external-card-icon">◎</span><h2>{{ $role==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</h2><p>{{ $profile ?? 'Bekijk je profiel' }}</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'profile']) }}"><span class="external-card-icon">◎</span><h2>{{ $role==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</h2><p>{{ $profile ?? 'Bekijk je profiel' }}</p></a>
 @endif
 @if($can('library.view'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'loans']) }}"><span class="external-card-icon">▤</span><strong class="external-number">{{ $loans->count() }}</strong><h2>Openstaande uitleningen</h2><p>{{ $loans->filter(fn($loan)=>$loan->due_date < now('Europe/Brussels')->toDateString())->count() }} te laat</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'loans']) }}"><span class="external-card-icon">▤</span><strong class="external-number">{{ $loans->count() }}</strong><h2>Openstaande uitleningen</h2><p>{{ $loans->filter(fn($loan)=>$loan->due_date < now('Europe/Brussels')->toDateString())->count() }} te laat</p></a>
 @endif
 @if($can('library.catalog.view'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'catalog']) }}"><span class="external-card-icon">▥</span><h2>Boekencatalogus</h2><p>Zoek boeken op titel, auteur of ISBN.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'catalog']) }}"><span class="external-card-icon">▥</span><h2>Boekencatalogus</h2><p>Zoek boeken op titel, auteur of ISBN.</p></a>
 @endif
 @if($can('library.history.view'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'history']) }}"><span class="external-card-icon">↶</span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'history']) }}"><span class="external-card-icon">↶</span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
 @endif
 @if($can('library.reserve') || $can('library.renew.request'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'requests']) }}"><span class="external-card-icon">☷</span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Openstaande aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'requests']) }}"><span class="external-card-icon">☷</span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Openstaande aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
 @endif
 @if($section==='dashboard' && $can('lvs.view') && $can('incidents.view'))
-<a class="external-card" href="{{ route('external.dashboard',['section'=>'incidents']) }}"><span class="external-card-icon">◎</span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
+<a class="external-card" href="{{ route($portalRoute,['section'=>'incidents']) }}"><span class="external-card-icon">◎</span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
 @endif
 @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
 <a class="external-card" href="{{ route('bibliotheek.index') }}"><span class="external-card-icon">▦</span><h2>Bibliotheekbeheer</h2><p>Open de werkruimte voor bibliotheekmedewerkers.</p></a>
@@ -70,7 +70,7 @@
 @forelse($loans as $loan)<tr><td>{{ $loan->title }}</td><td>{{ \Illuminate\Support\Carbon::parse($loan->due_date)->format('d/m/Y') }} @if($loan->due_date < now('Europe/Brussels')->toDateString())<strong> · Te laat</strong>
 @endif
 </td>
-@if($can('library.renew.request'))<td><form method="post" action="{{ route('external.requests.submit') }}">
+@if($can('library.renew.request'))<td><form method="post" action="{{ route($submitRoute) }}">
 @csrf
 <input type="hidden" name="type" value="renew"><input type="hidden" name="target_id" value="{{ $loan->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Verlenging testen' : 'Verlenging aanvragen' }}</button></form></td>
 @endif
@@ -90,7 +90,7 @@
 @include('partials.portal-pagination',['paginator'=>$history])</section>
 @endif
 @if($section==='catalog' && $books!==null)
-<section class="library-form-card"><h2>Bibliotheekcatalogus</h2><form method="get" action="{{ route('external.dashboard') }}" class="library-search" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><input type="hidden" name="section" value="catalog"><input style="flex:1" type="search" name="q" value="{{ request('q') }}" placeholder="Titel, auteur of ISBN" maxlength="100"><button class="library-button library-button-primary" type="submit">Zoeken</button></form>
+<section class="library-form-card"><h2>Bibliotheekcatalogus</h2><form method="get" action="{{ route($portalRoute) }}" class="library-search" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><input type="hidden" name="section" value="catalog"><input style="flex:1" type="search" name="q" value="{{ request('q') }}" placeholder="Titel, auteur of ISBN" maxlength="100"><button class="library-button library-button-primary" type="submit">Zoeken</button></form>
 <div class="library-table-wrap"><table class="library-table"><thead><tr><th>Titel</th><th>Auteur</th>
 @if($can('library.reserve'))<th>Actie</th>
 @endif
@@ -98,7 +98,7 @@
 @endif
 </tr></thead><tbody>
 @forelse($books as $book)<tr><td>{{ $book->title }}</td><td>{{ $book->authors }}</td>
-@if($can('library.reserve'))<td><form method="post" action="{{ route('external.requests.submit') }}">
+@if($can('library.reserve'))<td><form method="post" action="{{ route($submitRoute) }}">
 @csrf
 <input type="hidden" name="type" value="reserve"><input type="hidden" name="target_id" value="{{ $book->id }}"><button class="library-button library-button-secondary" >{{ session('portal_preview') ? 'Reserveren (test)' : 'Reserveren' }}</button></form></td>
 @endif
