@@ -85,7 +85,7 @@
             </div>
 
             <div class="library-form-grid">
-                <div class="library-field library-wide"><label for="title">Titel <span aria-hidden="true">*</span></label><input id="title" name="title" value="{{ old('title') }}" required maxlength="255"></div>
+                <div class="library-field library-wide"><label for="title">Titel <span aria-hidden="true">*</span></label><input id="title" name="title" value="{{ old('title') }}" maxlength="255"></div>
                 <div class="library-field"><label for="subtitle">Ondertitel</label><input id="subtitle" name="subtitle" value="{{ old('subtitle') }}" maxlength="255"></div>
                 <div class="library-field"><label for="authors">Auteur(s)</label><input id="authors" name="authors" value="{{ old('authors') }}" maxlength="255"></div>
                 <div class="library-field"><label for="publisher">Uitgever</label><input id="publisher" name="publisher" value="{{ old('publisher') }}" maxlength="255"></div>
@@ -109,7 +109,7 @@
                 <div class="library-field library-wide"><label for="notes">Opmerkingen over dit exemplaar</label><textarea id="notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea></div>
             </div>
         </section>
-        <div class="library-form-actions"><button type="submit" class="library-button library-button-primary">Boek registreren</button><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
+        <div class="library-form-actions"><button type="submit" class="library-button library-button-primary">Boek / exemplaar registreren</button><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
     </form>
 </main>
 @endsection
@@ -432,8 +432,9 @@
             if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; if (response.status !== 422) { updateOtherSources(isbn); otherSources.hidden = false; } return; }
             const book = result.book;
             applyBook(book);
-            message.textContent = 'Gegevens gevonden via ' + (book.source || 'Open Library')
-                + '. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
+            message.textContent = result.existing_book
+                ? 'Dit ISBN bestaat al in de bibliotheek. Bij registreren wordt een extra exemplaar toegevoegd; de bestaande boekgegevens blijven behouden.'
+                : 'Gegevens gevonden via ' + (book.source || 'Open Library') + '. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
             updateOtherSources(isbn);
