@@ -136,7 +136,10 @@ class LibraryBookController extends Controller
         ] as $provider => [$url, $params]) {
             try {
                 if ($provider === 'Google Books' && config('services.google_books.api_key')) $params['key'] = config('services.google_books.api_key');
-                $response = \Illuminate\Support\Facades\Http::acceptJson()->timeout(6)->get($url, $params);
+                $client = $provider === 'Open Library'
+                    ? LibraryIsbnLookup::openLibraryHttp(15)
+                    : \Illuminate\Support\Facades\Http::acceptJson()->timeout(10);
+                $response = $client->get($url, $params);
                 $results[$provider] = [
                     'reachable' => $response->successful(),
                     'status' => $response->status(),
