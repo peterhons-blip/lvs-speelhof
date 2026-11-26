@@ -17,8 +17,12 @@ class DashboardController extends Controller
 
         $lvs = ['leerlingen' => null, 'meldingen' => null, 'meldingen_maand' => null, 'jarig_vandaag' => null];
 
-        $canSeeLvs = app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view');
-        if ($canSeeLvs && Schema::hasTable('leerlingen')) {
+        $access = app(\App\Services\LibraryAccess::class);
+        $canSeeLvs = $access->has(request(), 'lvs.dashboard.view');
+        $canSeeLibrary = $access->has(request(), 'bibliotheek.view');
+        $canSeeBooks = $canSeeLibrary && $access->has(request(), 'bibliotheek.books.view');
+        $canSeeLoans = $canSeeLibrary && $access->has(request(), 'bibliotheek.loans.view');
+        if ($canSeeLvs && $access->has(request(),'lvs.view') && Schema::hasTable('leerlingen')) {
             $lvs['leerlingen'] = DB::table('leerlingen')->where('active', 1)->count();
             $lvs['jarig_vandaag'] = DB::table('leerlingen')
                 ->where('active', 1)->whereNotNull('geboortedatum')
@@ -26,7 +30,7 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        if ($canSeeLvs && Schema::hasTable('meldingen')) {
+        if ($canSeeLvs && $access->has(request(),'lvs.meldingen.view') && Schema::hasTable('meldingen')) {
             $lvs['meldingen'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count();
             $lvs['meldingen_maand'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))
                 ->whereBetween('gebeurdop', [
@@ -41,11 +45,11 @@ class DashboardController extends Controller
             'imports_wachten' => null, 'uitleningen' => null, 'te_laat' => null,
         ];
 
-        if (Schema::hasTable('library_books')) {
+        if ($canSeeBooks && Schema::hasTable('library_books')) {
             $bibliotheek['boeken'] = DB::table('library_books')->count();
         }
 
-        if (Schema::hasTable('library_copies')) {
+        if ($canSeeBooks && Schema::hasTable('library_copies')) {
             $counts = DB::table('library_copies')
                 ->selectRaw("COUNT(*) AS totaal")
                 ->selectRaw("SUM(CASE WHEN status = 'beschikbaar' THEN 1 ELSE 0 END) AS beschikbaar")
@@ -59,14 +63,14 @@ class DashboardController extends Controller
             $bibliotheek['beschadigd'] = (int) $counts->beschadigd;
         }
 
-        if (Schema::hasTable('library_import_items')) {
+        if ($canSeeLibrary && $access->has(request(),'bibliotheek.import.history') && Schema::hasTable('library_import_items')) {
             $bibliotheek['imports_wachten'] = DB::table('library_import_items')
                 ->where('status', 'wachten')->count();
         }
 
         // Uitleenstatistieken uit de nieuwe exemplaargebonden uitleentabel.
         // Geen Schema::hasColumn() op de oudere MariaDB-productieserver.
-        if (Schema::hasTable('library_loans')) {
+        if ($canSeeLoans && Schema::hasTable('library_loans')) {
             $bibliotheek['uitleningen'] = DB::table('library_loans')->whereNull('returned_at')->count();
             $bibliotheek['te_laat'] = DB::table('library_loans')
                 ->whereNull('returned_at')->where('due_date', '<', now('Europe/Brussels')->toDateString())
