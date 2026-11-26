@@ -91,7 +91,7 @@ class StudentManagementController extends Controller
         abort_unless($access->role($request)==='ict_coordinator',403);
         abort_unless(DB::table('leerlingen')->where('schoolid',1)->where('id',$student)->exists(),404);
         $data=$request->validate(['rights'=>'required|array','rights.*'=>'required|in:inherit,allow,deny']);
-        $valid=array_keys(config('portal_permissions.leerling.permissions',[]));
+        $valid=array_merge(array_keys(config('portal_permissions.leerling.permissions',[])),array_keys(config('portal_permissions.bibliotheek.permissions',[])));
         abort_if(array_diff(array_keys($data['rights']),$valid),422);
         DB::transaction(function()use($data,$student,$access,$request){
             $before=DB::table('portal_student_permissions')->where('leerling_id',$student)->pluck('allowed','permission')->all();
