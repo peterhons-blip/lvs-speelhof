@@ -28,11 +28,20 @@ class SendLibraryLoanReminders extends Command
         $today = now('Europe/Brussels')->toDateString();
         $defaultDays = max(0, (int) $notifier->setting('reminder_days_before', '3'));
         $defaultDue = $notifier->setting('remind_on_due_date', '1') === '1';
+        $overdueEnabled = $notifier->setting('overdue_reminders_enabled', '0') === '1';
+        $firstOverdueDays = max(1, (int) $notifier->setting('overdue_first_days', '3'));
+        $repeatDays = max(1, (int) $notifier->setting('overdue_repeat_days', '7'));
+        $escalationEnabled = $notifier->setting('escalation_enabled', '0') === '1';
+        $escalateAfter = max(1, (int) $notifier->setting('escalation_after_reminders', '3'));
+        if ($escalationEnabled && !Schema::hasTable('library_escalations')) {
+            $this->warn('Escalaties staan aan, maar de migratie library_escalations ontbreekt. Herinneringen lopen door; escalaties worden overgeslagen.');
+            $escalationEnabled = false;
+        }
         $sent = 0;
         $planned = 0;
 
         $loans = DB::table('library_loans')->whereNull('returned_at')
-            ->where('due_date', '>=', $today)->orderBy('id')->cursor();
+            ->orderBy('id')->cursor();
 
         foreach ($loans as $loan) {
             $days = $loan->reminder_days_before !== null ? (int) $loan->reminder_days_before : $defaultDays;
@@ -43,6 +52,11 @@ class SendLibraryLoanReminders extends Command
             $types = [];
             if ($days > 0 && (int) $daysLeft === $days) $types[] = 'before_due';
             if ($onDue && (int) $daysLeft === 0) $types[] = 'due_today';
+            $daysLate = - (int) $daysLeft;
+            if ($overdueEnabled && $daysLate >= $firstOverdueDays &&
+                ($daysLate - $firstOverdueDays) % $repeatDays === 0) {
+                $types[] = 'overdue_repeat';
+            }
 
             foreach ($types as $type) {
                 $exists = DB::table('library_loan_notifications')
@@ -54,6 +68,23 @@ class SendLibraryLoanReminders extends Command
                     $this->line("TEST: loan={$loan->id} type={$type} vervalt={$loan->due_date}");
                 } elseif ($notifier->send((int) $loan->id, $type, $today)) {
                     $sent++;
+                }
+            }
+            // Escalation is based on confirmed sent reminders, not mere attempts.
+            if ($escalationEnabled && $daysLate > 0 &&
+                \Illuminate\Support\Facades\Schema::hasTable('library_escalations')) {
+                $successful = DB::table('library_loan_notifications')
+                    ->where('loan_id', $loan->id)
+                    ->whereIn('type', ['before_due', 'due_today', 'overdue_repeat', 'manual'])
+                    ->where('status', 'sent')->count();
+                $alreadyEscalated = DB::table('library_escalations')
+                    ->where('loan_id', $loan->id)->exists();
+                if ($successful >= $escalateAfter && !$alreadyEscalated) {
+                    if ($dryRun) {
+                        $this->line("TEST: escalatie loan={$loan->id} na {$successful} herinneringen (geen bericht)");
+                    } else {
+                        app(\App\Services\LibraryEscalationNotifier::class)->notify((int) $loan->id);
+                    }
                 }
             }
         }

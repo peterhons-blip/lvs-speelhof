@@ -34,7 +34,7 @@ class ScheduledTasksController extends Controller
             'staff_sync' => ['title' => 'Personeelssynchronisatie', 'type' => 'Personeel', 'time' => '04.00',
                 'description' => 'Haalt leerkrachten en administratieve medewerkers uit de Smartschool-groepen op. Maakt ontbrekende accounts aan, werkt bestaande gegevens en standaardrollen bij en markeert verdwenen medewerkers als inactief.'],
             'library_reminders' => ['title' => 'Bibliotheekherinneringen', 'type' => 'Bibliotheek / leerlingen', 'time' => '08.00',
-                'description' => 'Controleert welke bibliotheekboeken binnenkort moeten worden ingeleverd of al vervallen zijn. Verstuurt alleen Smartschoolherinneringen wanneer die functie in de bibliotheekinstellingen is ingeschakeld.'],
+                'description' => 'Controleert dagelijks openstaande bibliotheekuitleningen: herinneringen vooraf, op de inleverdatum, herhalingen na X dagen en indien ingeschakeld eenmalige escalatie naar beleid. Smartschoolverzendingen en drempels zijn instelbaar onder Bibliotheek > Instellingen.'],
         ];
 
         $taskMonitoringEnabled = Schema::hasTable('scheduled_task_runs');

@@ -36,7 +36,11 @@
                 </div>
                 <button type="button" class="library-button library-button-secondary" id="library-lookup">Gegevens ophalen</button>
             </div>
-            <p class="library-help" id="library-lookup-result" role="status" aria-live="polite">Zonder ISBN kun je alle gegevens handmatig invullen.</p>
+            <p class="library-help" id="library-lookup-result" role="status" aria-live="polite">We zoeken eerst in Open Library en daarna in Google Books. Zonder resultaat kun je het boek handmatig toevoegen.</p>
+            <div class="library-lookup-diagnostics">
+                <button type="button" class="library-button library-button-secondary" id="library-test-providers">Controleer opzoekdiensten</button>
+                <p class="library-help" id="library-provider-feedback" role="status" aria-live="polite">Geeft aan of de live server verbinding kan maken met de opzoekdiensten. Er worden geen leerlinggegevens verzonden.</p>
+            </div>
             <div class="library-name-lookup">
                 <h3>Geen ISBN bij de hand? Zoek op naam</h3>
                 <div class="library-name-search-row">
@@ -45,6 +49,14 @@
                         <select id="library-search-type">
                             <option value="title">Boektitel</option>
                             <option value="author">Auteur</option>
+                        </select>
+                    </div>
+                    <div class="library-field">
+                        <label for="library-search-source">Bron</label>
+                        <select id="library-search-source">
+                            <option value="auto">Automatisch</option>
+                            <option value="openlibrary">Open Library</option>
+                            <option value="google">Google Books</option>
                         </select>
                     </div>
                     <div class="library-field library-name-search-input">
@@ -62,6 +74,7 @@
                     <div class="library-edition-navigation"><button type="button" class="library-button library-button-secondary" id="library-edition-prev">Vorige edities</button><span id="library-edition-page"></span><button type="button" class="library-button library-button-secondary" id="library-edition-next">Volgende edities</button></div>
                 </section>
                 <p class="library-help">Selecteer de juiste editie op basis van taal, omslag, uitgever en ISBN. Controleer altijd met het fysieke boek.</p>
+                <p class="library-help">Bronnen: Open Library en, wanneer nodig, Google Books. Meta4books kan later worden aangesloten zodra de school API-toegang heeft.</p>
             </div>
 
             <div class="library-form-grid">
@@ -100,6 +113,27 @@
     const button = document.getElementById('library-lookup');
     if (!button) return;
     const isbnInput = document.getElementById('isbn');
+    const testProvidersButton = document.getElementById('library-test-providers');
+    const testProvidersFeedback = document.getElementById('library-provider-feedback');
+    testProvidersButton?.addEventListener('click', async () => {
+        testProvidersButton.disabled = true;
+        testProvidersFeedback.textContent = 'Verbinding vanaf de server controleren…';
+        try {
+            const response = await fetch(@json(route('bibliotheek.books.lookup-diagnostics')), {
+                headers: {Accept: 'application/json'},
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Diagnose mislukt');
+            testProvidersFeedback.textContent = Object.entries(result.providers || {})
+                .map(([name, status]) => name + ': ' + (status.reachable
+                    ? 'OK (' + status.status + ')' : status.message + (status.status ? ' (' + status.status + ')' : '')))
+                .join(' · ');
+        } catch {
+            testProvidersFeedback.textContent = 'De controle kon niet worden uitgevoerd. Controleer de serverlogs.';
+        } finally {
+            testProvidersButton.disabled = false;
+        }
+    });
     const message = document.getElementById('library-lookup-result');
     const coverPreview = document.getElementById('library-cover-preview');
     const coverImage = document.getElementById('library-cover-image');
@@ -114,6 +148,7 @@
     const nameButton = document.getElementById('library-search-name');
     const nameQuery = document.getElementById('library-name-query');
     const nameType = document.getElementById('library-search-type');
+    const nameSource = document.getElementById('library-search-source');
     const nameFeedback = document.getElementById('library-name-feedback');
     const nameResults = document.getElementById('library-name-results');
     const editionPanel = document.getElementById('library-edition-panel');
@@ -159,6 +194,7 @@
             const url = new URL(@json(route('bibliotheek.books.search-external')), window.location.origin);
             url.searchParams.set('q', q);
             url.searchParams.set('type', nameType.value);
+            url.searchParams.set('source', nameSource.value);
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
             const data = await response.json();
             if (!response.ok) {
@@ -170,7 +206,8 @@
                 nameFeedback.textContent = 'Geen boeken gevonden. Je kunt de gegevens handmatig invullen.';
                 return;
             }
-            nameFeedback.textContent = books.length + ' resultaten gevonden. Kies het boek dat overeenkomt met jouw exemplaar.';
+            nameFeedback.textContent = books.length + ' resultaten gevonden via ' + (data.source || 'de externe bron')
+                + '. Kies het boek dat overeenkomt met jouw exemplaar.';
             nameResults.hidden = false;
             books.forEach(book => {
                 const option = document.createElement('button');
@@ -379,7 +416,8 @@
             if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; return; }
             const book = result.book;
             applyBook(book);
-            message.textContent = 'Gegevens gevonden. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
+            message.textContent = 'Gegevens gevonden via ' + (book.source || 'Open Library')
+                + '. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
         } finally {
