@@ -192,6 +192,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->whereNumber('student')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.show');
+    Route::post('/beheer/leerlingen/{student}/portaalrechten', [\App\Http\Controllers\StudentManagementController::class,'savePortalRights'])->whereNumber('student')->name('beheer.students.portal-rights');
     Route::put('/beheer/leerlingen/{student}', [\App\Http\Controllers\StudentManagementController::class, 'update'])
         ->whereNumber('student')
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.edit')
