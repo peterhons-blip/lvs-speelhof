@@ -33,6 +33,7 @@ class LibraryAccess
     ];
 
     public const MANAGEMENT_PERMISSIONS = [
+        'lvs.secretariat_visits.manage',
         'beheer.permissions.manage',
         'beheer.staff.manage', 'beheer.students.manage',
         'beheer.smartschool_test.send', 'beheer.student_sync.manage',
