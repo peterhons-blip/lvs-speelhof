@@ -19,6 +19,8 @@ Route::get('/mijn-portaal', [\App\Http\Controllers\ExternalPortalController::cla
 Route::post('/mijn-portaal/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'submit'])->name('external.requests.submit')->middleware('throttle:20,1');
 // ===== Protected (na SSO) =====
 Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
+    Route::get('/mijn-bibliotheek', [\App\Http\Controllers\ExternalPortalController::class,'staff'])->name('personal-library.index');
+    Route::post('/mijn-bibliotheek/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'submitStaff'])->middleware('throttle:20,1')->name('personal-library.submit');
     Route::post('/beheer/preview/{staff}', [\App\Http\Controllers\PortalPreviewController::class,'start'])->whereNumber('staff')->name('portal-preview.start');
     Route::post('/beheer/preview-external/{role}/{student}', [\App\Http\Controllers\PortalPreviewController::class,'startExternal'])->whereNumber('student')->name('portal-preview.external');
     Route::get('/bibliotheek/aanvragen', [\App\Http\Controllers\ExternalLibraryWorkflowController::class,'index'])->name('bibliotheek.requests.index');
