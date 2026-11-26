@@ -95,6 +95,13 @@ class LibraryLoanController extends Controller
             'loanDays', 'maxLoans', 'borrowerType', 'staffMember'));
     }
 
+    public function duePreview(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data=$request->validate(['days'=>'required|integer|min:1|max:365']);
+        $date=app(\App\Services\LibraryCalendar::class)->due(CarbonImmutable::today('Europe/Brussels'),(int)$data['days']);
+        return response()->json(['date'=>$date->toDateString()]);
+    }
+
     public function lookupStudent(Request $request): \Illuminate\Http\JsonResponse
     {
         $this->authorizeOperator($request);
