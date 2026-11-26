@@ -27,15 +27,12 @@
         <p>Open een schoolrol en vink de gewenste rechten aan, inclusief <strong>Bibliotheekrapportages en CSV</strong>, <strong>QR-labelbeheer</strong>, <strong>Smartschool-berichtsjablonen</strong> en <strong>Verjaardagsberichten beheren</strong>. Nieuwe rechten worden niet automatisch aan bestaande rollen toegekend. <strong>Niet aangevinkt = geen toegang.</strong></p>
     </div>
 
-    <section class="library-form-card lvs-future-access-notice" style="margin-bottom:22px">
-        <h2>LVS-toegang: voorbereiding ouders en leerlingen</h2>
-        <p><strong>Nog niet actief.</strong> Het systeem is voorbereid op een gecontroleerde koppeling van een ouder-/voogdaccount of leerlingaccount aan uitsluitend de juiste leerling.
-            De toegang staat standaard uit. Er zijn geen aanmeldroutes, zichtbare leerlingdossiers of automatisch toegekende rechten voor deze accounttypes.</p>
-        <div class="lvs-future-roles">
-            <div><strong>Leerling</strong><small>Toekomstig: alleen het eigen dossier, na verificatie en expliciete goedkeuring.</small></div>
-            <div><strong>Ouder / voogd</strong><small>Toekomstig: alleen gekoppelde leerlingen, rekening houdend met leeftijd, toestemming en wettelijke toegangsrechten.</small></div>
-        </div>
-        <p class="library-help">Bij activatie moeten we eerst de Smartschool-identiteitscontrole, koppeling van co-accounts, toestemming vanaf 18 jaar en zichtbaarheid van gevoelige meldingen uitwerken. Deze rollen kunnen daarom nog niet worden aangevinkt.</p>
+    <section class="library-form-card" style="margin-bottom:22px">
+        <h2>Individuele uitzonderingen</h2>
+        <p>De schoolrol is de basis. Een individuele toestemming of weigering heeft voorrang. ICT behoudt volledige toegang.</p>
+        <a class="library-button library-button-secondary" href="{{ route('beheer.permissions.individual') }}">Individuele rechten beheren</a>
+        <h3>Leerlingen en co-accounts</h3>
+        <p>De afzonderlijke rollen hieronder zijn voorbereid. Instellingen worden bewaard maar geven nog geen aanmeldtoegang. Alleen rechten voor het eigen of gekoppelde dossier zijn beschikbaar.</p>
     </section>
 
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
@@ -59,7 +56,8 @@
             @continue($role === 'ict_coordinator')
             @php
                 $assigned = $stored[$role] ?? [];
-                $available = collect($modules)->flatMap(fn ($module) =>
+                $roleModules = array_key_exists($role, \App\Services\LibraryAccess::EXTERNAL_ROLES) ? array_intersect_key($modules,[$role=>true]) : array_diff_key($modules,\App\Services\LibraryAccess::EXTERNAL_ROLES);
+                $available = collect($roleModules)->flatMap(fn ($module) =>
                     array_keys($module['permissions'] ?? [])
                 )->values()->all();
                 $enabledCount = count(array_intersect($assigned, $available));
@@ -85,7 +83,7 @@
                     </div>
 
                     <div class="portal-permission-modules">
-                        @foreach($modules as $module)
+                        @foreach($roleModules as $module)
                             @php
                                 $rights = collect($module['permissions'] ?? []);
                                 $moduleActive = count(array_intersect($assigned, $rights->keys()->all()));
