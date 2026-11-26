@@ -41,7 +41,7 @@
                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.reports.export', compact('from','to','status','borrower')) }}">Uitleningen exporteren (CSV)</a>
             </div>
         </form>
-        <p class="library-help">Voorraadcijfers zijn actueel; uitleningen, populaire boeken en de lijst hieronder volgen de geselecteerde datums en filters. Een uitlening telt mee op basis van de uitleendatum.</p>
+        <p class="library-help" style="margin-top: 1.25rem; margin-bottom: 0; clear: both; line-height: 1.6;">Voorraadcijfers zijn actueel; uitleningen, populaire boeken en de lijst hieronder volgen de geselecteerde datums en filters. Een uitlening telt mee op basis van de uitleendatum.</p>
     </section>
     <div class="library-report-stats">
         @foreach([
