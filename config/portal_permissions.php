@@ -27,8 +27,20 @@ return [
             'lvs.settings.manage' => 'LVS-opvolgregels, meldingsdrempels en Smartschool-acties beheren',
         ],
     ],
+    'persoonlijke_bibliotheek' => [
+        'label' => 'Bibliotheek (persoonlijk)',
+        'permissions' => [
+            'persoonlijke_bibliotheek.view' => 'Persoonlijke bibliotheek openen',
+            'persoonlijke_bibliotheek.catalog.view' => 'Catalogus bekijken',
+            'persoonlijke_bibliotheek.availability.view' => 'Beschikbaarheid bekijken',
+            'persoonlijke_bibliotheek.loans.view' => 'Eigen actuele uitleningen bekijken',
+            'persoonlijke_bibliotheek.history.view' => 'Eigen uitleenhistoriek bekijken',
+            'persoonlijke_bibliotheek.reserve' => 'Boeken reserveren',
+            'persoonlijke_bibliotheek.renew.request' => 'Verlenging aanvragen',
+        ],
+    ],
     'bibliotheek' => [
-        'label' => 'Bibliotheek',
+        'label' => 'Bibliotheekbeheer',
         'permissions' => [
             'bibliotheek.view' => 'Bibliotheek openen',
             'bibliotheek.requests.manage' => 'Reserveringen en verlengingsaanvragen beoordelen',
