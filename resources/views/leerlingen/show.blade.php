@@ -43,17 +43,17 @@
 
     @if($canManageVisit && $leerling->geboortedatum && $leerling->geboortedatum->age >= 18)
     <section class="card lvs-panel lvs-section-gap">
-        <h2>Secretariaatsbezoek – 18 jaar</h2>
+        <div class="lvs-panel-heading"><div><p class="portal-eyebrow">ADMINISTRATIEVE OPVOLGING</p><h2>Secretariaatsbezoek – 18 jaar</h2></div></div>
         @if($adultVisit)
             <p>{{ $adultVisit->completed_at ? 'Langsgekomen op '.$adultVisit->completed_at.' · '.$adultVisit->completed_by : 'Nog niet langsgekomen' }}</p>
             <form method="post" action="{{ route('secretariat-visits.update',$adultVisit->id) }}">@csrf
-                <input type="hidden" name="completed" value="{{ $adultVisit->completed_at ? '0' : '1' }}"><button class="library-button library-button-secondary">{{ $adultVisit->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button>
+                <input type="hidden" name="completed" value="{{ $adultVisit->completed_at ? '0' : '1' }}"><button type="submit" class="lvs-link-button {{ $adultVisit->completed_at ? '' : 'lvs-link-button-primary' }}">{{ $adultVisit->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button>
             </form>
         @else
             <p>Nog geen opvolging geregistreerd. Start alleen als deze leerling nog moet langskomen.</p>
-            <form method="post" action="{{ route('secretariat-visits.register',$leerling->id) }}">@csrf<button class="library-button library-button-secondary">Opvolging starten</button></form>
+            <form method="post" action="{{ route('secretariat-visits.register',$leerling->id) }}">@csrf<button type="submit" class="lvs-link-button lvs-link-button-primary">+ Opvolging starten</button></form>
         @endif
-        <p><a href="{{ route('secretariat-visits.index') }}">Alle secretariaatsbezoeken</a></p>
+        <div style="margin-top:12px"><a class="lvs-link-button" href="{{ route('secretariat-visits.index') }}">Alle secretariaatsbezoeken bekijken →</a></div>
     </section>
     @endif
     @if($canSeeMeldingen)
