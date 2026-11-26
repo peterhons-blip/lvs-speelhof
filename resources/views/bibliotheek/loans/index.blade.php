@@ -44,14 +44,26 @@
         </form>
     </section>
 
+    @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.manage'))
+    <section class="library-form-card"><h2>Meerdere uitleningen verwerken</h2>
+        <form id="bulk-loans" method="post" action="{{ route('bibliotheek.loans.bulk') }}" onsubmit="return confirm('Geselecteerde uitleningen verwerken?')">@csrf
+            <label>Scan meerdere exemplaarcodes (één per regel, maximaal 100; enkel voor inleveren)<textarea name="barcodes" rows="3" maxlength="7000"></textarea></label>
+            <button class="library-button library-button-primary" name="action" value="return">Inleveren</button>
+            <button class="library-button library-button-secondary" name="action" value="extend">Selectie verlengen</button>
+            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('.bulk-loan-check').forEach(c=>c.checked=true)">Selecteer alle openstaande op deze pagina</button>
+        </form>
+    </section>
+    @endif
     <section class="library-form-card">
         <form method="get" class="library-loan-filters">
+            @foreach(['student_id','staff_id','copy_id'] as $key)@if(request()->filled($key))<input type="hidden" name="{{ $key }}" value="{{ request($key) }}">@endif @endforeach
+            @if(request()->hasAny(['student_id','staff_id','copy_id']))<a href="{{ route('bibliotheek.loans.index',['filter'=>'all']) }}">Historiekfilter wissen</a>@endif
             <div class="library-field"><label for="loan-search">Zoeken op ontlener, titel of barcode</label>
                 <input id="loan-search" name="q" value="{{ $search }}" placeholder="Naam, gebruikersnaam, boek of barcode">
             </div>
             <div class="library-field"><label for="loan-filter">Toon</label>
                 <select name="filter" id="loan-filter">
-                    @foreach(['open' => 'Openstaand', 'overdue' => 'Te laat', 'returned' => 'Ingeleverd', 'all' => 'Alle uitleningen'] as $value => $label)
+                    @foreach(['open' => 'Openstaand', 'overdue' => 'Te laat', 'returned' => 'Ingeleverd', 'all' => 'Alle uitleningen', 'departed' => 'Uitgeschreven leerlingen'] as $value => $label)
                         <option value="{{ $value }}" @selected($mode === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -61,12 +73,13 @@
 
         <div class="library-table-wrap">
             <table class="library-table">
-                <thead><tr><th>Ontlener</th><th>Boek / exemplaar</th><th>Uitgeleend</th><th>Inleveren voor</th><th>Status</th><th>Acties</th></tr></thead>
+                <thead><tr><th>Ontlener / selectie</th><th>Boek / exemplaar</th><th>Uitgeleend</th><th>Inleveren voor</th><th>Status</th><th>Acties</th></tr></thead>
                 <tbody>
                 @forelse($loans as $loan)
                     @php($late = !$loan->returned_at && $loan->due_date < now('Europe/Brussels')->toDateString())
                     <tr>
                         <td>
+                            @if(!$loan->returned_at && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.manage'))<label><input class="bulk-loan-check" type="checkbox" form="bulk-loans" name="ids[]" value="{{ $loan->id }}"> Selecteren</label><br>@endif
                             @if($loan->staff_user_id)
                                 <strong>{{ trim(($loan->staff_voornaam ?? '').' '.($loan->staff_naam ?? '')) ?: 'Personeelslid #'.$loan->staff_user_id }}</strong>
                                 <div class="library-help">Personeel · {{ $loan->staff_gebruikersnaam ?: 'Geen gebruikersnaam' }}</div>
@@ -74,6 +87,7 @@
                                 <strong>{{ trim(($loan->voornaam ?? '').' '.($loan->naam ?? '')) ?: 'Leerling #'.$loan->leerling_id }}</strong>
                                 <div class="library-help">Leerling · {{ $loan->gebruikersnaam ?: 'Niet beschikbaar' }}</div>
                             @endif
+                            <a href="{{ route('bibliotheek.loans.index',['filter'=>'all',($loan->staff_user_id ? 'staff_id' : 'student_id')=>($loan->staff_user_id ?: $loan->leerling_id)]) }}">Historiek ontlener</a>
                         </td>
                         <td><strong>{{ $loan->title }}</strong><div class="library-help">{{ $loan->barcode }}</div></td>
                         <td>{{ \Illuminate\Support\Carbon::parse($loan->loan_date)->format('d/m/Y') }}</td>
@@ -86,6 +100,7 @@
                             @else
                                 <span class="library-pill">Uitgeleend</span>
                             @endif
+                            @if(!$loan->returned_at && $loan->reminders_paused_until && $loan->reminders_paused_until >= now('Europe/Brussels')->toDateString())<div class="library-help">Herinneringen gepauzeerd t/m {{ $loan->reminders_paused_until }}</div>@endif
                         </td>
                         <td>
                             @unless($loan->returned_at)
