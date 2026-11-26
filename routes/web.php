@@ -42,6 +42,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         Route::get('/', [\App\Http\Controllers\LibraryLoanController::class, 'index'])->name('index')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.view');
         Route::get('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'create'])->name('create')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
         Route::post('/nieuw', [\App\Http\Controllers\LibraryLoanController::class, 'store'])->name('store')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage');
+        Route::get('/inleverdatum-preview', [\App\Http\Controllers\LibraryLoanController::class, 'duePreview'])->name('due-preview')->middleware(['throttle:120,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage']);
         Route::get('/leerling-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupStudent'])->middleware(['throttle:60,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('student-scan');
         Route::get('/exemplaar-scan', [\App\Http\Controllers\LibraryLoanController::class, 'lookupCopy'])->middleware(['throttle:90,1', \App\Http\Middleware\RequirePortalPermission::class.':bibliotheek.loans.manage'])->name('copy-scan');
         Route::get('/boeken-zoeken', [\App\Http\Controllers\LibraryLoanController::class, 'searchBooks'])
@@ -129,6 +130,12 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::post('/beheer/verjaardagsberichten/overzicht-18', [\App\Http\Controllers\BirthdaySettingsController::class, 'updateOverviewRecipients'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.birthdays.manage')
         ->name('beheer.birthdays.overview.update');
+    Route::prefix('beheer/schoolkalender')->name('beheer.school-calendar.')->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.permissions.manage')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SchoolCalendarController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\SchoolCalendarController::class, 'store'])->name('store');
+        Route::post('/import', [\App\Http\Controllers\SchoolCalendarController::class, 'import'])->name('import');
+        Route::delete('/{closure}', [\App\Http\Controllers\SchoolCalendarController::class, 'destroy'])->whereNumber('closure')->name('destroy');
+    });
     Route::get('/beheer', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('beheer.dashboard');
 
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.

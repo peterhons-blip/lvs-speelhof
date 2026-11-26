@@ -15,6 +15,7 @@ class ManagementDashboardController extends Controller
         abort_unless($access->isManager($request), 403);
 
         $sections = [
+            ['permission' => 'beheer.permissions.manage', 'route' => 'beheer.school-calendar.index', 'title' => 'Schoolkalender', 'description' => 'Vakanties, vrije dagen en sluitingsperiodes beheren.', 'icon' => 'calendar'],
             ['permission' => 'beheer.staff.manage', 'route' => 'beheer.users.index', 'title' => 'Personeelsbeheer', 'description' => 'Medewerkers, schoolrollen en aanmeldtoegang beheren.', 'icon' => 'users'],
             ['permission' => 'beheer.students.manage', 'route' => 'beheer.students.index', 'title' => 'Leerlingenbeheer', 'description' => 'Leerlingen zoeken, gegevens bekijken en wijzigen.', 'icon' => 'graduation-cap'],
             ['permission' => 'beheer.permissions.manage', 'route' => 'beheer.permissions.index', 'title' => 'Rollen en rechten', 'description' => 'Toegangsrechten per schoolrol instellen.', 'icon' => 'shield-check'],

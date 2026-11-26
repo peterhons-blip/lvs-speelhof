@@ -95,6 +95,13 @@ class LibraryLoanController extends Controller
             'loanDays', 'maxLoans', 'borrowerType', 'staffMember'));
     }
 
+    public function duePreview(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data=$request->validate(['days'=>'required|integer|min:1|max:365']);
+        $date=app(\App\Services\LibraryCalendar::class)->due(CarbonImmutable::today('Europe/Brussels'),(int)$data['days']);
+        return response()->json(['date'=>$date->toDateString()]);
+    }
+
     public function lookupStudent(Request $request): \Illuminate\Http\JsonResponse
     {
         $this->authorizeOperator($request);
@@ -292,7 +299,7 @@ class LibraryLoanController extends Controller
                     'staff_user_id' => $staff?->id,
                     'registered_by' => $this->username($request),
                     'loan_date' => $today->toDateString(),
-                    'due_date' => $today->addDays((int) $data['loan_days'])->toDateString(),
+                    'due_date' => app(\App\Services\LibraryCalendar::class)->due($today, (int) $data['loan_days'])->toDateString(),
                     'extensions' => 0,
                     'reminder_days_before' => null,
                     'remind_on_due_date' => null,
@@ -399,7 +406,7 @@ class LibraryLoanController extends Controller
             }
             $old = CarbonImmutable::parse($item->due_date, 'Europe/Brussels');
             $base = $old->isAfter(CarbonImmutable::today('Europe/Brussels')) ? $old : CarbonImmutable::today('Europe/Brussels');
-            $newDue = $base->addDays($this->setting('extension_days', 21))->toDateString();
+            $newDue = app(\App\Services\LibraryCalendar::class)->due($base, $this->setting('extension_days', 21))->toDateString();
             DB::table('library_loans')->where('id', $loan)->update([
                 'due_date' => $newDue,
                 'extensions' => (int) $item->extensions + 1, 'updated_at' => now(),
@@ -438,6 +445,7 @@ class LibraryLoanController extends Controller
             'reminder_days_before' => ['nullable', 'integer', 'min:0', 'max:60'],
             'remind_on_due_date' => ['nullable', 'in:0,1'],
         ]);
+        $data['due_date'] = app(\App\Services\LibraryCalendar::class)->adjust(CarbonImmutable::parse($data['due_date'], 'Europe/Brussels'))->toDateString();
         $item = DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->first();
         abort_unless($item, 404);
         DB::table('library_loans')->where('id', $loan)->whereNull('returned_at')->update([
@@ -499,6 +507,11 @@ class LibraryLoanController extends Controller
             'overdue_escalate_after' => ['required', 'integer', 'min:0', 'max:100'],
             'policy_alert_enabled' => ['required', 'in:0,1'],
             'policy_alert_recipient' => ['nullable', 'string', 'max:120'],
+            'loan_day_unit' => ['required','in:calendar,school'],
+            'reminder_day_unit' => ['required','in:calendar,school'],
+            'shift_due_to_schoolday' => ['required','in:0,1'],
+            'skip_weekends' => ['required','in:0,1'],
+            'skip_holidays' => ['required','in:0,1'],
         ]);
 
         if ((int) $values['overdue_escalate_after'] > 1 && (int) $values['overdue_repeat_days'] === 0) {
