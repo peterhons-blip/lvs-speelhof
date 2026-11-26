@@ -42,6 +42,8 @@
     <section class="library-form-card">
         <div class="library-qr-toolbar">
             <strong id="qr-selection-count">0 geselecteerd</strong>
+            <button type="button" class="library-button library-button-secondary" id="qr-refresh">Lijst vernieuwen</button>
+            <span class="library-help">{{ $total }} exemplaren voldoen aan de filters.</span>
             <button type="button" class="library-button library-button-primary" id="qr-download-zip">Alle QR-codes downloaden (ZIP)</button>
             <button type="button" class="library-button library-button-secondary" id="qr-print">A4-etiketten afdrukken / PDF opslaan</button>
         </div>
@@ -67,13 +69,22 @@
                     <label for="qr-selection-mode">Welke exemplaren?</label>
                     <select name="select" id="qr-selection-mode">
                         <option value="all" @selected($mode === 'all')>Alle exemplaren in de selectie (max. 500)</option>
+                        <option value="next21" @selected($mode === 'next21')>Volgende 21 exemplaren (registratievolgorde)</option>
                         <option value="latest5" @selected($mode === 'latest5')>5 laatst toegevoegde exemplaren</option>
                         <option value="selected" @selected($mode === 'selected')>Zelf kiezen uit de lijst (max. 500)</option>
                     </select>
                 </div>
+                <div class="library-field">
+                    <label for="qr-sort">Sortering</label>
+                    <select id="qr-sort" name="sort">
+                        <option value="title" @selected($sort === 'title')>Titel</option>
+                        <option value="registration" @selected($sort === 'registration')>Registratievolgorde (oudste eerst)</option>
+                    </select>
+                </div>
+                <label><input type="checkbox" name="today" value="1" @checked($todayOnly)> Alleen vandaag geregistreerd</label>
                 <button type="submit" class="library-button library-button-secondary">Toepassen</button>
             </form>
-            <p class="library-help">{{ $mode === 'latest5' ? 'Gesorteerd op laatst toegevoegd.' : 'Vink alleen de exemplaren aan waarvoor je een QR-etiket wilt maken.' }}</p>
+            <p class="library-help">{{ $mode === 'latest5' ? 'Gesorteerd op laatst toegevoegd.' : 'Vink alleen de exemplaren aan waarvoor je een QR-etiket wilt maken. Vernieuw de lijst pas nadat je de huidige etiketten hebt verwerkt.' }}</p>
             <div class="library-qr-toolbar">
                 <button type="button" class="library-button library-button-secondary" id="qr-select-all">Alles selecteren</button>
                 <button type="button" class="library-button library-button-secondary" id="qr-select-none">Alles deselecteren</button>
@@ -97,7 +108,7 @@
                     <button type="submit" class="library-button library-button-secondary" id="qr-mark-printed">Geselecteerde etiketten als afgedrukt markeren</button>
                     <button type="submit" class="library-button library-button-secondary" id="qr-clear-printed">QR-status selectie wissen</button>
                 </div>
-                <p class="library-help">Bevestig dit pas nadat je de etiketten echt hebt afgedrukt en aangebracht. Downloaden of de afdrukdialoog openen markeert niets automatisch.</p>
+                <p class="library-help">Bevestig dit pas nadat je de etiketten echt hebt afgedrukt en aangebracht. Downloaden of de afdrukdialoog openen registreert alleen QR gemaakt, niet dat het etiket is aangebracht.</p>
             </form>
         @endif
         <div class="library-field library-label-settings">
@@ -121,6 +132,7 @@
 <script src="{{ asset('js/library-qr.js') }}"></script>
 <script>
 (() => {
+    document.getElementById('qr-refresh').addEventListener('click', () => window.location.reload());
     const copies = @json($copies);
     const checks = Array.from(document.querySelectorAll('.qr-copy-checkbox'));
     const generatedEndpoint = @json(route('bibliotheek.books.qr-generated'));
