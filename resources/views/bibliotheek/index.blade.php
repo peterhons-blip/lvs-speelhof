@@ -21,14 +21,16 @@
         </div>
 
         <div class="portal-library-feature-grid" aria-label="Bibliotheekfuncties">
-            <a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.view'))
+<a href="{{ route('bibliotheek.books.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">▤</span>
                 <h2>Boekencatalogus</h2>
                 <p>Boeken registreren via ISBN, met titel, auteur, omslag en meerdere exemplaren.</p>
                 <span class="portal-library-feature-state">Open de catalogus →</span>
             </a>
-            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
-                @php
+@endif
+            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.qr.view'))
+@php
                     $today = now()->toDateString();
                     $todayCopies = \App\Models\LibraryCopy::whereDate('created_at', $today)->count();
                     $todayBooks = \App\Models\LibraryBook::whereDate('created_at', $today)->count();
@@ -53,20 +55,26 @@
                 <span class="portal-library-feature-state">Start een uitlening →</span>
             </a>
 @endif
-            <a href="{{ route('bibliotheek.loans.index') }}" class="portal-library-feature portal-library-feature-active">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+<a href="{{ route('bibliotheek.loans.index') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">↩</span>
-                <h2>Inleveren en verlengen</h2>
-                <p>Openstaande uitleningen verwerken, inleveren en verlengen.</p>
+                <h2>Uitleningen</h2>
+                <p>Bekijk de uitleningen en beschikbare acties.</p>
                 <span class="portal-library-feature-state">Open uitleningen →</span>
             </a>
-            <a href="{{ route('bibliotheek.loans.index', ['filter' => 'overdue']) }}" class="portal-library-feature portal-library-feature-active">
+@endif
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+<a href="{{ route('bibliotheek.loans.index', ['filter' => 'overdue']) }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">◎</span>
                 <h2>Achterstallige uitleningen</h2>
                 <p>Bekijk vervallen inleverdatums en alle openstaande uitleningen.</p>
                 <span class="portal-library-feature-state">Bekijk te late boeken →</span>
             </a>
+@endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
-                <a href="{{ route('bibliotheek.loans.index',['filter'=>'departed']) }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">↗</span><h2>Uitgeschreven leerlingen</h2><p>Openstaande uitleningen bij niet-actieve leerlingen.</p><span class="portal-library-feature-state">Bekijk opvolging →</span></a>
+                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+<a href="{{ route('bibliotheek.loans.index',['filter'=>'departed']) }}" class="portal-library-feature portal-library-feature-active"><span class="portal-library-feature-icon">↗</span><h2>Uitgeschreven leerlingen</h2><p>Openstaande uitleningen bij niet-actieve leerlingen.</p><span class="portal-library-feature-state">Bekijk opvolging →</span></a>
+@endif
             @endif
             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.messages.manage'))
                 <a href="{{ route('bibliotheek.messages.index') }}" class="portal-library-feature portal-library-feature-active">
@@ -76,8 +84,7 @@
                     <span class="portal-library-feature-state">Berichten instellen →</span>
                 </a>
             @endif
-            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.books.view'))
-                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.qr.view'))
 <a href="{{ route('bibliotheek.books.qr-labels') }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">▦</span>
                     <h2>QR-codes en etiketten</h2>
@@ -85,9 +92,7 @@
                     <span class="portal-library-feature-state">QR-codes maken →</span>
                 </a>
 @endif
-            @endif
-            @if(app(\App\Services\LibraryAccess::class)->has(request(), 'bibliotheek.loans.view'))
-                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.reports.view'))
 <a href="{{ route('bibliotheek.reports.index') }}" class="portal-library-feature portal-library-feature-active">
                     <span class="portal-library-feature-icon" aria-hidden="true">▥</span>
                     <h2>Rapportages</h2>
@@ -95,14 +100,17 @@
                     <span class="portal-library-feature-state">Rapportages bekijken →</span>
                 </a>
 @endif
-            @endif
-            <a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.settings.manage'))
+<a href="{{ route('bibliotheek.loans.settings') }}" class="portal-library-feature portal-library-feature-active">
                 <span class="portal-library-feature-icon" aria-hidden="true">⚙</span>
                 <h2>Uitleeninstellingen</h2>
                 <p>Termijnen, aantal uitleningen en verlengingen beheren.</p>
                 <span class="portal-library-feature-state">Instellingen openen →</span>
             </a>
+@endif
         </div>
-        <p class="portal-library-notice">Smartschool-berichten vertrekken vanuit account bib. Beheer de teksten en schakel verzending in via de tegel Smartschool-berichten.</p>
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.messages.manage'))
+<p class="portal-library-notice">Smartschool-berichten vertrekken vanuit account bib. Beheer de teksten en schakel verzending in via de tegel Smartschool-berichten.</p>
+@endif
     </main>
 @endsection
