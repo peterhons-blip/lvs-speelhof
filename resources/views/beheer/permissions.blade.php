@@ -49,7 +49,16 @@
             @continue($role === 'ict_coordinator')
             @php
                 $assigned = $stored[$role] ?? [];
-                $roleModules = array_key_exists($role, \App\Services\LibraryAccess::EXTERNAL_ROLES) ? array_intersect_key($modules,[$role=>true]) : array_diff_key($modules,\App\Services\LibraryAccess::EXTERNAL_ROLES);
+                $roleModules = array_diff_key($modules,\App\Services\LibraryAccess::EXTERNAL_ROLES);
+                if (array_key_exists($role,\App\Services\LibraryAccess::EXTERNAL_ROLES)) {
+                    $roleModules = [];
+                    foreach (($modules[$role]['permissions'] ?? []) as $key => $label) {
+                        $parts = explode(' · ', $label, 2);
+                        $section = count($parts) === 2 ? $parts[0] : 'Algemeen';
+                        $roleModules[$section]['label'] = $section;
+                        $roleModules[$section]['permissions'][$key] = count($parts) === 2 ? $parts[1] : $label;
+                    }
+                }
                 $available = collect($roleModules)->flatMap(fn ($module) =>
                     array_keys($module['permissions'] ?? [])
                 )->values()->all();
