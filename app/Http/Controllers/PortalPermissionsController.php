@@ -34,6 +34,7 @@ class PortalPermissionsController extends Controller
     public function update(Request $request, LibraryAccess $access): RedirectResponse
     {
         $access->requireIctManager($request);
+        abort_unless($access->role($request)==='ict_coordinator',403);
         $data = $request->validate([
             'role' => ['required', Rule::in(array_keys(LibraryAccess::ROLES + LibraryAccess::EXTERNAL_ROLES))],
             'permissions' => ['sometimes', 'array'],
@@ -61,6 +62,43 @@ class PortalPermissionsController extends Controller
             }
         });
         return back()->with('success', 'Rechten voor '.(LibraryAccess::LABELS + LibraryAccess::EXTERNAL_ROLES)[$role].' opgeslagen.');
+    }
+
+    public function individual(Request $request, LibraryAccess $access): View
+    {
+        $access->requirePermission($request,'beheer.permissions.manage');
+        $q=trim((string)$request->query('q',''));
+        $users=DB::table('users as u')->leftJoin('groups as g','g.id','=','u.groupId')
+            ->where(fn($q)=>$q->whereNull('u.smartschool_active')->orWhere('u.smartschool_active',1))
+            ->when($q!=='',fn($x)=>$x->where(fn($x)=>$x->where('u.name','like','%'.$q.'%')->orWhere('u.voornaam','like','%'.$q.'%')->orWhere('u.smartschool_gebruikersnaam','like','%'.$q.'%')))
+            ->select('u.id','u.name','u.voornaam','u.smartschool_gebruikersnaam','g.groupname')->orderBy('u.name')->paginate(30)->withQueryString();
+        $selected=DB::table('users as u')->leftJoin('groups as g','g.id','=','u.groupId')->where('u.id',(int)$request->query('user_id'))->select('u.id','u.name','u.voornaam','g.groupname')->first();
+        $role=$selected ? collect(LibraryAccess::ROLES)->search(fn($name)=>mb_strtolower($name)===mb_strtolower((string)$selected->groupname)) : false;
+        $overrides=$selected?DB::table('portal_user_permissions')->where('user_id',$selected->id)->pluck('allowed','permission')->all():[];
+        $inherited=$role?DB::table('portal_role_permissions')->where('role',$role)->pluck('permission')->all():[];
+        $modules=collect(config('portal_permissions'))->except(['leerling','coaccount'])->all();
+        return view('beheer.individual-permissions',compact('users','selected','role','overrides','inherited','modules','q'));
+    }
+    public function saveIndividual(Request $request,LibraryAccess $access,int $user): RedirectResponse
+    {
+        $access->requirePermission($request,'beheer.permissions.manage');
+        // Rights administrators cannot elevate themselves or grant privileges they lack.
+        abort_unless($access->role($request)==='ict_coordinator',403);
+        $data=$request->validate(['rights'=>'required|array','rights.*'=>'required|in:inherit,allow,deny']);
+        $target=DB::table('users as u')->join('groups as g','g.id','=','u.groupId')->where('u.id',$user)->select('u.id','g.groupname')->first();
+        abort_unless($target && mb_strtolower($target->groupname)!==mb_strtolower(LibraryAccess::ROLES['ict_coordinator']),403);
+        $valid=collect(config('portal_permissions'))->except(['leerling','coaccount'])->flatMap(fn($m)=>array_keys($m['permissions']))->all();
+        abort_if(array_diff(array_keys($data['rights']),$valid),422);
+        DB::transaction(function()use($data,$user,$access,$request){
+            $before=DB::table('portal_user_permissions')->where('user_id',$user)->pluck('allowed','permission')->all();
+            foreach($data['rights'] as $key=>$value){
+                $query=DB::table('portal_user_permissions')->where('user_id',$user)->where('permission',$key);
+                if($value==='inherit') $query->delete();
+                else DB::table('portal_user_permissions')->updateOrInsert(['user_id'=>$user,'permission'=>$key],['allowed'=>$value==='allow','updated_at'=>now()]);
+            }
+            DB::table('portal_permission_audit')->insert(['actor'=>$access->username($request),'target'=>'user:'.$user,'changes'=>json_encode(['before'=>$before,'after'=>DB::table('portal_user_permissions')->where('user_id',$user)->pluck('allowed','permission')->all()]),'created_at'=>now(),'updated_at'=>now()]);
+        });
+        return redirect()->route('beheer.permissions.individual',['user_id'=>$user])->with('success','Individuele rechten opgeslagen.');
     }
 
     public function users(Request $request, LibraryAccess $access): View
