@@ -48,7 +48,7 @@
     </section>
     @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
     @php
-        $rights=array_filter(config('portal_permissions.leerling.permissions',[]),fn($key)=>!str_starts_with($key,'leerling.library.help.'),ARRAY_FILTER_USE_KEY);
+        $rights=array_filter(config('portal_permissions.leerling.permissions',[]),fn($key)=>!str_starts_with($key,'leerling.library.help'),ARRAY_FILTER_USE_KEY);
         $overrides=\Illuminate\Support\Facades\DB::table('portal_student_permissions')->where('leerling_id',$student->id)->pluck('allowed','permission')->all();
         $inherited=\Illuminate\Support\Facades\DB::table('portal_role_permissions')->where('role','leerling')->pluck('permission')->all();
     @endphp
@@ -61,9 +61,9 @@
             <tr><td>{{ $label }}</td><td>{{ in_array($key,$inherited,true)?'Toegestaan':'Niet toegestaan' }}</td><td><select name="rights[{{ $key }}]" aria-label="{{ $label }}"><option value="inherit" @selected(!array_key_exists($key,$overrides))>Volg groepsrecht</option><option value="allow" @selected(array_key_exists($key,$overrides)&&(bool)$overrides[$key])>Toestaan</option><option value="deny" @selected(array_key_exists($key,$overrides)&&!(bool)$overrides[$key])>Weigeren</option></select></td></tr>
             @endforeach
             </tbody></table></div>
-            <h3>Bibliotheekmedewerker · volledige module</h3><p>Alleen individuele toestemmingen; activeer ook het recht Werkruimte openen.</p>
-            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='allow');this.form.elements['rights[leerling.library.help]'].value='allow';this.form.elements['rights[leerling.dashboard.view]'].value='allow'">Alle bibliotheekrechten toestaan</button>
-            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='deny');this.form.elements['rights[leerling.library.help]'].value='deny'">Alle bibliotheekrechten weigeren</button>
+            <h3>Bibliotheekmedewerker · volledige module</h3><p>Alleen individuele toestemmingen. Bibliotheek openen bepaalt of het beheermenu verschijnt.</p>
+            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='allow');this.form.elements['rights[leerling.dashboard.view]'].value='allow'">Alle bibliotheekrechten toestaan</button>
+            <button type="button" class="library-button library-button-secondary" onclick="document.querySelectorAll('[data-bib-right]').forEach(s=>s.value='deny')">Alle bibliotheekrechten weigeren</button>
             <div class="library-table-wrap"><table class="library-table"><tbody>
             @foreach(config('portal_permissions.bibliotheek.permissions',[]) as $key=>$label)
             <tr><td>{{ $label }}</td><td><select data-bib-right name="rights[{{ $key }}]" aria-label="{{ $label }}"><option value="inherit" @selected(!array_key_exists($key,$overrides))>Niet toegekend</option><option value="allow" @selected(array_key_exists($key,$overrides)&&(bool)$overrides[$key])>Toestaan</option><option value="deny" @selected(array_key_exists($key,$overrides)&&!(bool)$overrides[$key])>Weigeren</option></select></td></tr>
