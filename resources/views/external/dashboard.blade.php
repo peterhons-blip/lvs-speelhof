@@ -37,6 +37,9 @@
 .personal-catalog-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;width:100%;margin-top:4px}
 .personal-catalog-filters .library-field{margin:0;min-width:0}
 .personal-catalog-filters select{width:100%;min-width:0}
+.personal-book-description h2{margin:0 0 12px;font-size:18px;line-height:1.4;color:#12365b}
+.personal-book-description .library-description{margin:0;max-width:85ch;line-height:1.75;white-space:pre-line;overflow-wrap:anywhere}
+.personal-book-description .library-help{margin:0;line-height:1.5}
 </style>
 <main class="library-page">
 <div class="library-page-head"><div><p class="portal-eyebrow">{{ $role==='staff'?'MIJN BIBLIOTHEEK':'MIJN PORTAAL' }}</p><h1>{{ $titles[$section] }}</h1>
@@ -163,7 +166,7 @@
 @endif
 @if($section==='book' && $book)
 <div class="library-form-actions">
-    <a class="library-button library-button-secondary" href="{{ route($portalRoute,['section'=>'catalog','q'=>request('q'),'page'=>request('page')]) }}">Terug naar catalogus</a>
+    <a class="library-button library-button-secondary" href="{{ route($portalRoute,array_merge(request()->only(['q','category','authors','publisher','published_year','availability','sort','page']),['section'=>'catalog'])) }}">Terug naar catalogus</a>
     @if($can('library.reserve'))
     <form method="post" action="{{ route($submitRoute) }}">
         @csrf
@@ -195,13 +198,15 @@
             <div><dt>Beschikbaarheid</dt><dd>{{ $book->available }} beschikbaar</dd></div>
             @endif
         </dl>
-        @if($book->description)
-        <h2>Over dit boek</h2>
-        <p class="library-description" style="white-space:pre-line;line-height:1.6">{{ $book->description }}</p>
-        @else
+            </div>
+</section>
+<section class="library-form-card personal-book-description" aria-labelledby="book-description-title">
+    <h2 id="book-description-title">Over dit boek</h2>
+    @if($book->description)
+        <p class="library-description">{{ $book->description }}</p>
+    @else
         <p class="library-help">Er is nog geen beschrijving beschikbaar.</p>
-        @endif
-    </div>
+    @endif
 </section>
 @endif
 @if($section==='requests')
