@@ -41,6 +41,21 @@
         </dl>
     </section>
 
+    @if($canManageVisit && $leerling->geboortedatum && $leerling->geboortedatum->age >= 18)
+    <section class="card lvs-panel lvs-section-gap">
+        <h2>Secretariaatsbezoek – 18 jaar</h2>
+        @if($adultVisit)
+            <p>{{ $adultVisit->completed_at ? 'Langsgekomen op '.$adultVisit->completed_at.' · '.$adultVisit->completed_by : 'Nog niet langsgekomen' }}</p>
+            <form method="post" action="{{ route('secretariat-visits.update',$adultVisit->id) }}">@csrf
+                <input type="hidden" name="completed" value="{{ $adultVisit->completed_at ? '0' : '1' }}"><button class="library-button library-button-secondary">{{ $adultVisit->completed_at ? 'Heropenen' : '✓ Langsgekomen' }}</button>
+            </form>
+        @else
+            <p>Nog geen opvolging geregistreerd. Start alleen als deze leerling nog moet langskomen.</p>
+            <form method="post" action="{{ route('secretariat-visits.register',$leerling->id) }}">@csrf<button class="library-button library-button-secondary">Opvolging starten</button></form>
+        @endif
+        <p><a href="{{ route('secretariat-visits.index') }}">Alle secretariaatsbezoeken</a></p>
+    </section>
+    @endif
     @if($canSeeMeldingen)
     <section class="card lvs-panel lvs-section-gap">
         <div class="lvs-panel-heading">
