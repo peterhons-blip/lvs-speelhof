@@ -8,6 +8,7 @@
         'catalog'=>$personalAccess->personalLibraryCan(request(),'library.catalog.view')?'Catalogus':null,
         'requests'=>($personalAccess->personalLibraryCan(request(),'library.reserve')||$personalAccess->personalLibraryCan(request(),'library.renew.request'))?'Mijn aanvragen':null,
     ]);
+    asort($personalItems, SORT_NATURAL | SORT_FLAG_CASE);
 @endphp
 <div class="portal-nav-module">
     <a class="portal-nav-link {{ $personalActive?'is-current':'' }}" href="{{ route('personal-library.index') }}"><span class="portal-nav-icon" aria-hidden="true">▤</span> Bibliotheek</a>
