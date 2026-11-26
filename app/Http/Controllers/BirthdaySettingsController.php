@@ -218,7 +218,7 @@ class BirthdaySettingsController extends Controller
      */
     public function updateOverviewRecipients(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $access->requirePermission($request, 'beheer.birthdays.recipients');
         $data = $request->validate([
             'school_id' => ['required', 'integer', 'min:1'],
             'overview_smartschool_users' => ['sometimes', 'array', 'max:150'],
@@ -312,7 +312,7 @@ class BirthdaySettingsController extends Controller
 
     public function updateAdult(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $access->requirePermission($request, 'beheer.birthdays.adult');
         $data = $request->validate([
             'adult_student_notice' => ['required', 'in:0,1'],
             'adult_secretariat_notice' => ['required', 'in:0,1'],
@@ -348,7 +348,7 @@ class BirthdaySettingsController extends Controller
 
     public function updateWarning(Request $request, LibraryAccess $access): RedirectResponse
     {
-        $access->requirePermission($request, 'beheer.birthdays.manage');
+        $access->requirePermission($request, 'beheer.birthdays.warning');
         $data = $request->validate([
             'warning_enabled' => ['required', 'in:0,1'],
             'warning_days' => ['required', 'integer', 'min:1', 'max:30'],
