@@ -77,9 +77,9 @@ class MeldingController extends Controller
         }
 
         // Categorieën + hun soorten voor de 2 dropdowns
-        $categorieen = Meldingscategorie::with(['soorten' => function ($q) {
-            $q->orderBy('naam');
-        }])->orderBy('naam')->get();
+        $categorieen = Meldingscategorie::where('portal_active',1)->whereHas('soorten',fn($q)=>$q->where('portal_active',1))->with(['soorten' => function ($q) {
+            $q->where('portal_active',1)->orderBy('portal_sort')->orderBy('naam');
+        }])->orderBy('portal_sort')->orderBy('naam')->get();
 
         // Incident history is confidential and requires the independent view right.
         $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
@@ -111,12 +111,12 @@ class MeldingController extends Controller
 
         // check: soort hoort bij gekozen categorie
         $soort = Meldingssoort::where('id', $validated['soort_id'])
-            ->where('meldingscategorieId', $validated['categorie_id'])
-            ->first();
+            ->where('meldingscategorieId', $validated['categorie_id'])->where('portal_active',1)
+            ->whereHas('categorie',fn($q)=>$q->where('portal_active',1))->first();
 
         if (!$soort) {
             return back()
-                ->withErrors(['soort_id' => 'De gekozen soort hoort niet bij de geselecteerde categorie.'])
+                ->withErrors(['soort_id' => 'De gekozen meldingssoort of categorie is niet actief of komt niet overeen.'])
                 ->withInput();
         }
 

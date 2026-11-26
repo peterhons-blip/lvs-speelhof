@@ -52,7 +52,7 @@
                     <a href="{{ route('home') }}" class="portal-nav-link {{ request()->routeIs('home') ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
                         <span class="portal-nav-icon" aria-hidden="true">⌂</span> Dashboard
                     </a>
-                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*'))
+                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
                     @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
                     <div class="portal-nav-module">
                         <a href="{{ route('lvs.dashboard') }}" class="portal-nav-link {{ $lvsActive ? 'is-current' : '' }}" @if($lvsActive) aria-expanded="true" @endif>
@@ -60,6 +60,9 @@
                         </a>
                         @if($lvsActive)
                             <nav class="portal-nav-submenu" aria-label="LVS-subnavigatie">
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.taxonomy.manage'))
+                                <a href="{{ route('beheer.incident-release.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.incident-release.*') ? 'is-active' : '' }}">Categorieën en meldingssoorten</a>
+                                @endif
                                 <a href="{{ route('lvs.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('lvs.dashboard')) aria-current="page" @endif>Dashboard</a>
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
                                 <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingenoverzicht</a>
@@ -138,9 +141,7 @@
                         <a href="{{ route('beheer.dashboard') }}" class="portal-nav-link {{ request()->routeIs('beheer.*') ? 'is-current' : '' }}" @if(request()->routeIs('beheer.*')) aria-expanded="true" @endif><span class="portal-nav-icon" aria-hidden="true">⚙</span> Beheer</a>
                         @if(request()->routeIs('beheer.*'))
                         <nav class="portal-nav-submenu" aria-label="Portaalbeheer">
-                            @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
-                            <a href="{{ route('beheer.incident-release.index') }}" class="portal-nav-subitem">Meldingsvrijgave</a>
-                            @endif
+                            
                             <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
                             @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.staff.manage'))
                             <a href="{{ route('beheer.users.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.users.*') ? 'is-active' : '' }}">Personeelsbeheer</a>

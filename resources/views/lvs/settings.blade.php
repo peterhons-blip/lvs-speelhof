@@ -34,6 +34,9 @@ document.querySelectorAll('.lvs-staff-search').forEach(search => {
 </script>
 @endpush
 @section('content')
+@if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.taxonomy.manage'))
+<div style="margin-bottom:16px"><a class="library-button library-button-secondary" href="{{ route('beheer.incident-release.index') }}">Categorieën en meldingssoorten beheren</a></div>
+@endif
 <main class="library-page lvs-settings-page">
     <div class="library-page-head">
         <div><p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / BEHEER</p><h1>LVS-instellingen</h1>

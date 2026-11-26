@@ -1,81 +1,68 @@
 @extends('layouts.app')
-@section('title','Meldingsvrijgave')
+@section('title','Categorieën en meldingssoorten')
 @section('breadcrumbs')
-@include('partials.breadcrumbs',['items'=>[
-    ['label'=>'Dashboard','url'=>route('home')],
-    ['label'=>'Meldingsvrijgave'],
-]])
+@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('home')],['label'=>'Categorieën en meldingssoorten']]])
 @endsection
 @section('content')
 <style>
-.release-page .release-check { appearance:auto; width:20px; height:20px; accent-color:#006e80; cursor:pointer; vertical-align:middle; margin:0; }
-.release-page .release-check:focus-visible { outline:3px solid #74bdc9; outline-offset:3px; }
-.release-page .release-choice { display:inline-flex; gap:8px; align-items:center; justify-content:center; min-height:36px; cursor:pointer; }
-.release-page .release-center { text-align:center; width:160px; }
-.release-page .release-category td { background:#edf4f7; font-weight:700; color:#17365d; }
-.release-page .release-explanation { background:#eef6f8; border-left:4px solid #008599; padding:14px 18px; border-radius:8px; margin-bottom:20px; }
-.release-page .release-explanation p { margin:5px 0; }
-.release-page .release-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:20px; }
-.release-page .release-count { color:#52677a; font-size:13px; font-weight:400; display:block; margin-top:4px; }
+.taxonomy-page .tax-row {display:grid;grid-template-columns:minmax(180px,2fr) minmax(90px,1fr) 85px 100px auto;gap:12px;align-items:end;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.taxonomy-page .tax-type {grid-template-columns:minmax(150px,2fr) minmax(150px,1.5fr) 80px 90px 100px 100px auto}
+.taxonomy-page .tax-row label {display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.taxonomy-page .tax-row input:not([type=checkbox]),.taxonomy-page .tax-row select {width:100%;min-width:0;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:6px;background:white;color:#17365d}
+.taxonomy-page .tax-row input[type=checkbox] {appearance:auto;width:20px;height:20px;accent-color:#007b8d;cursor:pointer}
+.taxonomy-page .tax-row .tax-check {align-items:center;justify-content:center;min-height:58px}
+.taxonomy-page .tax-info {background:#edf5f8;padding:16px;border-radius:9px;margin:16px 0}
+.taxonomy-page .tax-new {background:#f0f7f8;padding:14px;border-radius:8px;margin:14px 0}
+.taxonomy-page .tax-category {background:#edf4f7;padding:12px;border-radius:7px;margin-top:20px;display:flex;justify-content:space-between;gap:8px}
+@media(max-width:1100px){.taxonomy-page .tax-row,.taxonomy-page .tax-type{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}}
 </style>
-<main class="library-page release-page">
-    <div class="library-page-head">
-        <div><p class="portal-eyebrow">PORTAALBEHEER / LVS</p><h1>Meldingsvrijgave</h1><p>Bepaal wie nieuwe LVS-meldingen standaard mag bekijken.</p></div>
-    </div>
-    <div class="release-explanation">
-        <strong>Hoe werkt dit?</strong>
-        <p>Vink per meldingssoort aan of een nieuwe melding standaard zichtbaar mag zijn voor de leerling en/of de co-accounts.</p>
-        <p>De leerkracht kan deze keuze aanpassen bij het registreren van een melding. Vertrouwelijke meldingen blijven altijd intern. Bestaande meldingen worden niet automatisch aangepast.</p>
-        <p>De gebruiker moet daarnaast over het juiste LVS-leesrecht beschikken.</p>
-    </div>
-    @if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="library-errors" role="alert">{{ $errors->first() }}</div>@endif
-    <section class="library-form-card">
-        <form method="post" action="{{ route('beheer.incident-release.save') }}" id="release-form">@csrf
-            <div class="library-table-wrap"><table class="library-table">
-                <thead><tr><th>Meldingssoort</th>
-                    @foreach(['student'=>'Leerling','coaccount'=>'Co-account'] as $key=>$label)
-                        <th class="release-center">
-                            {{ $label }}
-                            <label class="release-choice"><input class="release-check" type="checkbox" data-release-all="{{ $key }}"> Alles</label>
-                            <span class="release-count" data-release-count="{{ $key }}"></span>
-                        </th>
-                    @endforeach
-                </tr></thead>
-                <tbody>
-                @foreach($types->groupBy('categorie') as $category=>$rows)
-                    <tr class="release-category"><td colspan="3">{{ $category ?: 'Zonder categorie' }}</td></tr>
-                    @foreach($rows as $type)
-                    <tr><td>{{ $type->naam }}</td>
-                        <td class="release-center"><input type="hidden" name="rights[{{ $type->id }}][student]" value="0"><label class="release-choice"><input class="release-check" type="checkbox" data-release="student" name="rights[{{ $type->id }}][student]" value="1" @checked(old('rights.'.$type->id.'.student',$type->visible_student)) aria-label="Leerling: {{ $type->naam }}"></label></td>
-                        <td class="release-center"><input type="hidden" name="rights[{{ $type->id }}][coaccount]" value="0"><label class="release-choice"><input class="release-check" type="checkbox" data-release="coaccount" name="rights[{{ $type->id }}][coaccount]" value="1" @checked(old('rights.'.$type->id.'.coaccount',$type->visible_coaccount)) aria-label="Co-account: {{ $type->naam }}"></label></td>
-                    </tr>
-                    @endforeach
-                @endforeach
-                </tbody>
-            </table></div>
-            <div class="release-actions"><span class="library-help">Wijzigingen gelden uitsluitend voor nieuwe meldingen.</span><button class="library-button library-button-primary" type="submit">Instellingen opslaan</button></div>
-        </form>
-    </section>
+<main class="library-page taxonomy-page">
+<div class="library-page-head"><div><p class="portal-eyebrow">LVS / INSTELLINGEN</p><h1>Categorieën en meldingssoorten</h1><p>Beheer de structuur en standaardvrijgave van nieuwe LVS-meldingen.</p></div></div>
+<div class="tax-info"><strong>Hoe werkt dit?</strong><p>Actieve categorieën en soorten verschijnen bij nieuwe meldingen. Lagere volgnummers komen eerst; gelijke nummers worden alfabetisch gesorteerd. Deactiveer in plaats van te verwijderen: bestaande meldingen en opvolgregels blijven behouden.</p><p>Leerling en Co-account bepalen de standaardvrijgave bij nieuwe meldingen. De leerkracht kan afwijken. Vertrouwelijke meldingen blijven intern. Een gebruikte meldingssoort kan niet naar een andere categorie worden verplaatst, om historische rapportages te beschermen.</p></div>
+@if(session('success'))<div class="library-message" role="status">{{ session('success') }}</div>@endif
+@if($errors->any())<div class="library-errors" role="alert">{{ $errors->first() }}</div>@endif
+<section class="library-form-card">
+<h2>1. Categorieën</h2>
+@foreach($categories as $category)
+<form class="tax-row" method="post" action="{{ route('beheer.incident-release.save') }}">@csrf
+<input type="hidden" name="kind" value="category"><input type="hidden" name="id" value="{{ $category->id }}">
+<label>Naam<input name="naam" value="{{ $category->naam }}" required maxlength="120"></label>
+<label>Volgorde<input type="number" name="portal_sort" min="0" max="99999" value="{{ $category->portal_sort }}" required></label>
+<label class="tax-check">Actief<input type="hidden" name="portal_active" value="0"><input type="checkbox" name="portal_active" value="1" @checked($category->portal_active)></label>
+<span>{{ $types->where('meldingscategorieId',$category->id)->count() }} soorten</span>
+<button class="library-button library-button-secondary">Opslaan</button>
+</form>
+@endforeach
+<form class="tax-row tax-new" method="post" action="{{ route('beheer.incident-release.save') }}">@csrf
+<input type="hidden" name="kind" value="category"><label>Nieuwe categorie<input name="naam" required maxlength="120" placeholder="Naam categorie"></label><label>Volgorde<input type="number" name="portal_sort" min="0" max="99999" value="0" required></label><label class="tax-check">Actief<input type="hidden" name="portal_active" value="0"><input type="checkbox" name="portal_active" value="1" checked></label><span></span><button class="library-button library-button-primary">Toevoegen</button>
+</form>
+</section>
+<section class="library-form-card">
+<h2>2. Meldingssoorten en vrijgave</h2>
+@foreach($categories as $category)
+<div class="tax-category"><strong>{{ $category->naam }}</strong><span>{{ $category->portal_active?'Actief':'Categorie inactief' }}</span></div>
+@foreach($types->where('meldingscategorieId',$category->id) as $type)
+<form class="tax-row tax-type" method="post" action="{{ route('beheer.incident-release.save') }}">@csrf
+<input type="hidden" name="kind" value="type"><input type="hidden" name="id" value="{{ $type->id }}">
+<label>Meldingssoort<input name="naam" value="{{ $type->naam }}" maxlength="120" required></label>
+<label>Categorie<select name="category_id">@foreach($categories as $option)<option value="{{ $option->id }}" @selected($option->id==$type->meldingscategorieId)>{{ $option->naam }}</option>@endforeach</select></label>
+<label>Volgorde<input type="number" name="portal_sort" min="0" max="99999" value="{{ $type->portal_sort }}" required></label>
+@foreach(['portal_active'=>'Actief','visible_student'=>'Leerling','visible_coaccount'=>'Co-account'] as $key=>$label)
+<label class="tax-check">{{ $label }}<input type="hidden" name="{{ $key }}" value="0"><input type="checkbox" name="{{ $key }}" value="1" @checked($type->$key)></label>
+@endforeach
+<button class="library-button library-button-secondary">Opslaan</button>
+</form>
+@endforeach
+@endforeach
+@if($categories->isNotEmpty())
+<form class="tax-row tax-type tax-new" method="post" action="{{ route('beheer.incident-release.save') }}">@csrf
+<input type="hidden" name="kind" value="type"><label>Nieuwe meldingssoort<input name="naam" required maxlength="120" placeholder="Naam soort"></label><label>Categorie<select name="category_id" required>@foreach($categories as $option)<option value="{{ $option->id }}">{{ $option->naam }}</option>@endforeach</select></label><label>Volgorde<input type="number" name="portal_sort" min="0" max="99999" value="0" required></label>
+@foreach(['portal_active'=>'Actief','visible_student'=>'Leerling','visible_coaccount'=>'Co-account'] as $key=>$label)
+<label class="tax-check">{{ $label }}<input type="hidden" name="{{ $key }}" value="0"><input type="checkbox" name="{{ $key }}" value="1" @checked($key==='portal_active')></label>
+@endforeach
+<button class="library-button library-button-primary">Toevoegen</button>
+</form>
+@endif
+</section>
 </main>
-<script>
-(() => {
-    const form=document.getElementById('release-form');
-    for(const all of form.querySelectorAll('[data-release-all]')){
-        const key=all.dataset.releaseAll;
-        const boxes=Array.from(form.querySelectorAll('[data-release="'+key+'"]'));
-        const count=form.querySelector('[data-release-count="'+key+'"]');
-        const refresh=()=>{
-            const n=boxes.filter(box=>box.checked).length;
-            all.checked=boxes.length>0 && n===boxes.length;
-            all.indeterminate=n>0 && n<boxes.length;
-            all.disabled=boxes.length===0;
-            count.textContent=n+' van '+boxes.length+' geselecteerd';
-        };
-        all.addEventListener('change',()=>{boxes.forEach(box=>box.checked=all.checked);refresh();});
-        boxes.forEach(box=>box.addEventListener('change',refresh));
-        refresh();
-    }
-})();
-</script>
 @endsection
