@@ -129,7 +129,7 @@ class LibraryBookController extends Controller
             return response()->json(['message' => 'Voer een geldig ISBN-10 of ISBN-13 in.'], 422);
         }
 
-        $book = $lookup->find($isbn);
+        $book = $lookup->findWithFallback($isbn);
         if ($book === null) {
             return response()->json(['message' => 'Geen gegevens gevonden. Vul het boek handmatig in.'], 404);
         }
@@ -145,8 +145,14 @@ class LibraryBookController extends Controller
         ]);
 
         $books = $lookup->searchByName(trim($data['q']), $data['type'] ?? 'title');
+        if ($books === []) {
+            $books = $lookup->searchGoogleByName(trim($data['q']), $data['type'] ?? 'title');
+        }
 
-        return response()->json(['books' => $books]);
+        return response()->json([
+            'books' => $books,
+            'source' => $books !== [] ? (($books[0]['source'] ?? 'Open Library')) : null,
+        ]);
     }
 
     public function editions(Request $request, LibraryIsbnLookup $lookup): JsonResponse
