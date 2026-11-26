@@ -26,7 +26,7 @@ class LibraryLoanController extends Controller
     {
         $search = trim((string) $request->query('q', ''));
         $mode = (string) $request->query('filter', 'open');
-        if (! in_array($mode, ['open', 'overdue', 'returned', 'all'], true)) $mode = 'open';
+        if (! in_array($mode, ['open', 'overdue', 'returned', 'all', 'departed'], true)) $mode = 'open';
 
         $query = DB::table('library_loans as loans')
             ->join('library_copies as copies', 'copies.id', '=', 'loans.copy_id')
@@ -38,6 +38,10 @@ class LibraryLoanController extends Controller
                 'staff.voornaam as staff_voornaam', 'staff.name as staff_naam',
                 'staff.smartschool_gebruikersnaam as staff_gebruikersnaam');
 
+        if ($mode === 'departed') $query->whereNull('loans.returned_at')->whereNotNull('loans.leerling_id')->where(fn($q)=>$q->whereNull('leerlingen.id')->orWhere('leerlingen.active',0));
+        if ($request->filled('student_id')) $query->where('loans.leerling_id',(int)$request->query('student_id'));
+        if ($request->filled('staff_id')) $query->where('loans.staff_user_id',(int)$request->query('staff_id'));
+        if ($request->filled('copy_id')) $query->where('loans.copy_id',(int)$request->query('copy_id'));
         if ($mode === 'open') $query->whereNull('loans.returned_at');
         if ($mode === 'overdue') $query->whereNull('loans.returned_at')->where('loans.due_date', '<', now()->toDateString());
         if ($mode === 'returned') $query->whereNotNull('loans.returned_at');
@@ -327,6 +331,48 @@ class LibraryLoanController extends Controller
         return redirect()->route('bibliotheek.loans.index')->with('success',
             count($loanIds).' boek(en) uitgeleend.'
             .($sent > 0 ? " Smartschool-bevestiging(en): {$sent} verzonden." : ''));
+    }
+
+    public function bulk(Request $request): RedirectResponse
+    {
+        $this->authorizeOperator($request);
+        $data=$request->validate(['action'=>'required|in:return,extend','ids'=>'nullable|array|max:100','ids.*'=>'integer|min:1|distinct','barcodes'=>'nullable|string|max:7000']);
+        $ids=$data['ids'] ?? [];
+        $fail=[];
+        if (!empty($data['barcodes'])) {
+            if ($data['action']!=='return') return back()->withErrors(['bulk'=>'Barcodes zijn enkel voor inleveren.']);
+            $codes=array_unique(preg_split('/[\s,;]+/',trim($data['barcodes']),-1,PREG_SPLIT_NO_EMPTY));
+            if(count($codes)>100) return back()->withErrors(['bulk'=>'Maximaal 100 scans per keer.']);
+            foreach($codes as $code){
+                $id=DB::table('library_loans as l')->join('library_copies as c','c.id','=','l.copy_id')->where('c.barcode',$code)->whereNull('l.returned_at')->value('l.id');
+                if($id) $ids[]=$id; else $fail[]=$code.': geen openstaande uitlening';
+            }
+        }
+        $ids=array_unique($ids);
+        $request->session()->forget('errors');
+        if(count($ids)>100 || (!$ids && !$fail)) return back()->withErrors(['bulk'=>'Selecteer 1 tot 100 uitleningen.']);
+        $ok=0;
+        foreach($ids as $id){
+            if(!DB::table('library_loans')->where('id',$id)->exists()){ $fail[]='Uitlening #'.$id.': niet gevonden'; continue; }
+            $request->session()->forget('errors');
+            $response=$data['action']==='return' ? $this->returnLoan((int)$id) : $this->extend((int)$id);
+            $errors=$request->session()->get('errors');
+            if($errors instanceof \Illuminate\Support\ViewErrorBag && $errors->any()){ $fail[]='Uitlening #'.$id.': '.$errors->first(); $request->session()->forget('errors'); } else $ok++;
+        }
+        $response=back()->with('success',$ok.' uitleningen verwerkt.');
+        return $fail ? $response->withErrors($fail) : $response;
+    }
+
+    public function pause(Request $request,int $loan): RedirectResponse
+    {
+        $this->authorizeOperator($request);
+        $data=$request->validate(['until'=>'nullable|date_format:Y-m-d|after_or_equal:today']);
+        DB::transaction(function() use($request,$loan,$data){
+            $item=DB::table('library_loans')->where('id',$loan)->whereNull('returned_at')->lockForUpdate()->first(); abort_unless($item,404);
+            DB::table('library_loans')->where('id',$loan)->update(['reminders_paused_until'=>$data['until'] ?? null,'updated_at'=>now()]);
+            DB::table('library_loan_events')->insert(['loan_id'=>$loan,'action'=>'herinneringen_pauze','actor'=>$this->username($request),'details'=>json_encode($data),'created_at'=>now(),'updated_at'=>now()]);
+        });
+        return back()->with('success','Pauze aangepast.');
     }
 
     public function returnByBarcode(Request $request): RedirectResponse

@@ -372,6 +372,7 @@ class LibraryBookController extends Controller
                 return back()->withErrors(['delete' => 'Verwijderen niet mogelijk: het boek heeft een uitleenhistoriek.']);
             }
 
+            if (DB::table('library_copy_events')->whereIn('copy_id',$copies->pluck('id'))->exists() || DB::table('library_inventory_items')->whereIn('copy_id',$copies->pluck('id'))->exists()) return back()->withErrors(['delete'=>'Exemplaren hebben een historiek. Gebruik afvoeren.']);
             $book->delete();
             return redirect()->route('bibliotheek.books.index')->with('success', 'Boek en bijbehorende exemplaren verwijderd.');
         });
@@ -424,6 +425,23 @@ class LibraryBookController extends Controller
             ->with('success', 'Exemplaar '.$copy->barcode.' aangepast.');
     }
 
+    public function copyStatus(Request $request, LibraryBook $book, LibraryCopy $copy): RedirectResponse
+    {
+        $data=$request->validate(['status'=>'required|in:beschikbaar,beschadigd,verloren,afgevoerd','note'=>'required|string|max:2000']);
+        return DB::transaction(function() use($request,$book,$copy,$data){
+            $copy=$book->copies()->whereKey($copy->id)->lockForUpdate()->firstOrFail();
+            if (DB::table('library_loans')->where('copy_id',$copy->id)->whereNull('returned_at')->exists() || $copy->status==='uitgeleend') {
+                return back()->withErrors(['status'=>'Er staat nog een uitlening open. Sluit die eerst correct af; de ontlener blijft anders uit beeld.']);
+            }
+            if ($copy->status===$data['status']) return back()->with('success','Status is ongewijzigd.');
+            DB::table('library_copy_events')->insert(['copy_id'=>$copy->id,'old_status'=>$copy->status,'new_status'=>$data['status'],'actor'=>app(\App\Services\LibraryAccess::class)->username($request),'note'=>$data['note'],'created_at'=>now(),'updated_at'=>now()]);
+            $values=['status'=>$data['status'],'updated_at'=>now()];
+            if ($data['status']==='beschadigd') $values['condition']='beschadigd';
+            DB::table('library_copies')->where('id',$copy->id)->update($values);
+            return back()->with('success','Exemplaarstatus aangepast; historiek behouden.');
+        });
+    }
+
     public function destroyCopy(LibraryBook $book, LibraryCopy $copy): RedirectResponse
     {
         return DB::transaction(function () use ($book, $copy) {
@@ -453,6 +471,7 @@ class LibraryBookController extends Controller
                 }
             }
 
+            if (DB::table('library_copy_events')->where('copy_id',$copy->id)->exists() || DB::table('library_inventory_items')->where('copy_id',$copy->id)->exists()) return back()->withErrors(['delete'=>'Exemplaar heeft een inventaris- of statushistoriek. Gebruik afvoeren.']);
             $barcode = $copy->barcode;
             $copy->delete();
 

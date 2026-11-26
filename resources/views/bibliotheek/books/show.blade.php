@@ -70,6 +70,14 @@
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.qr-labels', ['copy' => $copy->id]) }}">Etiket afdrukken</a>
                                 <button type="button" class="library-button library-button-secondary library-single-qr" data-barcode="{{ $copy->barcode }}" data-copy-id="{{ $copy->id }}" aria-label="QR-code voor exemplaar {{ $copy->barcode }} downloaden">QR downloaden</button>
                                 <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.copies.edit', [$book, $copy]) }}" aria-label="Exemplaar {{ $copy->barcode }} bewerken">Bewerken</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.loans.view'))
+                                    <a class="library-button library-button-secondary" href="{{ route('bibliotheek.loans.index',['filter'=>'all','copy_id'=>$copy->id]) }}">Uitleenhistoriek</a>
+                                @endif
+                                @if($copy->status !== 'uitgeleend' && app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.books.manage'))
+                                    <form method="post" action="{{ route('bibliotheek.books.copies.status',[$book,$copy]) }}">@csrf
+                                    <select name="status">@foreach(['beschikbaar','beschadigd','verloren','afgevoerd'] as $status)<option @selected($copy->status===$status)>{{ $status }}</option>@endforeach</select>
+                                    <input name="note" required maxlength="2000" placeholder="Reden statuswijziging"><button class="library-button library-button-secondary">Status wijzigen</button></form>
+                                @endif
                                 @if($copy->status === 'beschikbaar')
                                     <form method="post" action="{{ route('bibliotheek.books.copies.destroy', [$book, $copy]) }}" onsubmit="return confirm('Exemplaar {{ $copy->barcode }} definitief verwijderen? Het boek en de andere exemplaren blijven behouden.');">
                                         @csrf
