@@ -376,10 +376,21 @@
         try {
             const response = await fetch(@json(route('bibliotheek.books.lookup')) + '?isbn=' + encodeURIComponent(isbn), { headers: { Accept: 'application/json' } });
             const result = await response.json();
-            if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; return; }
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    message.textContent = 'Je sessie is verlopen of je hebt geen toegangsrechten. Meld je opnieuw aan.';
+                } else if (response.status === 429) {
+                    message.textContent = 'Te veel zoekopdrachten. Probeer het binnenkort opnieuw.';
+                } else if (response.status >= 500) {
+                    message.textContent = 'De bibliotheekopzoekdienst is tijdelijk niet beschikbaar (serverfout). Probeer opnieuw of registreer handmatig.';
+                } else {
+                    message.textContent = result.message || 'Geen gegevens gevonden.';
+                }
+                return;
+            }
             const book = result.book;
             applyBook(book);
-            message.textContent = 'Gegevens gevonden. Controleer de velden; de exemplaarbarcode staat al ingevuld.';
+            message.textContent = 'Gegevens gevonden via ' + (book.source || 'Open Library') + '. Controleer de velden en het ISBN op het fysieke boek.';
         } catch {
             message.textContent = 'De ISBN-dienst is tijdelijk niet bereikbaar. Vul de gegevens handmatig in.';
         } finally {
