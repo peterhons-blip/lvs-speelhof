@@ -496,6 +496,10 @@ class LibraryLoanController extends Controller
             'overdue_escalate_after' => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
+        if ((int) $values['overdue_escalate_after'] > 1 && (int) $values['overdue_repeat_days'] === 0) {
+            return back()->withInput()->withErrors(['overdue_repeat_days' =>
+                'Kies een herhaalinterval wanneer een escalatie pas na meerdere herinneringen moet volgen.']);
+        }
         if ((int) $values['overdue_escalate_after'] > 0 && (int) $values['overdue_first_days'] === 0) {
             return back()->withInput()->withErrors(['overdue_escalate_after' =>
                 'Schakel eerst een herinnering na de inleverdatum in voordat je een escalatie instelt.']);
