@@ -57,6 +57,7 @@ class LibraryAccess
 
     public function role(Request $request): ?string
     {
+        if (in_array($request->session()->get('ss_user.principal_type'),['leerling','coaccount'],true)) return null;
         $username = $this->username($request);
         if ($username === '' || ! Schema::hasTable('users') || ! Schema::hasTable('groups')) return null;
 
