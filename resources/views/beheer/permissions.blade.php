@@ -100,6 +100,10 @@
                                         </span>
                                     </summary>
                                     <div class="portal-permission-module-body">
+                                        <label class="portal-permission-option" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #dbe3eb;font-weight:700">
+                                            <input type="checkbox" data-module-toggle @checked($moduleActive === $rights->count())>
+                                            <span>Alle rechten in {{ $module['label'] }} selecteren</span>
+                                        </label>
                                         <div class="portal-permission-list">
                                             @foreach($rights as $permission => $label)
                                                 <label class="portal-permission-option">
@@ -139,14 +143,26 @@
             const active = checkboxes.filter(box => box.checked).length;
             counter.textContent = active + ' van ' + checkboxes.length + ' actief';
             form.querySelectorAll('.portal-permission-module').forEach(module => {
-                const boxes = [...module.querySelectorAll('input[type="checkbox"]')];
-                module.querySelector('[data-module-count]').textContent =
-                    boxes.filter(box => box.checked).length + '/' + boxes.length;
+                const boxes = [...module.querySelectorAll('input[name="permissions[]"]')];
+                const selected = boxes.filter(box => box.checked).length;
+                const toggle = module.querySelector('[data-module-toggle]');
+                toggle.checked = selected === boxes.length;
+                toggle.indeterminate = selected > 0 && selected < boxes.length;
+                module.querySelector('[data-module-count]').textContent = selected + '/' + boxes.length;
             });
             unsaved.hidden = !checkboxes.some((box, index) => box.checked !== original[index]);
         };
 
-        form.addEventListener('change', update);
+        form.addEventListener('change', event => {
+            if (event.target.matches('[data-module-toggle]')) {
+                const module = event.target.closest('.portal-permission-module');
+                module.querySelectorAll('input[name="permissions[]"]').forEach(box => {
+                    box.checked = event.target.checked;
+                });
+            }
+            update();
+        });
+        update();
     });
 })();
 </script>
