@@ -16,11 +16,23 @@
     <div class="library-page-head">
         <div>
             <p class="portal-eyebrow">BIBLIOTHEEK / BOEKENCATALOGUS</p>
-            <h1 id="add-book-title">Nieuw boek registreren</h1>
+            <h1 id="add-book-title">{{ $quick ? 'Snel boeken registreren' : 'Nieuw boek registreren' }}</h1>
             <p>Zoek een boek via ISBN, titel of auteur. Controleer de gegevens vóór het opslaan.</p>
         </div>
         <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Terug naar catalogus</a>
     </div>
+    @if(session('success'))
+        <div class="library-message" role="status">{{ session('success') }} · {{ session('last_barcode') }}</div>
+    @endif
+    @if($quick)
+        <section class="library-form-card">
+            <strong>Vandaag:</strong> {{ $todayCopies }} exemplaren · {{ $todayBooks }} nieuwe titels · {{ $todayUnprinted }} etiketten nog niet bevestigd
+            <p class="library-help">Scan het ISBN, controleer de gegevens en kies Registreren en volgend boek. Leg onbekende boeken apart indien nodig.</p>
+            <a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.create') }}">Uitgebreide invoer</a>
+        </section>
+    @else
+        <p><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.create', ['quick' => 1]) }}">Snel boeken registreren</a></p>
+    @endif
     @if($errors->any())
         <div class="library-errors" role="alert"><strong>Controleer de invoer:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
@@ -99,7 +111,7 @@
         </section>
 
         <section class="library-form-card">
-            <h2>2. Eerste fysiek exemplaar</h2>
+            <h2>2. Fysiek exemplaar</h2>
             <p>Elk exemplaar heeft een eigen barcode, ook wanneer meerdere boeken hetzelfde ISBN hebben.</p>
             <div class="library-form-grid">
                 <div class="library-field"><label for="barcode">Unieke barcode / inventarisnummer <span aria-hidden="true">*</span></label><input id="barcode" name="barcode" value="{{ old('barcode', $suggestedBarcode) }}" maxlength="60" required></div>
@@ -109,7 +121,14 @@
                 <div class="library-field library-wide"><label for="notes">Opmerkingen over dit exemplaar</label><textarea id="notes" name="notes" rows="2" maxlength="2000">{{ old('notes') }}</textarea></div>
             </div>
         </section>
-        <div class="library-form-actions"><button type="submit" class="library-button library-button-primary">Boek / exemplaar registreren</button><a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
+        <div class="library-form-actions">
+            @if($quick)
+                <button type="submit" name="next_book" value="1" class="library-button library-button-primary">Registreren en volgend boek</button>
+                <button type="submit" class="library-button library-button-secondary">Registreren en details bekijken</button>
+            @else
+                <button type="submit" class="library-button library-button-primary">Boek / exemplaar registreren</button>
+                <button type="submit" name="next_book" value="1" class="library-button library-button-secondary">Registreren en volgend boek</button>
+            @endif<a class="library-button library-button-secondary" href="{{ route('bibliotheek.books.index') }}">Annuleren</a></div>
     </form>
 </main>
 @endsection
@@ -420,9 +439,24 @@
         }
     });
 
+    const form = document.getElementById('library-new-book-form');
+    let lookingUp = false;
+    let submitting = false;
+    isbnInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (!lookingUp) button.click();
+        }
+    });
+    form.addEventListener('submit', event => {
+        if (lookingUp || submitting) { event.preventDefault(); return; }
+        submitting = true;
+    });
     button.addEventListener('click', async () => {
+        if (lookingUp) return;
         const isbn = isbnInput.value.trim();
         if (!isbn) { message.textContent = 'Vul eerst een ISBN in.'; isbnInput.focus(); return; }
+        lookingUp = true;
         button.disabled = true;
         otherSources.hidden = true;
         message.textContent = 'Boekgegevens ophalen…';
@@ -430,6 +464,7 @@
             const response = await fetch(@json(route('bibliotheek.books.lookup')) + '?isbn=' + encodeURIComponent(isbn), { headers: { Accept: 'application/json' } });
             const result = await response.json();
             if (!response.ok) { message.textContent = result.message || 'Geen gegevens gevonden.'; if (response.status !== 422) { updateOtherSources(isbn); otherSources.hidden = false; } return; }
+            if (isbnInput.value.trim() !== isbn) { message.textContent = 'ISBN gewijzigd. Scan opnieuw.'; return; }
             const book = result.book;
             applyBook(book);
             message.textContent = result.existing_book
@@ -440,6 +475,7 @@
             updateOtherSources(isbn);
             otherSources.hidden = false;
         } finally {
+            lookingUp = false;
             button.disabled = false;
         }
     });
