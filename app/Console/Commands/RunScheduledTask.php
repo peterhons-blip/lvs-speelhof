@@ -118,6 +118,12 @@ class RunScheduledTask extends Command
             $staff = preg_match_all('/^User: verstuurd naar /m', $output);
             return "{$pupils} leerling- en {$staff} personeelsverjaardagsberichten gemeld als verzonden.";
         }
+        if ($key === 'secretariat_reminders') {
+            if (preg_match('/Klaar:\s*(\d+) van (\d+) secretariaatsherinneringen/', $output,$m)) return "{$m[1]} van {$m[2]} secretariaatsherinneringen verzonden.";
+            if (str_contains($output,'Geen secretariaatsherinneringen:')) return trim($output);
+            if (str_contains($output,'Secretariaatsherinneringen staan uit.')) return 'Secretariaatsherinneringen staan uit.';
+            return 'Secretariaatsherinneringen gecontroleerd; zie serverlog.';
+        }
         if ($key === 'becoming_18') {
             return '18-jarigen en waarschuwingen gecontroleerd; details in beveiligd serverlog.';
         }
