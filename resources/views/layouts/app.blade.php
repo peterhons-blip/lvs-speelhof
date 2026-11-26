@@ -34,6 +34,14 @@
             </div>
         </header>
 
+        @if(session('portal_preview'))
+        <div role="status" style="background:#fff1d5;border-bottom:1px solid #e5bf72;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#604000">
+            <div><strong>Testmodus: {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}</strong> · Alleen-lezen · {{ $ss_user['groupname'] ?? '' }}
+                @if(session('preview_warning'))<div>{{ session('preview_warning') }}</div>@endif
+            </div>
+            <form method="post" action="{{ route('portal-preview.stop') }}">@csrf<button type="submit" class="library-button library-button-secondary">Terug naar ICT</button></form>
+        </div>
+        @endif
         <div class="portal-workspace">
             <aside class="portal-sidebar" aria-label="Hoofdnavigatie">
                 <span class="portal-sidebar-label">WERKOMGEVING</span>
