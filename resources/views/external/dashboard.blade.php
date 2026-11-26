@@ -34,6 +34,9 @@
 .personal-catalog-feedback{font-size:13px;color:#526b83;margin:0 0 8px;min-height:0}
 .personal-catalog-feedback:empty{display:none}
 [data-catalog-results][aria-busy=true]{opacity:.65}
+.personal-catalog-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;width:100%;margin-top:4px}
+.personal-catalog-filters .library-field{margin:0;min-width:0}
+.personal-catalog-filters select{width:100%;min-width:0}
 </style>
 <main class="library-page">
 <div class="library-page-head"><div><p class="portal-eyebrow">{{ $role==='staff'?'MIJN BIBLIOTHEEK':'MIJN PORTAAL' }}</p><h1>{{ $titles[$section] }}</h1>
@@ -121,6 +124,36 @@
     </div>
     <button class="library-button library-button-secondary" type="button" data-catalog-clear>Wissen</button>
     <button class="library-button library-button-primary" type="submit">Zoeken</button>
+    <div class="personal-catalog-filters">
+        @foreach(['category'=>'Genre / categorie','authors'=>'Auteur','publisher'=>'Uitgever','published_year'=>'Uitgavejaar'] as $field=>$label)
+        <div class="library-field">
+            <label for="catalog-{{ $field }}">{{ $label }}</label>
+            <select id="catalog-{{ $field }}" name="{{ $field }}">
+                <option value="">Alle</option>
+                @foreach($catalogFilters[$field] as $value)
+                <option value="{{ $value }}" @selected((string)request($field,'')===(string)$value)>{{ $value }}</option>
+                @endforeach
+            </select>
+        </div>
+        @endforeach
+        @if($can('library.availability.view'))
+        <div class="library-field"><label for="catalog-availability">Beschikbaarheid</label>
+            <select id="catalog-availability" name="availability">
+                <option value="">Alle boeken</option>
+                <option value="available" @selected(request('availability')==='available')>Beschikbaar</option>
+                <option value="unavailable" @selected(request('availability')==='unavailable')>Niet beschikbaar</option>
+            </select>
+        </div>
+        @endif
+        <div class="library-field"><label for="catalog-sort">Sorteren op</label>
+            <select id="catalog-sort" name="sort">
+                <option value="title" @selected(request('sort','title')==='title')>Titel (A–Z)</option>
+                <option value="author" @selected(request('sort')==='author')>Auteur (A–Z)</option>
+                <option value="year" @selected(request('sort')==='year')>Uitgavejaar (nieuwste eerst)</option>
+                <option value="recent" @selected(request('sort')==='recent')>Laatst toegevoegd</option>
+            </select>
+        </div>
+    </div>
 </form>
 <p class="personal-catalog-feedback" data-catalog-feedback role="status" aria-live="polite"></p>
 <div data-catalog-results>
@@ -192,5 +225,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/personal-catalog.js') }}?v=1" defer></script>
+<script src="{{ asset('js/personal-catalog.js') }}?v=2" defer></script>
 @endpush
