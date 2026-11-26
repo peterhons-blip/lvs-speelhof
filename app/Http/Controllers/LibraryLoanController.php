@@ -208,9 +208,11 @@ class LibraryLoanController extends Controller
                     ->whereColumn('loans.copy_id', 'copies.id')
                     ->whereNull('loans.returned_at');
             })
-            ->select('copies.barcode', 'copies.shelf_location', 'copies.condition')
+            ->select('copies.id','copies.barcode', 'copies.shelf_location', 'copies.condition')
             ->orderBy('copies.barcode')->limit(100)->get();
 
+        $reserved=app(\App\Services\LibraryReservations::class)->active()->whereIn('reserved_copy_id',$copies->pluck('id'))->pluck('reserved_copy_id')->all();
+        $copies->each(fn($copy)=>$copy->reserved=in_array($copy->id,$reserved));
         return response()->json($copies);
     }
 
