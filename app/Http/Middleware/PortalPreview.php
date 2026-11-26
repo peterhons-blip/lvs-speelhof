@@ -53,7 +53,7 @@ class PortalPreview
             Log::notice('Portal staff preview ended by logout',['actor'=>$preview['actor'],'target'=>$preview['target_id']]);
             return $next($request);
         }
-        if (!in_array($request->method(),['GET','HEAD'],true) || $request->routeIs('login','smartschool.callback') || $request->is('fake-login')) {
+        if ((!in_array($request->method(),['GET','HEAD'],true) && !($request->isMethod('POST') && $request->routeIs('personal-library.submit'))) || $request->routeIs('login','smartschool.callback') || $request->is('fake-login')) {
             return redirect()->route('home')->with('preview_warning','Testmodus is alleen-lezen. Er werd niets opgeslagen.');
         }
         $request->session()->put('ss_user',[

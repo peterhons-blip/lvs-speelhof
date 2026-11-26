@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Bibliotheek')
+@section('title', 'Bibliotheekbeheer')
 
 @section('breadcrumbs')
     @include('partials.breadcrumbs', ['items' => [
         ['label' => 'Dashboard', 'url' => route('home')],
-        ['label' => 'Bibliotheek'],
+        ['label' => 'Bibliotheekbeheer'],
     ]])
 @endsection
 
@@ -14,7 +14,7 @@
         <div class="portal-library-heading">
             <div>
                 <p class="portal-eyebrow">ATHENEUM PORTAAL</p>
-                <h1 id="library-title">Bibliotheek</h1>
+                <h1 id="library-title">Bibliotheekbeheer</h1>
                 <p>Beheer boeken, fysieke exemplaren, uitleningen, Smartschool-berichten en QR-etiketten.</p>
             </div>
             <span class="portal-library-status">Catalogus en uitleningen</span>
