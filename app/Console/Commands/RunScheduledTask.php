@@ -14,6 +14,7 @@ class RunScheduledTask extends Command
     protected $description = 'Execute a registered nightly task and persist its real status';
 
     private const TASKS = [
+        'secretariat_reminders' => ['command'=>'leerlingen:secretariaat-herinneringen'],
         'becoming_18' => ['command' => 'leerlingen:check-18'],
         'birthdays' => ['command' => 'verjaardagen:check'],
         'student_sync' => ['command' => 'smartschool:sync-leerlingen', 'parameters' => ['--schoolid' => 1]],
