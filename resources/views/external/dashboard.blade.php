@@ -1,27 +1,59 @@
-<!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mijn Atheneum Portaal</title><link rel="icon" href="{{ asset('atheneum-portaal-favicon.svg') }}">
-<link rel="stylesheet" href="{{ asset('css/lvs.css') }}"><link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=41">
-</head><body class="portal-body">
-<header class="portal-topbar"><a class="portal-brand" href="{{ route('external.dashboard') }}"><img class="portal-brand-logo" src="{{ asset('images/logo.jpg') }}" alt="Atheneum Sint-Truiden"><span class="portal-brand-title">Atheneum Portaal</span></a>
-<div class="portal-account"><span class="portal-account-copy"><strong>{{ session('ss_user.voornaam') }} {{ session('ss_user.naam') }}</strong><small>{{ $role==='leerling'?'Leerling':'Co-account' }}</small></span><a class="portal-logout" href="{{ route('logout') }}">Uitloggen</a></div></header>
-@if(session('portal_preview'))<div style="padding:12px;background:#fff1d5;color:#604000"><strong>Testmodus · {{ $role }} · {{ $student->voornaam }} {{ $student->naam }}</strong><form method="post" action="{{ route('portal-preview.stop') }}">
-@csrf
-<button class="library-button library-button-secondary">Terug naar ICT</button></form></div>
-@endif
-<main class="library-page" style="max-width:1100px;margin:24px auto;padding:0 16px">
-<div class="library-page-head"><div><p class="portal-eyebrow">MIJN PORTAAL</p><h1>Welkom, {{ session('ss_user.voornaam') }}!</h1>
-@if($role==='coaccount')<p>Portaal van {{ $student->voornaam }} {{ $student->naam }}</p>
+@extends('layouts.app')
+@section('title',$titles[$section])
+@section('breadcrumbs')
+@include('partials.breadcrumbs',['items'=>[['label'=>'Dashboard','url'=>route('external.dashboard')],['label'=>$titles[$section]]]])
+@endsection
+@section('content')
+<style>
+.external-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:18px;margin:20px 0}
+.external-card{display:flex;flex-direction:column;gap:8px;min-height:165px;background:#fff;border:1px solid #99d5de;border-radius:15px;padding:22px;text-decoration:none;color:inherit}
+.external-card:hover{border-color:#008599;box-shadow:0 4px 15px #12334a12}
+.external-card h2{font-size:17px;margin:0;color:#12365b}
+.external-card p{margin:0;color:#526b83;font-size:14px}
+.external-card-icon{display:grid;place-items:center;width:42px;height:42px;background:#e2f4f5;border-radius:12px;color:#007e90;font-size:22px}
+.external-number{font-size:30px;color:#12365b}
+</style>
+<main class="library-page">
+<div class="library-page-head"><div><p class="portal-eyebrow">MIJN PORTAAL</p><h1>{{ $titles[$section] }}</h1>
+@if($role==='coaccount')
+<p>Portaal van {{ $student->voornaam }} {{ $student->naam }}</p>
 @endif
 </div></div>
-@if($can('profile.view'))
+
+@if(in_array($section,['dashboard','library']))
+<div class="external-card-grid">
+@if($section==='dashboard' && $can('profile.view'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'profile']) }}"><span class="external-card-icon">◎</span><h2>{{ $role==='leerling'?'Mijn gegevens':'Leerlinggegevens' }}</h2><p>{{ $profile ?? 'Bekijk je profiel' }}</p></a>
+@endif
+@if($can('library.view'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'loans']) }}"><span class="external-card-icon">▤</span><strong class="external-number">{{ $loans->count() }}</strong><h2>Openstaande uitleningen</h2><p>{{ $loans->filter(fn($loan)=>$loan->due_date < now('Europe/Brussels')->toDateString())->count() }} te laat</p></a>
+@endif
+@if($can('library.catalog.view'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'catalog']) }}"><span class="external-card-icon">▥</span><h2>Boekencatalogus</h2><p>Zoek boeken op titel, auteur of ISBN.</p></a>
+@endif
+@if($can('library.history.view'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'history']) }}"><span class="external-card-icon">↶</span><h2>Uitleenhistoriek</h2><p>Bekijk eerder ingeleverde boeken.</p></a>
+@endif
+@if($can('library.reserve') || $can('library.renew.request'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'requests']) }}"><span class="external-card-icon">☷</span><strong class="external-number">{{ $requests->where('status','pending')->count() }}</strong><h2>Openstaande aanvragen</h2><p>Reserveringen en verlengingen.</p></a>
+@endif
+@if($section==='dashboard' && $can('lvs.view') && $can('incidents.view'))
+<a class="external-card" href="{{ route('external.dashboard',['section'=>'incidents']) }}"><span class="external-card-icon">◎</span><h2>LVS-meldingen</h2><p>Bekijk vrijgegeven meldingen.</p></a>
+@endif
+@if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
+<a class="external-card" href="{{ route('bibliotheek.index') }}"><span class="external-card-icon">▦</span><h2>Bibliotheekbeheer</h2><p>Open de werkruimte voor bibliotheekmedewerkers.</p></a>
+@endif
+</div>
+@endif
+
+@if($section==='profile' && $can('profile.view'))
 <section class="library-form-card"><h2>Leerlinggegevens</h2><dl class="lvs-details-grid"><div><dt>Naam</dt><dd>{{ $student->voornaam }} {{ $student->naam }}</dd></div><div><dt>Klas</dt><dd>{{ $profile ?? '—' }}</dd></div></dl></section>
 @endif
 @if(session('success'))<p role="status">{{ session('success') }}</p>
 @endif
 @if($errors->any())<div role="alert">{{ $errors->first() }}</div>
 @endif
-@if($incidents!==null)
+@if($section==='incidents' && $incidents!==null)
 <section class="library-form-card"><h2>LVS-meldingen</h2>
 @forelse($incidents as $incident)<article><strong>{{ $incident->soort }} · {{ $incident->gebeurdop }}</strong><p>{{ $incident->comment }}</p></article>
 @empty
@@ -30,7 +62,7 @@
 @include('partials.portal-pagination',['paginator'=>$incidents])
 </section>
 @endif
-@if($loans!==null)
+@if($section==='loans' && $loans!==null)
 <section class="library-form-card"><h2>Actuele uitleningen</h2><div class="library-table-wrap"><table class="library-table"><thead><tr><th>Boek</th><th>Inleverdatum</th>
 @if($can('library.renew.request'))<th>Actie</th>
 @endif
@@ -48,7 +80,7 @@
 @endforelse
 </tbody></table></div></section>
 @endif
-@if($history!==null)
+@if($section==='history' && $history!==null)
 <section class="library-form-card"><h2>Uitleenhistoriek</h2><div class="library-table-wrap"><table class="library-table"><thead><tr><th>Boek</th><th>Ingeleverd</th></tr></thead><tbody>
 @forelse($history as $loan)<tr><td>{{ $loan->title }}</td><td>{{ \Illuminate\Support\Carbon::parse($loan->returned_at)->format('d/m/Y') }}</td></tr>
 @empty
@@ -57,8 +89,8 @@
 </tbody></table></div>
 @include('partials.portal-pagination',['paginator'=>$history])</section>
 @endif
-@if($books!==null)
-<section class="library-form-card"><h2>Bibliotheekcatalogus</h2><form method="get" action="{{ route('external.dashboard') }}" class="library-search"><input type="search" name="q" value="{{ request('q') }}" placeholder="Titel, auteur of ISBN" maxlength="100"><button class="library-button library-button-primary" type="submit">Zoeken</button></form>
+@if($section==='catalog' && $books!==null)
+<section class="library-form-card"><h2>Bibliotheekcatalogus</h2><form method="get" action="{{ route('external.dashboard') }}" class="library-search" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><input type="hidden" name="section" value="catalog"><input style="flex:1" type="search" name="q" value="{{ request('q') }}" placeholder="Titel, auteur of ISBN" maxlength="100"><button class="library-button library-button-primary" type="submit">Zoeken</button></form>
 <div class="library-table-wrap"><table class="library-table"><thead><tr><th>Titel</th><th>Auteur</th>
 @if($can('library.reserve'))<th>Actie</th>
 @endif
@@ -79,15 +111,13 @@
 </tbody></table></div>
 @include('partials.portal-pagination',['paginator'=>$books])</section>
 @endif
-@if(!$can('profile.view') && $books===null && $loans===null && $history===null)<section class="library-form-card"><p>Er zijn nog geen functies voor je account geactiveerd.</p></section>
-@endif
-@if(app(\App\Services\LibraryAccess::class)->has(request(),'bibliotheek.view'))
-<section class="library-form-card"><h2>Bibliotheekmedewerker</h2><p>Open de bibliotheekmodule om boeken en uitleningen rechtstreeks te beheren.</p><a class="library-button library-button-primary" href="{{ route('bibliotheek.index') }}">Bibliotheekbeheer openen</a></section>
-@endif
-@if($requests->isNotEmpty())<section class="library-form-card"><h2>Mijn aanvragen</h2>
-@foreach($requests as $item)<p>{{ ['reserve'=>'Reservering','renew'=>'Verlenging','helper'=>'Bibliotheektaak'][$item->request_type] ?? '' }} · {{ $item->created_at }} · {{ $item->status==='approved' && $item->reserved_until && $item->reserved_until < now('Europe/Brussels')->toDateString() ? 'Verlopen' : (['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd','fulfilled'=>'Opgehaald','cancelled'=>'Geannuleerd'][$item->status] ?? '') }} @if($item->reserved_until) · Ophalen uiterlijk {{ $item->reserved_until }} @endif @if($item->decision_note) · {{ $item->decision_note }} @endif
+@if($section==='requests')<section class="library-form-card"><h2>Mijn aanvragen</h2>
+@forelse($requests as $item)<p>{{ ['reserve'=>'Reservering','renew'=>'Verlenging','helper'=>'Bibliotheektaak'][$item->request_type] ?? '' }} · {{ $item->created_at }} · {{ $item->status==='approved' && $item->reserved_until && $item->reserved_until < now('Europe/Brussels')->toDateString() ? 'Verlopen' : (['pending'=>'Open','approved'=>'Goedgekeurd','rejected'=>'Geweigerd','fulfilled'=>'Opgehaald','cancelled'=>'Geannuleerd'][$item->status] ?? '') }} @if($item->reserved_until) · Ophalen uiterlijk {{ $item->reserved_until }} @endif @if($item->decision_note) · {{ $item->decision_note }} @endif
 </p>
-@endforeach
+@empty
+<p>Je hebt nog geen aanvragen.</p>
+@endforelse
 </section>
 @endif
-</main></body></html>
+</main>
+@endsection
