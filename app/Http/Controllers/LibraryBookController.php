@@ -128,7 +128,6 @@ class LibraryBookController extends Controller
         $today = now()->toDateString();
         return view('bibliotheek.books.create', [
             'suggestedBarcode' => LibraryCopy::generateBarcode(),
-            'quick' => $request->boolean('quick'),
             'todayCopies' => LibraryCopy::whereDate('created_at', $today)->count(),
             'todayBooks' => LibraryBook::whereDate('created_at', $today)->count(),
             'todayUnprinted' => LibraryCopy::whereDate('created_at', $today)->whereNull('qr_printed_at')->count(),
@@ -305,7 +304,7 @@ class LibraryBookController extends Controller
         });
 
         if ($request->boolean('next_book')) {
-            return redirect()->route('bibliotheek.books.create', ['quick' => 1])
+            return redirect()->route('bibliotheek.books.create')
                 ->with('success', ($newBook ? 'Nieuw boek geregistreerd: ' : 'Extra exemplaar geregistreerd: ').$book->title)
                 ->with('last_barcode', $copy->barcode);
         }
