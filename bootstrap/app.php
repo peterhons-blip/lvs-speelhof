@@ -11,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [\App\Http\Middleware\PortalPreview::class]);
+        $middleware->web(append: [\App\Http\Middleware\ExternalPortalBoundary::class, \App\Http\Middleware\PortalPreview::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
