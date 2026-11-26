@@ -462,21 +462,6 @@
         <p class="library-help">Maximaal 250 records per overzicht. Oudere uitvoeringen van vóór de invoering van deze log verschijnen hier niet.</p>
     </section>
 
-    <section class="library-form-card" style="margin-top:20px">
-        <h2>Recente verzendingen</h2>
-        <div class="library-table-wrap">
-            <table class="library-table">
-                <thead><tr><th>Datum</th><th>Kanaal</th><th>Status</th><th>Aantal</th></tr></thead>
-                <tbody>
-                    @forelse($recent as $item)
-                        <tr><td>{{ $item->birthday_date }}</td><td>{{ $item->channel }}</td><td>{{ $item->status }}</td><td>{{ $item->total }}</td></tr>
-                    @empty
-                        <tr><td colspan="4">Nog geen verzendhistoriek geregistreerd.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
 </main>
 @push('scripts')
 <script>
