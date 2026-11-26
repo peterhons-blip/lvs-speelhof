@@ -24,9 +24,14 @@
     @if(session('success'))
         <div class="library-message" role="status">{{ session('success') }} · {{ session('last_barcode') }}</div>
     @endif
-    <section class="library-form-card">
-            <strong>Vandaag:</strong> {{ $todayCopies }} exemplaren · {{ $todayBooks }} nieuwe titels · {{ $todayUnprinted }} etiketten nog niet bevestigd
-            <p class="library-help">Scan het ISBN, controleer de gegevens en kies Registreren en volgend boek. Leg onbekende boeken apart indien nodig.</p>
+    <section class="library-form-card portal-today-summary" aria-labelledby="today-summary-title">
+        <h2 id="today-summary-title" class="portal-today-summary-title">Vandaag geregistreerd</h2>
+        <div class="portal-today-summary-grid">
+            <div class="portal-today-summary-stat"><strong>{{ $todayCopies }}</strong><span>{{ $todayCopies == 1 ? 'Exemplaar' : 'Exemplaren' }}</span></div>
+            <div class="portal-today-summary-stat"><strong>{{ $todayBooks }}</strong><span>{{ $todayBooks == 1 ? 'Nieuwe titel' : 'Nieuwe titels' }}</span></div>
+            <div class="portal-today-summary-stat"><strong>{{ $todayUnprinted }}</strong><span>{{ $todayUnprinted == 1 ? 'Etiket nog niet bevestigd' : 'Etiketten nog niet bevestigd' }}</span></div>
+        </div>
+        <p class="portal-today-summary-help">Scan het ISBN, controleer de gegevens en kies <strong>Registreren en volgend boek</strong>. Leg onbekende boeken indien nodig apart.</p>
     </section>
     @if($errors->any())
         <div class="library-errors" role="alert"><strong>Controleer de invoer:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
