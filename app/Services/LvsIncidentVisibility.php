@@ -39,7 +39,7 @@ class LvsIncidentVisibility
         if($role==='ict_coordinator')return $query;
         if(!Schema::hasTable('lvs_visibility_matrix'))return $query->whereRaw('1=0');
         $matrix=self::matrix();
-        $hasAuthor=Schema::hasColumn('meldingen','auteur_gebruikersnaam');
+        $hasAuthor=\App\Support\LegacyDatabaseSchema::hasColumn('meldingen','auteur_gebruikersnaam');
         $username=$access->username($request);
         $hasMentor=Schema::hasTable('class_staff_links');
         $hasTeacher=Schema::hasTable('skore_student_teacher_links');
