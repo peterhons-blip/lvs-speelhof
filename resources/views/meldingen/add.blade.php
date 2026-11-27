@@ -109,7 +109,7 @@
                     <input type="hidden" name="visible_student" value="0">
                     <input type="hidden" name="visible_coaccount" value="0">
                     <div class="lvs-incident-options">
-                        <label class="lvs-incident-option"><input type="checkbox" id="visible_student" name="visible_student" value="1" @checked(old('visible_student',0))><span><strong>Leerling</strong><small>Zichtbaar in het leerlingenportaal</small></span></label>
+                        <label class="lvs-incident-option"><input type="checkbox" id="visible_student" name="visible_student" value="1" @checked(old('visible_student',1))><span><strong>Leerling</strong><small>Zichtbaar in het leerlingenportaal · standaard aan</small></span></label>
                         <label class="lvs-incident-option"><input type="checkbox" id="visible_coaccount" name="visible_coaccount" value="1" @checked(old('visible_coaccount',1))><span><strong>Co-accounts</strong><small>Zichtbaar in het ouderportaal · standaard aan</small></span></label>
                     </div>
                     @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.meldingen.confidential.create'))
@@ -170,5 +170,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/incident-form.js') }}?v=1" defer></script>
+<script src="{{ asset('js/incident-form.js') }}?v=2" defer></script>
 @endpush
