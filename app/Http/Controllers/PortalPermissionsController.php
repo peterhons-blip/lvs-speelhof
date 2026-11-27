@@ -26,7 +26,7 @@ class PortalPermissionsController extends Controller
         $access->requirePermission($request, 'beheer.permissions.manage');
         $modules = config('portal_permissions', []);
         $roles = LibraryAccess::LABELS + LibraryAccess::EXTERNAL_ROLES;
-        $stored = DB::table('portal_role_permissions')->get()->groupBy('role')
+        $stored = DB::table('portal_role_permissions')->get(['role','permission'])->groupBy('role')
             ->map(fn ($rows) => $rows->pluck('permission')->all())->all();
         return view('beheer.permissions', compact('modules', 'roles', 'stored'));
     }
@@ -54,11 +54,12 @@ class PortalPermissionsController extends Controller
             $before=DB::table('portal_role_permissions')->where('role',$role)->pluck('permission')->all();
             DB::table('portal_permission_audit')->insert(['actor'=>$access->username($request),'target'=>'rol:'.$role,'changes'=>json_encode(['before'=>$before,'after'=>$requested]),'created_at'=>now(),'updated_at'=>now()]);
             DB::table('portal_role_permissions')->where('role', $role)->delete();
-            foreach ($requested as $permission) {
-                DB::table('portal_role_permissions')->insert([
+            $now = now();
+            foreach (array_chunk($requested, 200) as $chunk) {
+                DB::table('portal_role_permissions')->insert(array_map(fn ($permission) => [
                     'role' => $role, 'permission' => $permission,
-                    'created_at' => now(), 'updated_at' => now(),
-                ]);
+                    'created_at' => $now, 'updated_at' => $now,
+                ], $chunk));
             }
         });
         return back()->with('success', 'Rechten voor '.(LibraryAccess::LABELS + LibraryAccess::EXTERNAL_ROLES)[$role].' opgeslagen.');

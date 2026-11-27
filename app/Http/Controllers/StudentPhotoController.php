@@ -62,9 +62,15 @@ class StudentPhotoController extends Controller
     public function show(Request $request, LibraryAccess $access, int $student)
     {
         abort_unless($access->staffId($request) && ($access->has($request,'beheer.students.manage') || $access->has($request,'beheer.classes.manage') || $access->has($request,'lvs.view') || $access->has($request,'lvs.meldingen.create') || $access->has($request,'lvs.history.view')),403);
-        $row=$this->student($student);
+        $row=DB::table('leerlingen as p')->where('p.schoolid',1)->where('p.id',$student)
+            ->select('p.id','p.active','p.InformatInternNr')
+            ->selectSub(DB::table('leerlingen as other')->where('other.schoolid',1)
+                ->whereColumn('other.InformatInternNr','p.InformatInternNr')
+                ->whereColumn('other.id','<>','p.id')->selectRaw('COUNT(*)'),'duplicate_number')->first();
+        abort_unless($row,404);
         abort_unless($row->active || $access->has($request,'beheer.students.manage') || ($access->has($request,'lvs.view') && $access->has($request,'lvs.history.view')),404);
-        $key=$this->key($row);
+        $number=(string)($row->InformatInternNr??'');
+        $key=preg_match('/\\A[0-9]{1,40}\\z/D',$number) && !(int)$row->duplicate_number ? $number : null;
         if ($key!==null) {
             foreach (['jpg','jpeg','png','webp','JPG','JPEG','PNG','WEBP'] as $ext) {
                 $path=$this->directory().DIRECTORY_SEPARATOR.$key.'.'.$ext;
