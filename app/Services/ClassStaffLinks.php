@@ -110,6 +110,46 @@ class ClassStaffLinks
         return compact('rows','errors','covered','notes');
     }
 
+    public function smartschoolMentorPreview(): array
+    {
+        $school=School::findOrFail(1);
+        if (!trim((string)$school->smartschool_wsdl)||!trim((string)$school->smartschool_accesscode)) throw new RuntimeException('Smartschool-configuratie ontbreekt.');
+        $soap=new SmartschoolSoap($school->smartschool_wsdl,$school->smartschool_accesscode);
+        $accounts=$soap->getClassTeachers();
+        if (!array_is_list($accounts)||!$accounts) throw new RuntimeException('Geen geldige titularissenlijst ontvangen.');
+        $classes=$this->classes();
+        $byCode=$classes->groupBy(fn($c)=>(string)$c->smartschool_code);
+        $byName=$classes->groupBy(fn($c)=>$this->normalize($c->klasnaam));
+        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$covered=[];
+        foreach($accounts as $account){
+            if(!is_array($account)){$errors[]='Ongeldig titularisrecord.';continue;}
+            if(!in_array($account['isOfficial']??null,[true,1,'1','true'],true))continue;
+            if((string)($account['instellingsnummer']??'')!==(string)$school->instellingsnummer)continue;
+            $code=trim((string)($account['klasid']??''));
+            $name=trim((string)($account['klasnaam']??''));
+            $username=$this->normalize((string)($account['gebruikersnaam']??''));
+            if($code===''||$name===''||$username===''){$errors[]='Onvolledig titularisrecord.';continue;}
+            $matched=$byCode->get($code,collect());
+            if($matched->isEmpty()){
+                // Ignore inactive classes; a name match with a different code is a conflict.
+                if($byName->has($this->normalize($name)))$errors[]=$name.': klas-ID wijkt af; controleer leerlingensync.';
+                continue;
+            }
+            if($matched->count()!==1 || $this->normalize($matched->first()->klasnaam)!==$this->normalize($name)){
+                $errors[]=$name.': klas-ID niet eenduidig gekoppeld.';continue;
+            }
+            $class=$matched->first();
+            $user=$staff->get($username,collect());
+            if($user->count()!==1){$errors[]=$name.': onbekend of dubbel personeelsaccount '.$username;continue;}
+            $u=$user->first();
+            $rows[$class->id.':'.$u->id]=['class_id'=>(int)$class->id,'user_id'=>(int)$u->id,'class'=>$class->klasnaam,'username'=>$username];
+            $covered[]=(int)$class->id;
+        }
+        $covered=array_values(array_unique($covered));
+        foreach($classes as $class)if(!in_array((int)$class->id,$covered,true))$notes[]=$class->klasnaam.': geen titularis ontvangen; bestaande koppelingen behouden.';
+        return ['rows'=>array_values($rows),'errors'=>$errors,'covered'=>$covered,'notes'=>$notes];
+    }
+
     public function mentorPreview(array $input): array
     {
         $classes=$this->classes()->groupBy(fn($c)=>$this->normalize($c->klasnaam));
@@ -128,8 +168,9 @@ class ClassStaffLinks
 
     public function apply(array $preview,string $kind): int
     {
-        if(!in_array($kind,['teacher','mentor'],true)||$preview['errors']||!$preview['rows']) throw new RuntimeException('Controleer eerst alle fouten; niets gewijzigd.');
-        $source=$kind==='teacher'?'smartschool':'excel';
+        if(!in_array($kind,['teacher','mentor','mentor_smartschool'],true)||$preview['errors']||!$preview['rows']) throw new RuntimeException('Controleer eerst alle fouten; niets gewijzigd.');
+        $source=$kind==='mentor'?'excel':'smartschool';
+        $kind=$kind==='mentor_smartschool'?'mentor':$kind;
         $year=self::year();
         return DB::transaction(function()use($preview,$kind,$source,$year){
             $classes=$this->classes()->pluck('id')->map(fn($id)=>(int)$id)->all();
@@ -138,7 +179,7 @@ class ClassStaffLinks
                 if(!in_array($row['class_id'],$classes,true)||!in_array($row['user_id'],$staff,true)) throw new RuntimeException('Klas of personeelsaccount gewijzigd. Maak een nieuwe preview.');
             }
             // Only replace the same source/kind for explicitly covered classes.
-            DB::table('class_staff_links')->where('school_id',1)->where('school_year',$year)->where('kind',$kind)->where('source',$source)->whereIn('class_id',$preview['covered'])->delete();
+            DB::table('class_staff_links')->where('school_id',1)->where('school_year',$year)->where('kind',$kind)->whereIn('class_id',$preview['covered'])->delete();
             foreach($preview['rows'] as $row){
                 DB::table('class_staff_links')->insertOrIgnore(['school_id'=>1,'school_year'=>$year,'class_id'=>$row['class_id'],'user_id'=>$row['user_id'],'kind'=>$kind,'source'=>$source,'created_at'=>now(),'updated_at'=>now()]);
             }
