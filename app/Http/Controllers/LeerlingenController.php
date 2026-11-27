@@ -109,8 +109,37 @@ class LeerlingenController extends Controller
 
         $canManageVisit=(bool)$leerling->active && app(\App\Services\LibraryAccess::class)->has($request,'lvs.secretariat_visits.manage') && \Illuminate\Support\Facades\Schema::hasTable('adult_secretariat_visits');
         $adultVisit=$canManageVisit ? \Illuminate\Support\Facades\DB::table('adult_secretariat_visits')->where('student_id',$leerling->id)->where('school_id',$leerling->schoolid)->first() : null;
-        return view('leerlingen.show', compact('canManageVisit','adultVisit','leerling', 'meldingen', 'meldingGroepen',
-            'canCreate', 'canSeeMeldingen'));
+        $access=app(\App\Services\LibraryAccess::class);
+        $schema=DB::getSchemaBuilder();
+        $mentors=collect();$teachers=collect();
+        // Current class assignments are not historical evidence.
+        if($leerling->active && $leerling->klas && (int)$leerling->klas->schoolid===(int)$leerling->schoolid && $schema->hasTable('class_staff_links')){
+            $members=DB::table('class_staff_links as l')->join('users as u','u.id','=','l.user_id')
+                ->where('l.school_id',$leerling->schoolid)->where('u.schoolid',$leerling->schoolid)
+                ->where('l.school_year',\App\Services\ClassStaffLinks::year())->where('l.class_id',$leerling->klasid)
+                ->where(fn($q)=>$q->whereNull('u.smartschool_active')->orWhere('u.smartschool_active',1))
+                ->orderBy('u.name')->orderBy('u.voornaam')->get(['l.kind','u.id','u.name','u.voornaam','u.smartschool_gebruikersnaam']);
+            $mentors=$members->where('kind','mentor')->map(fn($u)=>trim($u->voornaam.' '.$u->name)?:$u->smartschool_gebruikersnaam)->unique()->values();
+            if($schema->hasTable('skore_student_teacher_links')){
+                $teachers=DB::table('skore_student_teacher_links as l')->join('users as u','u.id','=','l.user_id')
+                    ->where('l.school_id',$leerling->schoolid)->where('u.schoolid',$leerling->schoolid)
+                    ->where('l.school_year',\App\Services\ClassStaffLinks::year())->where('l.class_id',$leerling->klasid)->where('l.student_id',$leerling->id)
+                    ->where(fn($q)=>$q->whereNull('u.smartschool_active')->orWhere('u.smartschool_active',1))
+                    ->orderBy('u.name')->orderBy('u.voornaam')->get(['l.courses','u.name','u.voornaam','u.smartschool_gebruikersnaam']);
+            }
+        }
+        $canSeeFollowups=$access->has($request,'lvs.followups.view');
+        $followupsReady=$schema->hasTable('lvs_followup_events') && $schema->hasTable('lvs_followup_rules');
+        $followups=collect();
+        if($canSeeFollowups && $followupsReady){
+            $followups=\App\Services\LvsIncidentVisibility::apply(DB::table('lvs_followup_events as e')->join('meldingen as m','m.id','=','e.melding_id'),'m.vertrouwelijk')
+                ->leftJoin('lvs_followup_rules as r','r.id','=','e.rule_id')
+                ->where('e.leerling_id',$leerling->id)->where('m.leerlingId',$leerling->id)
+                ->whereIn('e.action',['review','sanction_proposal'])->orderByDesc('e.created_at')
+                ->get(['e.id','e.action','e.status','e.created_at','e.resolved_at','e.resolved_by','e.resolution_note','r.title as rule_title']);
+        }
+        return response()->view('leerlingen.show', compact('canManageVisit','adultVisit','leerling','meldingen','meldingGroepen',
+            'canCreate','canSeeMeldingen','mentors','teachers','canSeeFollowups','followupsReady','followups'))->header('Cache-Control','private, no-store');
     }
 
     public function verjaardagen()
