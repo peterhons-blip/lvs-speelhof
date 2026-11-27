@@ -28,11 +28,31 @@
             <div><dt>Smartschool-gebruikersnaam</dt><dd>{{ $student->gebruikersnaam ?: '—' }}</dd></div>
             <div><dt>Klas</dt><dd>{{ $student->klasnaam ?: '—' }}</dd></div>
             <div><dt>Status</dt><dd>{{ (int) $student->active === 1 ? 'Actief' : 'Inactief' }}</dd></div>
+            <div><dt>Stamnummer</dt><dd>{{ $student->stamnummer ?? "—" }}</dd></div>
+            <div><dt>Internnummer Informat</dt><dd>{{ $student->InformatInternNr ?? "—" }}</dd></div>
             <div><dt>School-ID</dt><dd>{{ $student->schoolid }}</dd></div>
             @if($hasScanCode)<div><dt>QR-scancode</dt><dd>{{ filled($student->scannable_code ?? null) ? 'Beschikbaar' : 'Niet beschikbaar' }}</dd></div>@endif
         </dl>
     </section>
 
+    <section class="library-form-card">
+        <h2>Leerlingfoto</h2>
+        <div class="student-photo-inline">
+            @include('partials.student-photo',['studentId'=>$student->id,'large'=>true])
+            @if(app(\App\Services\LibraryAccess::class)->has(request(),'beheer.students.edit'))
+                @if(filled($student->InformatInternNr ?? null))
+                <form method="post" enctype="multipart/form-data" action="{{ route('beheer.students.photo.upload',$student->id) }}">
+                    @csrf
+                    <div class="library-field"><label for="photo">Nieuwe foto</label><input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required></div>
+                    <button class="library-button library-button-primary" type="submit">Foto opslaan</button>
+                    <p class="library-help">JPG, PNG of WebP, maximaal 5 MB. Vervangt de bestaande foto.</p>
+                </form>
+                @else
+                <p>Synchroniseer eerst het Informat-internnummer.</p>
+                @endif
+            @endif
+        </div>
+    </section>
     <section class="library-form-card">
         <h2>Leerlinggegevens bewerken</h2>
         <p class="portal-users-card-intro">Voornaam, familienaam en geboortedatum kunnen door de volgende nachtelijke Smartschool-sync opnieuw worden overschreven. Het e-mailadres wordt bij bestaande leerlingen normaal behouden.</p>
