@@ -138,6 +138,7 @@ class SmartschoolSyncLeerlingen extends Command
             ]);
 
             if (!$classCode) {
+                $failedClasses++;
                 continue;
             }
 
@@ -362,13 +363,13 @@ class SmartschoolSyncLeerlingen extends Command
         $deactivated = 0;
 
         // Reconcile immediately, but only after a complete, plausible school snapshot.
-        $completeScope = $failedClasses === 0 && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0;
+        $completeScope = \App\Support\StudentSyncSafety::complete($failedClasses,$limit,$onlyCode,count($seenUsernames));
         $pendingMissing = 0;
         if ($completeScope) {
             $activeCount = Leerling::query()->where('schoolid',$schoolId)->where('active',1)->count();
             $missing = Leerling::query()->where('schoolid',$schoolId)->where('active',1)
                 ->whereNotIn('gebruikersnaam',$seenUsernames)->with('klas')->orderBy('naam')->orderBy('voornaam')->get();
-            $plausible = $activeCount===0 || $missing->count() <= max(5,(int)floor($activeCount*0.10));
+            $plausible = \App\Support\StudentSyncSafety::plausible($activeCount,$missing->count());
             $this->info('Unieke leerlingen ontvangen: '.count($seenUsernames));
             $this->info('Lokaal actief maar niet ontvangen: '.$missing->count());
             foreach ($missing as $student) {
