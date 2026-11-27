@@ -109,6 +109,7 @@ class MeldingController extends Controller
             'vertrouwelijk' => ['nullable','boolean'],
             'visible_student' => ['nullable','boolean'],
             'visible_coaccount' => ['nullable','boolean'],
+            'confirm_confidential_release' => ['nullable','boolean'],
         ]);
 
         // check: soort hoort bij gekozen categorie
@@ -124,15 +125,22 @@ class MeldingController extends Controller
 
         $confidential = $request->boolean('vertrouwelijk');
         if ($confidential) app(\App\Services\LibraryAccess::class)->requirePermission($request,'lvs.meldingen.confidential.create');
+        $releaseRequested=$confidential && ($request->boolean('visible_student') || $request->boolean('visible_coaccount'));
+        if($releaseRequested && !$request->boolean('confirm_confidential_release')){
+            return back()->withInput()->withErrors(['confirm_confidential_release'=>'Bevestig expliciet dat deze vertrouwelijke melding zichtbaar mag zijn voor de geselecteerde leerling of co-accounts.']);
+        }
+        $releaseColumn=\App\Support\LegacyDatabaseSchema::hasColumn('meldingen','confidential_release');
+        if($releaseRequested && !$releaseColumn) abort(503,'Voer eerst de migratie voor vertrouwelijke vrijgave uit.');
         $attributes = [
             'vertrouwelijk'=>$confidential,
-            'visible_student'=>!$confidential && $request->boolean('visible_student',true),
-            'visible_coaccount'=>!$confidential && $request->boolean('visible_coaccount',true),
+            'visible_student'=>$request->boolean('visible_student',!$confidential),
+            'visible_coaccount'=>$request->boolean('visible_coaccount',!$confidential),
             'leerlingId' => $leerling->id,
             'meldingssoortId' => $soort->id,
             'comment' => $validated['comment'],
             'gebeurdop' => $validated['gebeurdop'],
         ];
+        if($releaseColumn) $attributes['confidential_release']=$releaseRequested;
         // Author comes only from trusted Smartschool session, never from the form.
         // Legacy DB remains operational before optional author migration is installed.
         if (\Illuminate\Support\Facades\DB::select("SHOW COLUMNS FROM `meldingen` LIKE 'auteur_gebruikersnaam'")) {
@@ -142,6 +150,7 @@ class MeldingController extends Controller
         $preview=$request->session()->get('portal_preview');
         if($preview){
             // Real test record, explicitly identified; never release or trigger automatic actions.
+            if($releaseColumn) $attributes['confidential_release']=false;
             $attributes['visible_student']=false;
             $attributes['visible_coaccount']=false;
             $attributes['comment']='[TESTMODUS] '.$attributes['comment'];
