@@ -57,6 +57,12 @@
                 <small>Signalen en sanctievoorstellen beoordelen.</small>
             </a>
         @endif
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.secretariat_visits.manage'))
+            <a href="{{ route('secretariat-visits.index') }}" class="card lvs-dashboard-action">
+                <span class="lvs-dashboard-action-icon" aria-hidden="true">✓</span><strong>Secretariaatsbezoeken (18+)</strong>
+                <small>Volg op welke meerderjarige leerlingen zich bij het secretariaat hebben gemeld.</small>
+            </a>
+        @endif
         @if($canSeeReports)
             <a href="{{ route('lvs.reports.index') }}" class="card lvs-dashboard-action">
                 <span class="lvs-dashboard-action-icon" aria-hidden="true">▥</span><strong>Klassenraadoverzicht</strong><small>Overzicht per klas en categorie, zonder automatische sancties.</small>
