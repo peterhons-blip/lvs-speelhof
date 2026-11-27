@@ -30,11 +30,40 @@ class StudentPhotoController extends Controller
         return storage_path('app/private/student-photos/1');
     }
 
+    public function bulkForm(Request $request, LibraryAccess $access)
+    {
+        $access->requirePermission($request,'beheer.students.manage');
+        $access->requirePermission($request,'beheer.students.edit');
+        abort_unless($access->staffId($request),403);
+        return view('beheer.students.photos');
+    }
+
+    public function bulkUpload(Request $request, LibraryAccess $access, \App\Services\StudentPhotoZip $import)
+    {
+        $access->requirePermission($request,'beheer.students.manage');
+        $access->requirePermission($request,'beheer.students.edit');
+        abort_unless($access->staffId($request),403);
+        $request->validate(['archive'=>'required|file|max:102400','mode'=>'required|in:preview,import','replace'=>'nullable|boolean']);
+        $students=DB::table('leerlingen')->where('schoolid',1)->whereNotNull('InformatInternNr')->pluck('InformatInternNr')->map(fn($v)=>(string)$v)->countBy()->all();
+        $directory=null;
+        if ($request->input('mode')==='import') {
+            $directory=$this->directory();
+            File::ensureDirectoryExists($directory,0700,true);
+        }
+        try {
+            $report=$import->inspect($request->file('archive')->getRealPath(),$students,$directory,$request->boolean('replace'));
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages(['archive'=>$e->getMessage()]);
+        }
+        \Illuminate\Support\Facades\Log::info('Student photo ZIP processed',['actor'=>$access->username($request),'mode'=>$request->input('mode'),'saved'=>$report['saved'],'errors'=>$report['errors']]);
+        return view('beheer.students.photos',['report'=>$report,'mode'=>$request->input('mode')]);
+    }
+
     public function show(Request $request, LibraryAccess $access, int $student)
     {
-        abort_unless($access->staffId($request) && ($access->has($request,'beheer.students.manage') || $access->has($request,'lvs.view') || $access->has($request,'lvs.meldingen.create')),403);
+        abort_unless($access->staffId($request) && ($access->has($request,'beheer.students.manage') || $access->has($request,'lvs.view') || $access->has($request,'lvs.meldingen.create') || $access->has($request,'lvs.history.view')),403);
         $row=$this->student($student);
-        abort_unless($row->active || $access->has($request,'beheer.students.manage'),404);
+        abort_unless($row->active || $access->has($request,'beheer.students.manage') || ($access->has($request,'lvs.view') && $access->has($request,'lvs.history.view')),404);
         $key=$this->key($row);
         if ($key!==null) {
             foreach (['jpg','jpeg','png','webp','JPG','JPEG','PNG','WEBP'] as $ext) {
