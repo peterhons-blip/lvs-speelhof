@@ -49,7 +49,7 @@
                     <tr>
                         <td>{{ $item->gebeurdop ? \Illuminate\Support\Carbon::parse($item->gebeurdop)->format('d/m/Y') : '—' }}</td>
                         <td>{{ $item->created_at ? \Illuminate\Support\Carbon::parse($item->created_at)->format('d/m/Y H:i') : '—' }}</td>
-                        <td><a href="{{ route('leerlingen.show', $item->leerlingId) }}"><strong>{{ $item->voornaam }} {{ $item->naam }}</strong></a></td>
+                        <td><a class="student-photo-inline" href="{{ route('leerlingen.show', $item->leerlingId) }}">@include('partials.student-photo',['studentId'=>$item->leerlingId])<strong>{{ $item->voornaam }} {{ $item->naam }}</strong></a></td>
                         <td>{{ $item->klasnaam ?: '—' }}</td>
                         <td><span class="badge badge-cat">{{ $item->categorie ?: '—' }}</span><div>{{ $item->soort ?: '—' }}</div></td>
                         <td class="lvs-notification-comment">{{ $item->comment }}</td>
