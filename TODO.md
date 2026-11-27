@@ -12,7 +12,8 @@ Bijgewerkt: 27 november 2026. Dit is een werkdocument; testfase betekent niet da
 - [x] Individuele foto-upload en ZIP-import met controle.
 - [x] Historische dossiers met afzonderlijk recht.
 - [x] Veiligheidsregels voor leerlingensync als unit-test voorzien.
-- [ ] ZIP-import, historische rechten en sync op de server valideren.
+- [x] StudentSyncSafetyTest lokaal uitgevoerd: 3 tests, 9 assertions geslaagd.
+- [ ] ZIP-import, historische rechten en volledige live sync op de server valideren.
 - [ ] Automatische Smartschool-fotosync onderzoeken.
 
 ## P1 — Klassen, leerkrachten en toegangsbeheer
@@ -22,7 +23,9 @@ Bijgewerkt: 27 november 2026. Dit is een werkdocument; testfase betekent niet da
 - [ ] Koppelingen per schooljaar bewaren; wijzigingen en vervangingen kunnen verwerken.
 - [ ] Beheerpagina met overzicht per klas en per leerkracht; zoeken, filteren en koppelingen beheren.
 - [ ] LVS > Mijn klassen: leerkracht ziet eigen lesklassen en titularisklassen, met duidelijke aanduiding van rol.
-- [ ] Klikbare klassenkaart of lijst: klas openen, alle leerlingen van die klas tonen; zoeken en sorteren; leerling aanklikken voor dossier of nieuwe melding.
+- [ ] Mijn klassen: compacte uitklapbare accordeon, zonder page reload; leerlingen pas bij eerste openen via AJAX ophalen, meerdere klassen tegelijk open, geopende klassen per gebruiker en schooljaar tijdens de sessie onthouden.
+- [ ] Fotoklaslijst per uitgeklapte klas: alfabetisch op familienaam en voornaam, snel zoeken, dossier/nieuwe melding/opvolging volgens rechten; laadstatus en foutmelding met opnieuw proberen.
+- [ ] AJAX-endpoints server-side autoriseren voor elke klas en leerling; geen gegevens van onbevoegde klassen vooraf laden.
 - [ ] Rollen/rechten onderscheiden: eigen lesklassen, titularisklassen, toegewezen begeleidingsleerlingen en alle klassen (expliciet recht voor bevoegde functies).
 - [ ] Toegang server-side afdwingen op lijsten, individuele dossiers, meldingen, opvolging, zoekresultaten, statistieken en exports; geen toegang via directe URL buiten scope.
 - [ ] Vertrouwelijke gegevens blijven apart afgeschermd; klaslidmaatschap geeft geen automatisch recht op gevoelige gegevens.
