@@ -211,3 +211,6 @@
     border-radius: 14px;
     box-shadow: 0 3px 16px rgba(14,38,67,.035);
 }
+
+/* Compact, left-aligned incident history in the registration form. */
+.lvs-incident-create .meldingen-list .melding-row{display:block;text-align:left;padding:14px 16px;min-height:0}.lvs-incident-create .melding-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 14px}.lvs-incident-create .melding-comment{display:block;width:100%;margin:10px 0 0;padding:0;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.lvs-incident-create .melding-confidential-label{display:inline-block;margin-top:10px;color:#a0003c;font-size:.8rem;font-weight:700;background:#fff0f5;padding:3px 8px;border-radius:6px}.lvs-incident-create .melding-confidential-label+.melding-comment{margin-top:5px}
