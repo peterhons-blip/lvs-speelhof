@@ -46,6 +46,9 @@ class SmartschoolSyncLeerlingen extends Command
         $syncScancodes = ! $this->option('skip-scancodes')
             && \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen', 'scannable_code');
         $refreshScancodes = (bool) $this->option('refresh-scancodes');
+        $identifierFields = array_filter(['stamnummer'=>'stamboeknummer','InformatInternNr'=>'internnummer'],fn($source,$column)=>\App\Support\LegacyDatabaseSchema::hasColumn('leerlingen',$column),ARRAY_FILTER_USE_BOTH);
+        $identifierCounts = ['stamnummer'=>0,'InformatInternNr'=>0];
+        $identifierConflicts = 0;
         $detailsCallsDisabled = false;
         $detailsFailures = 0;
         $codesUpdated = 0;
@@ -210,6 +213,21 @@ class SmartschoolSyncLeerlingen extends Command
                     }
                 }
 
+                $identifiers = [];
+                foreach ($identifierFields as $column=>$source) {
+                    $raw = $row[$source] ?? ($source==='internnummer' ? ($row['internummer'] ?? null) : null);
+                    if (!is_string($raw) && !is_int($raw)) continue;
+                    $value = trim((string)$raw);
+                    if ($value==='' || in_array(strtolower($value),['null','undefined','0'],true) || mb_strlen($value)>100) continue;
+                    $identifierCounts[$column]++;
+                    if (!$dryRun && Leerling::query()->where('schoolid',$schoolId)->where($column,$value)->where('gebruikersnaam','<>',$username)->exists()) {
+                        $identifierConflicts++;
+                        $this->warn("Identificatieconflict ({$column}); bestaande waarde behouden.");
+                        continue;
+                    }
+                    $identifiers[$column]=$value;
+                }
+
                 $email = strtolower($username) . '@atheneumsinttruiden.be';
 
                 $seenUsernames[] = $username;
@@ -262,6 +280,7 @@ class SmartschoolSyncLeerlingen extends Command
                     } else if ($syncScancodes) {
                         $codesMissing++;
                     }
+                    foreach ($identifiers as $column=>$value) $leerling->{$column}=$value;
                     $leerling->save();
 
                     $created++;
@@ -307,6 +326,12 @@ class SmartschoolSyncLeerlingen extends Command
                         $dirty = true;
                     } else if ($scannableCode === null && empty($existing->scannable_code)) {
                         $codesMissing++;
+                    }
+                }
+                foreach ($identifiers as $column=>$value) {
+                    if ((string)$existing->{$column}!==$value) {
+                        $existing->{$column}=$value;
+                        $dirty=true;
                     }
                 }
                 if ($dirty) {
@@ -362,7 +387,7 @@ class SmartschoolSyncLeerlingen extends Command
             $this->warn("WAARSCHUWING: {$failedClasses} klassen konden niet opgehaald worden. Deactivering overgeslagen.");
         }
 
-        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
+        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, stamnummers_received={$identifierCounts['stamnummer']}, informatnummers_received={$identifierCounts['InformatInternNr']}, identifier_conflicts={$identifierConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
 
         $this->info($msg);
         Log::info('Smartschool sync leerlingen: ' . $msg);
