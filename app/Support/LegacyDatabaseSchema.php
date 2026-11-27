@@ -13,6 +13,9 @@ final class LegacyDatabaseSchema
 {
     public static function hasColumn(string $table, string $column): bool
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return DB::connection()->getSchemaBuilder()->hasColumn($table, $column);
+        }
         return DB::table('information_schema.COLUMNS')
             ->where('TABLE_SCHEMA', DB::getDatabaseName())
             ->where('TABLE_NAME', $table)
