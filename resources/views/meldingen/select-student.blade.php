@@ -34,6 +34,6 @@
 </main>
 @endsection
 @push('scripts')
-<script>window.LVS_STUDENTS = @json($leerlingen);</script>
+<script>window.LVS_PHOTO_BASE = @json(url("/leerlingfoto")."/"); window.LVS_STUDENTS = @json($leerlingen);</script>
 <script src="{{ asset('js/lvs.js') }}?v=4" defer></script>
 @endpush
