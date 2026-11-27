@@ -35,6 +35,7 @@ class SmartschoolSyncClassStaff extends Command
                     // Mentor records can be incomplete within a class; keep the whole snapshot on errors.
                     if($kind==='mentor_smartschool' && $preview['errors'])continue;
                     $this->info($label.': '.count($preview['rows']).' koppelingen, '.count($preview['covered']).' klassen.');
+                    if($kind==='teacher')$this->info('Individuele lesrelaties: '.count($preview['student_rows']??[]).'.');
                     if($this->option('apply')){
                         $count=$links->apply($preview,$kind,$kind==='teacher');
                         $this->info($label.': '.$count.' koppelingen opgeslagen.');
