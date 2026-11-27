@@ -197,7 +197,7 @@ class SmartschoolSoap
     {
         $json = $this->client->returnJsonErrorCodes();
         $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
+        return is_array($data) ? $data : throw new \RuntimeException('Smartschool gaf geen geldige lijst terug.');
     }
 
     public function getErrorDescription($code): ?string
@@ -235,20 +235,17 @@ class SmartschoolSoap
 
         try {
             $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-            return is_array($data) ? $data : [];
+            return is_array($data) ? $data : throw new \RuntimeException('Smartschool gaf geen geldige lijst terug.');
         } catch (\JsonException $e) {
             // kleine repair voor rare lege quote-velden zoals :"""
             $fixed = str_replace(':"""', ':""', $json);
 
             try {
                 $data = json_decode($fixed, true, 512, JSON_THROW_ON_ERROR);
-                return is_array($data) ? $data : [];
+                return is_array($data) ? $data : throw new \RuntimeException('Smartschool gaf geen geldige lijst terug.');
             } catch (\JsonException $e2) {
-                Log::error('Smartschool JSON decode faalde: ' . $e2->getMessage(), [
-                    'preview' => substr($json, 0, 500),
-                ]);
-
-                return [];
+                Log::error('Smartschool JSON decode faalde: ' . $e2->getMessage());
+                throw new \RuntimeException('Smartschool gaf ongeldige JSON terug.',0,$e2);
             }
         }
     }
