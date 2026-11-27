@@ -128,7 +128,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 <a href="{{ route('lvs.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('lvs.dashboard')) aria-current="page" @endif>Dashboard</a>
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
                                 <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingen zoeken</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.my_classes.view'))
                                 <a href="{{ route('lvs.my-classes.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.my-classes.*') ? 'is-active' : '' }}">Mijn klassen</a>
+                                @endif
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.view'))
                                 <a href="{{ route('meldingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.index') ? 'is-active' : '' }}">Alle meldingen</a>
@@ -145,6 +147,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
 
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.create'))
                                 <a href="{{ route('meldingen.select-student') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.select-student') || request()->routeIs('meldingen.create') ? 'is-active' : '' }}">Nieuwe melding</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+                                <a href="{{ route('lvs.visibility.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.visibility.*')?'is-active':'' }}">Zichtbaarheid meldingen</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.followups.view'))
                                 <a href="{{ route('lvs.followups.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.followups.*') ? 'is-active' : '' }}">Opvolging</a>
