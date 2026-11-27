@@ -17,6 +17,7 @@ class ScheduledTasksController extends Controller
         'birthdays' => 'verjaardagen_check.log',
         'student_sync' => 'smartschool_sync_leerlingen.log',
         'staff_sync' => 'smartschool_sync_personeel.log',
+        'class_staff_sync' => 'smartschool_sync_klaskoppelingen.log',
         'library_reminders' => 'bibliotheek_herinneringen.log',
     ];
 
@@ -33,6 +34,7 @@ class ScheduledTasksController extends Controller
                 'description' => 'Controleert dagelijks de geboortedatums van leerlingen en personeelsleden. Verstuurt de ingestelde verjaardagsberichten via Smartschool naar de betrokken personen.'],
             'student_sync' => ['title' => 'Leerlingensynchronisatie', 'type' => 'Leerlingen', 'time' => '03.00',
                 'description' => 'Haalt de actuele leerlingen en klassen uit Smartschool op, verwerkt nieuwe of gewijzigde gegevens, actualiseert de actieve status en vult beschikbare QR-scancodes aan.'],
+            'class_staff_sync' => ['title'=>'Klaskoppelingen synchroniseren','type'=>'Klassen en personeel','time'=>'05.00','description'=>'Haalt vakleerkrachten uit de Lkr-groepen en titularissen uit getClassTeachers op. Behoudt bestaande koppelingen bij onbetrouwbare opvragingen.'],
             'staff_sync' => ['title' => 'Personeelssynchronisatie', 'type' => 'Personeel', 'time' => '04.00',
                 'description' => 'Haalt leerkrachten en administratieve medewerkers uit de Smartschool-groepen op. Maakt ontbrekende accounts aan, werkt bestaande gegevens en standaardrollen bij en markeert verdwenen medewerkers als inactief.'],
             'library_reminders' => ['title' => 'Bibliotheekherinneringen', 'type' => 'Bibliotheek / leerlingen', 'time' => '08.00',
