@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=53">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=54">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
 </head>
 <body class="portal-body">
@@ -27,6 +27,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                     <span class="portal-brand-title">Atheneum Portaal</span>
                 </span>
             </a>
+            <button type="button" class="portal-mobile-menu" aria-controls="portal-navigation" aria-expanded="false"><span aria-hidden="true">☰</span> Menu</button>
             <div class="portal-account">
                 <span class="portal-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ss_user['voornaam'] ?? 'G', 0, 1)) }}</span>
                 <span class="portal-account-copy">
@@ -49,7 +50,8 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
         </div>
         @endif
         <div class="portal-workspace">
-            <aside class="portal-sidebar" aria-label="Hoofdnavigatie">
+            <aside id="portal-navigation" class="portal-sidebar" aria-label="Hoofdnavigatie">
+                <div class="portal-mobile-nav-heading"><strong>Menu</strong><button type="button" class="portal-mobile-close" aria-label="Menu sluiten">×</button></div>
                 <span class="portal-sidebar-label">WERKOMGEVING</span>
                 <nav class="portal-nav" aria-label="Modules">
                     <a href="{{ route('home') }}" class="portal-nav-link {{ (request()->routeIs('home') || (request()->routeIs('external.dashboard') && request('section','dashboard')==='dashboard')) ? 'is-current' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif>
@@ -208,6 +210,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                 </nav>
                 <div class="portal-sidebar-foot">GO! Atheneum Sint-Truiden<br><span>Campus Speelhof</span></div>
             </aside>
+            <div class="portal-mobile-backdrop" hidden></div>
             <div class="portal-content">
                 <div class="portal-page-breadcrumb">
                     @hasSection('breadcrumbs')
@@ -229,6 +232,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
 @endif
 
 {{-- Elke pagina laadt alleen de eigen scripts, na de HTML-inhoud. --}}
+@if($ss_user)<script src="{{ asset('js/portal-mobile-nav.js') }}?v=1" defer></script>@endif
 @stack('scripts')
 </body>
 </html>
