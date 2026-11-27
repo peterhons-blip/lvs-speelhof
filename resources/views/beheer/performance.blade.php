@@ -26,6 +26,19 @@
         <section class="library-form-card portal-management-stat"><p>Laravel-configuratiecache</p><strong>{{ app()->configurationIsCached() ? 'Actief' : 'Uit' }}</strong><p>Sessie: {{ config('session.driver') }} · Cache: {{ config('cache.default') }}</p></section>
     </div>
     <section class="library-form-card" style="margin-top:20px">
+        <h2>Windows-server</h2>
+        @if($health)
+            <p>CPU: {{ round($health['cpu_percent'],1) }}% · RAM: {{ round($health['ram_percent'],1) }}% · Vrij RAM: {{ round($health['ram_free_mb']) }} MB / {{ round($health['ram_total_mb']) }} MB</p>
+            <p>Laatste meting {{ round($health['age']/60,1) }} minuten geleden. {{ $health['age'] > 300 ? 'Meting verouderd: controleer Windows Taakplanner.' : 'Recente meting.' }}</p>
+        @else<p>Nog geen geldige Windows-meting beschikbaar.</p>@endif
+        <h2>Databankback-ups</h2>
+        @if($backup)
+            <p>Laatste poging {{ round($backup['age']/60) }} minuten geleden. {{ $backup['age'] > 5400 ? 'Verouderd: controleer de back-uptaak.' : '' }}</p>
+            <p>Lokaal: {{ $backup['local']==='ok' ? 'Gelukt' : 'Mislukt' }} · Extern: {{ ['ok'=>'Upload gemeld als gelukt','failed'=>'Mislukt','not_configured'=>'Niet ingesteld'][$backup['external']] }} · {{ round($backup['bytes']/1048576,2) }} MB versleuteld.</p>
+            <p>Een succesvolle upload is geen bewezen hersteltest.</p>
+        @else<p>Nog geen back-upstatus beschikbaar. Windows-taak moet worden ingesteld.</p>@endif
+    </section>
+    <section class="library-form-card" style="margin-top:20px">
         <h2>Responstijden per route</h2>
         <p>Metingen: {{ config('lvs_performance.enabled') ? 'actief' : 'uitgeschakeld' }} · Logdrempel: {{ config('lvs_performance.slow_request_ms') }} ms · {{ count($rows) }} gevonden metingen.</p>
         <p>Alleen gelogde aanvragen, maximaal 2.000 recente regels uit de laatste 4 MiB per logbestand (vast log en daglogs van vandaag en gisteren). Bij een drempel boven nul ontbreken snelle aanvragen. De cijfers zijn geen volledige verkeersstatistiek.</p>
