@@ -14,7 +14,9 @@ class StudentManagementController extends Controller
     {
         $access->requirePermission($request, 'beheer.students.manage');
         $search = mb_substr(trim((string) $request->query('zoek', '')), 0, 100);
-        $showInactive = $request->boolean('toon_inactief');
+        $statusFilter = (string)$request->query('status', $request->boolean('toon_inactief') ? 'all' : 'active');
+        if (!in_array($statusFilter,['active','inactive','all'],true)) $statusFilter='active';
+        $showInactive = $statusFilter!=='active';
         $classId=max(0,(int)$request->query('klas',0));
         $classes=DB::table('klassen')->whereIn('id',DB::table('leerlingen')->where('schoolid',1)->whereNotNull('klasid')->select('klasid'))->orderBy('klasnaam')->get(['id','klasnaam']);
         $sortColumns = [
@@ -33,7 +35,8 @@ class StudentManagementController extends Controller
             ->leftJoin('klassen', 'klassen.id', '=', 'leerlingen.klasid')
             ->where('leerlingen.schoolid', 1)
             ->when($classId>0,fn($q)=>$q->where('leerlingen.klasid',$classId))
-            ->when(! $showInactive, fn ($q) => $q->where('leerlingen.active', 1))
+            ->when($statusFilter==='active', fn ($q) => $q->where('leerlingen.active', 1))
+            ->when($statusFilter==='inactive', fn ($q) => $q->where(fn($x)=>$x->where('leerlingen.active',0)->orWhereNull('leerlingen.active')))
             ->when($search !== '', function ($query) use ($search) {
                 $term = '%'.addcslashes($search, '%_\\').'%';
                 $query->where(function ($q) use ($term) {
@@ -51,7 +54,7 @@ class StudentManagementController extends Controller
             ->orderBy($sortColumns[$sort], $direction)
             ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam', $sort==='leerling'?$direction:'asc')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
-        return view('beheer.students.index', compact('students', 'search', 'showInactive','classes','classId'));
+        return view('beheer.students.index', compact('students', 'search', 'showInactive','classes','classId','statusFilter'));
     }
 
     public function bulkRights(Request $request, LibraryAccess $access): RedirectResponse
