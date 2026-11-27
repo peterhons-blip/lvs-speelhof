@@ -30,6 +30,10 @@ class ManagementDashboardController extends Controller
         $sections = array_values(array_filter($sections,
             fn ($section) => $access->has($request, $section['permission'])));
 
+        if ($access->role($request) === 'ict_coordinator' && !$request->session()->has('portal_preview')) {
+            $sections[] = ['route'=>'beheer.performance.index','title'=>'Systeemprestaties','description'=>'Responstijden, SQL-belasting en databankindexen analyseren.','icon'=>'activity'];
+        }
+
         $stats = [];
         if ($access->has($request, 'beheer.staff.manage') && Schema::hasTable('users')) {
             $activeStaff = DB::table('users')->where('schoolid', 1)
