@@ -25,8 +25,8 @@ class StudentManagementController extends Controller
             'stamnummer'=>'leerlingen.stamnummer',
             'internnummer'=>'leerlingen.InformatInternNr',
         ];
-        $sort = (string) $request->query('sort', 'leerling');
-        if (! array_key_exists($sort, $sortColumns)) $sort = 'leerling';
+        $sort = (string) $request->query('sort', 'klas');
+        if (! array_key_exists($sort, $sortColumns)) $sort = 'klas';
         $direction = strtolower((string) $request->query('richting', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $students = DB::table('leerlingen')
@@ -47,6 +47,7 @@ class StudentManagementController extends Controller
             })
             ->select('leerlingen.id', 'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam',
                 'leerlingen.active', 'leerlingen.geboortedatum', 'leerlingen.stamnummer','leerlingen.InformatInternNr','klassen.klasnaam')
+            ->when($sort==='klas',fn($q)=>$q->orderByRaw("CASE WHEN klassen.klasnaam IS NULL OR klassen.klasnaam = '' THEN 1 ELSE 0 END"))
             ->orderBy($sortColumns[$sort], $direction)
             ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam', $sort==='leerling'?$direction:'asc')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
