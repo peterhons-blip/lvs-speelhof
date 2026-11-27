@@ -18,6 +18,7 @@ class RunScheduledTask extends Command
         'becoming_18' => ['command' => 'leerlingen:check-18'],
         'birthdays' => ['command' => 'verjaardagen:check'],
         'student_sync' => ['command' => 'smartschool:sync-leerlingen', 'parameters' => ['--schoolid' => 1]],
+        'class_staff_sync' => ['command' => 'smartschool:sync-klaskoppelingen', 'parameters' => ['--apply' => true]],
         'staff_sync' => ['command' => 'smartschool:sync-personeel', 'parameters' => ['--schoolid' => 1, '--apply' => true]],
         'library_reminders' => ['command' => 'bibliotheek:herinneringen'],
     ];
@@ -99,6 +100,11 @@ class RunScheduledTask extends Command
                 return "Verwerkt: {$m[1]}; nieuw: {$m[2]}; bijgewerkt: {$m[3]}; nieuwe klassen: {$m[4]}; gedeactiveerd: {$m[5]}; QR-codes bijgewerkt: {$m[6]}; ontbrekende QR-codes: {$m[7]}; conflicten: {$m[8]}; mislukte klassen: {$m[9]}; lege klassen: {$m[10]}.";
             }
             return 'Leerlingensync uitgevoerd; resultaat controleren in serverlog.';
+        }
+        if ($key === 'class_staff_sync') {
+            $summary=[];
+            if(preg_match_all('/^(Leerkrachten|Klastitularissen): (\d+) koppelingen opgeslagen\./m',$output,$matches,PREG_SET_ORDER)) foreach($matches as $m) $summary[]=$m[1].': '.$m[2].' koppelingen';
+            return $summary ? implode('; ',$summary).'. Controleer het log bij waarschuwingen.' : 'Geen bevestigde koppelingen opgeslagen; controleer het serverlog.';
         }
         if ($key === 'staff_sync') {
             if (preg_match('/Nieuw:\s*(\d+).*?Bijwerken:\s*(\d+).*?Uitschakelen:\s*(\d+)/u', $output, $m)) {
