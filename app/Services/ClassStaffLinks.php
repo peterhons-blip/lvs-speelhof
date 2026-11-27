@@ -42,17 +42,17 @@ class ClassStaffLinks
         $relations=$soap->getSkoreRelations();
         $classes=$this->classes();
         $byName=$classes->groupBy(fn($c)=>$this->normalize($c->klasnaam));
-        $pupils=DB::table('leerlingen')->where('schoolid',1)->where('active',1)->get(['gebruikersnaam','klasid'])->groupBy(fn($p)=>$this->normalize((string)$p->gebruikersnaam));
-        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$bad=[];$covered=[];$seenClasses=[];
+        $pupils=DB::table('leerlingen')->where('schoolid',1)->where('active',1)->get(['id','gebruikersnaam','klasid'])->groupBy(fn($p)=>$this->normalize((string)$p->gebruikersnaam));
+        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$bad=[];$covered=[];$seenClasses=[];$studentRows=[];
         foreach($relations as $rel){
             $name=$this->normalize($rel['class']);
             $username=$this->normalize($rel['username']);
             $course=trim($rel['course']);
             $matches=$byName->get($name,collect());
-            $actual=[];
+            $actual=[];$actualStudents=[];
             foreach($rel['students'] as $student){
                 $pupil=$pupils->get($this->normalize($student),collect());
-                if($pupil->count()===1)$actual[(int)$pupil->first()->klasid]=true;
+                if($pupil->count()===1){$person=$pupil->first();$actual[(int)$person->klasid]=true;$actualStudents[(int)$person->klasid][(int)$person->id]=true;}
             }
             $targets=$classes->filter(fn($c)=>isset($actual[(int)$c->id]));
             if($targets->isEmpty() && $matches->count()===1 && !$rel['students'])$targets=$matches;
@@ -72,6 +72,11 @@ class ClassStaffLinks
                 $user=$u->first();$key=$id.':'.$user->id;
                 if(!isset($rows[$key]))$rows[$key]=['class_id'=>$id,'user_id'=>(int)$user->id,'class'=>$class->klasnaam,'username'=>$username,'courses'=>[]];
                 $rows[$key]['courses'][$course]=$course;
+                foreach(array_keys($actualStudents[$id]??[]) as $studentId){
+                    $studentKey=$key.':'.$studentId;
+                    if(!isset($studentRows[$studentKey]))$studentRows[$studentKey]=['class_id'=>$id,'user_id'=>(int)$user->id,'student_id'=>(int)$studentId,'courses'=>[]];
+                    $studentRows[$studentKey]['courses'][$course]=$course;
+                }
             }
         }
         foreach($classes as $class){
@@ -85,7 +90,9 @@ class ClassStaffLinks
         $rows=array_values(array_filter($rows,fn($row)=>in_array($row['class_id'],$covered,true)));
         foreach($rows as &$row){$row['courses']=array_values($row['courses']);natcasesort($row['courses']);$row['courses']=array_values($row['courses']);}unset($row);
         if(count($covered)<max(1,(int)ceil($classes->count()*0.8)))throw new RuntimeException('Te weinig betrouwbare Skore-klassen; niets gewijzigd.');
-        return ['rows'=>$rows,'errors'=>array_values(array_unique($errors)),'covered'=>$covered,'notes'=>$notes,'source'=>'skore'];
+        $studentRows=array_values(array_filter($studentRows,fn($row)=>in_array($row['class_id'],$covered,true)));
+        foreach($studentRows as &$row){$row['courses']=array_values($row['courses']);natcasesort($row['courses']);$row['courses']=array_values($row['courses']);}unset($row);
+        return ['rows'=>$rows,'errors'=>array_values(array_unique($errors)),'covered'=>$covered,'notes'=>$notes,'source'=>'skore','student_rows'=>$studentRows];
     }
 
     public function groupTeacherPreview(): array
@@ -231,6 +238,26 @@ class ClassStaffLinks
             $staff=$this->staff()->filter(fn($g)=>$g->count()===1)->map(fn($g)=>(int)$g->first()->id)->values()->all();
             foreach($preview['rows'] as $row){
                 if(!in_array($row['class_id'],$classes,true)||!in_array($row['user_id'],$staff,true)) throw new RuntimeException('Klas of personeelsaccount gewijzigd. Maak een nieuwe preview.');
+            }
+            if($kind==='teacher' && $source==='skore'){
+                if(!isset($preview['student_rows'])||!$preview['student_rows'])throw new RuntimeException('Geen individuele Skore-relaties; maak een nieuwe preview.');
+                $current=DB::table('leerlingen')->where('schoolid',1)->where('active',1)->pluck('klasid','id');
+                $pairs=[];
+                foreach($preview['rows'] as $row)$pairs[$row['class_id'].':'.$row['user_id']]=true;
+                foreach($preview['student_rows'] as $row){
+                    if(!isset($pairs[$row['class_id'].':'.$row['user_id']])||(int)$current->get($row['student_id'])!==$row['class_id'])throw new RuntimeException('Leerling of klas gewijzigd. Maak een nieuwe preview.');
+                }
+                $scope=DB::table('skore_student_teacher_links')->where('school_id',1)->where('school_year',$year)->whereIn('class_id',$preview['covered']);
+                $old=$scope->count();
+                if($old>0 && count($preview['student_rows'])<0.8*$old)throw new RuntimeException('Onverwacht veel verdwenen individuele Skore-relaties; niets gewijzigd.');
+                // Do not replace a class's pupil relationships with an empty snapshot.
+                $withStudents=array_unique(array_column($preview['student_rows'],'class_id'));
+                if(array_diff($preview['covered'],$withStudents))throw new RuntimeException('Een klas heeft geen individuele Skore-relaties; niets gewijzigd.');
+                $scope->delete();
+                foreach(array_chunk($preview['student_rows'],300) as $chunk){
+                    $data=array_map(fn($row)=>['school_id'=>1,'school_year'=>$year,'class_id'=>$row['class_id'],'user_id'=>$row['user_id'],'student_id'=>$row['student_id'],'courses'=>json_encode($row['courses'],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),'created_at'=>now(),'updated_at'=>now()],$chunk);
+                    DB::table('skore_student_teacher_links')->insert($data);
+                }
             }
             // Only replace the same kind for explicitly covered, validated classes.
             DB::table('class_staff_links')->where('school_id',1)->where('school_year',$year)->where('kind',$kind)->whereIn('class_id',$preview['covered'])->delete();
