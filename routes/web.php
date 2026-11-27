@@ -193,6 +193,8 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     // Leerlingenbeheer: bestaande leerlingen bekijken en beperkte gegevens corrigeren, uitsluitend ICT.
     Route::get('/leerlingfoto/{student}', [\App\Http\Controllers\StudentPhotoController::class,'show'])->whereNumber('student')->name('students.photo');
     Route::post('/beheer/leerlingen/{student}/foto', [\App\Http\Controllers\StudentPhotoController::class,'upload'])->whereNumber('student')->middleware('throttle:20,1')->name('beheer.students.photo.upload');
+    Route::get('/beheer/leerlingen/fotos', [\App\Http\Controllers\StudentPhotoController::class,'bulkForm'])->name('beheer.students.photos');
+    Route::post('/beheer/leerlingen/fotos', [\App\Http\Controllers\StudentPhotoController::class,'bulkUpload'])->middleware('throttle:5,1')->name('beheer.students.photos.upload');
     Route::get('/beheer/leerlingen', [\App\Http\Controllers\StudentManagementController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':beheer.students.manage')
         ->name('beheer.students.index');
