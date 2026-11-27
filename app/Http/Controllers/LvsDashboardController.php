@@ -41,6 +41,8 @@ class LvsDashboardController extends Controller
 
         $recent = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
             ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
+            ->where('l.active', 1)
+            ->where('l.schoolid', 1)
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
             ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
             ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
