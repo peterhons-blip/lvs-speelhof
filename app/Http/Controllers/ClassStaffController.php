@@ -23,7 +23,7 @@ class ClassStaffController extends Controller
         $year=ClassStaffLinks::year();
         $members=DB::table('class_staff_links as l')->join('users as u','u.id','=','l.user_id')
             ->where('l.school_id',1)->where('l.school_year',$year)->where('u.schoolid',1)
-            ->select('l.class_id','l.kind','u.smartschool_gebruikersnaam','u.voornaam','u.name')->orderBy('u.name')->orderBy('u.voornaam')->get()
+            ->select('l.class_id','l.kind','l.courses','u.smartschool_gebruikersnaam','u.voornaam','u.name')->orderBy('u.name')->orderBy('u.voornaam')->get()
             ->map(function($member){
                 $member->display_name=trim(trim((string)$member->voornaam).' '.trim((string)$member->name)) ?: $member->smartschool_gebruikersnaam;
                 return $member;
