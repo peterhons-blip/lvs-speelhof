@@ -19,6 +19,7 @@
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
             <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
             <p>Leerlinggegevens en overzicht van de geregistreerde meldingen.</p>
+            @if(!$leerling->active)<p><strong>Historisch dossier · inactieve leerling</strong> — alleen raadplegen.</p>@endif
         </div>
     </div>
 
