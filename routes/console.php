@@ -46,3 +46,6 @@ Schedule::command('monitor:scheduled staff_sync')
     ->appendOutputTo(storage_path('logs/smartschool_sync_personeel.log'));
 
 Schedule::command('monitor:scheduled secretariat_reminders')->dailyAt('08:15')->timezone('Europe/Brussels')->withoutOverlapping()->appendOutputTo(storage_path('logs/secretariaat_herinneringen.log'));
+
+// Klassen, vakleerkrachten en titularissen na leerlingen- en personeelssync.
+Schedule::command('monitor:scheduled class_staff_sync')->dailyAt('05:00')->timezone('Europe/Brussels')->withoutOverlapping()->appendOutputTo(storage_path('logs/smartschool_sync_klaskoppelingen.log'));
