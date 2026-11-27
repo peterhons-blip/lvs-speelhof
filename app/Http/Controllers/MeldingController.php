@@ -107,6 +107,8 @@ class MeldingController extends Controller
             'gebeurdop'    => ['required','date','before_or_equal:today'],
             'comment'      => ['required','min:5'],
             'vertrouwelijk' => ['nullable','boolean'],
+            'visible_student' => ['nullable','boolean'],
+            'visible_coaccount' => ['nullable','boolean'],
         ]);
 
         // check: soort hoort bij gekozen categorie
@@ -125,7 +127,7 @@ class MeldingController extends Controller
         $attributes = [
             'vertrouwelijk'=>$confidential,
             'visible_student'=>!$confidential && $request->boolean('visible_student'),
-            'visible_coaccount'=>!$confidential && $request->boolean('visible_coaccount'),
+            'visible_coaccount'=>!$confidential && $request->boolean('visible_coaccount',true),
             'leerlingId' => $leerling->id,
             'meldingssoortId' => $soort->id,
             'comment' => $validated['comment'],
@@ -141,7 +143,7 @@ class MeldingController extends Controller
         app(\App\Services\LvsFollowupEngine::class)->evaluate($saved);
 
         $destination = app(\App\Services\LibraryAccess::class)->has($request, 'lvs.view')
-            ? route('leerlingen.show', $leerling->id)
+            ? route('leerlingen.show', $leerling->id).'#meldingen'
             : route('meldingen.select-student');
 
         return redirect($destination)->with('success', 'Melding succesvol toegevoegd.');
