@@ -47,7 +47,7 @@
                 <thead><tr><th>Leerling</th><th>Klas</th><th>Aantal</th></tr></thead>
                 <tbody>
                     @forelse($topStudents as $student)
-                        <tr><td>@if($canSeeStudents && $canSeeNotifications)<a href="{{ route('leerlingen.show', $student->id) }}">{{ $student->voornaam }} {{ $student->naam }}</a>@else{{ $student->voornaam }} {{ $student->naam }}@endif</td><td>{{ $student->klasnaam ?: '—' }}</td><td>{{ $student->aantal }}</td></tr>
+                        <tr><td>@if($canSeeStudents && $canSeeNotifications)<a class="student-photo-inline" href="{{ route('leerlingen.show', $student->id) }}">@include('partials.student-photo',['studentId'=>$student->id])<span>{{ $student->voornaam }} {{ $student->naam }}</span></a>@else{{ $student->voornaam }} {{ $student->naam }}@endif</td><td>{{ $student->klasnaam ?: '—' }}</td><td>{{ $student->aantal }}</td></tr>
                     @empty
                         <tr><td colspan="3">Geen meldingen in deze periode.</td></tr>
                     @endforelse
