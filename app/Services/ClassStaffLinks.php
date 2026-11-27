@@ -39,16 +39,22 @@ class ClassStaffLinks
         $school=School::findOrFail(1);
         if (!trim((string)$school->smartschool_wsdl)||!trim((string)$school->smartschool_accesscode)) throw new RuntimeException('Smartschool-configuratie ontbreekt.');
         $soap=new SmartschoolSoap($school->smartschool_wsdl,$school->smartschool_accesscode);
-        $groups=$soap->getAllGroupsAndClasses();
+        // Group names are also accepted by getAllAccountsExtended (as in staff sync).
+        // Prefer a uniquely discovered code; tolerate differences in whitespace.
+        try { $groups=$soap->getAllGroupsAndClasses(); } catch (\Throwable $e) { $groups=[]; }
         $byName=[];
-        foreach($groups as $code=>$name) $byName[$this->normalize($name)][]=(string)$code;
+        foreach($groups as $code=>$groupName) {
+            $key=preg_replace('/\s+/u','',$this->normalize((string)$groupName));
+            $byName[$key][]=(string)$code;
+        }
         $staff=$this->staff(); $rows=[]; $errors=[]; $covered=[];
         foreach($this->classes() as $class){
             $name=$class->klasnaam.' LK';
-            $codes=$byName[$this->normalize($name)]??[];
-            if(count($codes)!==1){$errors[]=$name.': groep ontbreekt of is dubbel.';continue;}
+            $codes=array_values(array_unique($byName[preg_replace('/\s+/u','',$this->normalize($name))]??[]));
+            if(count($codes)>1){$errors[]=$name.': meerdere groepen gevonden (codes: '.implode(', ',$codes).').';continue;}
+            $identifier=$codes[0]??$name;
             try{
-                $accounts=$soap->getAllAccountsExtended($codes[0],false);
+                $accounts=$soap->getAllAccountsExtended($identifier,false);
                 if(!array_is_list($accounts)){
                     $accounts=$accounts['accounts']??$accounts['users']??$accounts['data']??$accounts['items']??$accounts['result']??null;
                 }
@@ -68,7 +74,7 @@ class ClassStaffLinks
                 if(!$valid||!$local){$errors[]=$name.': bestaande koppelingen behouden.';continue;}
                 $covered[]=(int)$class->id;
                 array_push($rows,...array_values($local));
-            }catch(\Throwable $e){$errors[]=$name.': groep niet betrouwbaar opgehaald.';}
+            }catch(\Throwable $e){$errors[]=$name.': '.($codes?'groep gevonden via code '.$identifier:'niet in groepslijst; rechtstreeks op naam geprobeerd').'; geen geldige, niet-lege ledenlijst ontvangen. Bestaande koppelingen behouden.';}
         }
         return compact('rows','errors','covered');
     }
