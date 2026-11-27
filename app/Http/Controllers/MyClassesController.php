@@ -35,6 +35,7 @@ class MyClassesController extends Controller
     public function index(Request $request,LibraryAccess $access)
     {
         $id=$this->staff($request,$access);
+        $access->requirePermission($request,'lvs.my_classes.view');
         $classes=$this->links($id)->orderBy('k.klasnaam')->get()->groupBy('class_id')->map(function($group)use($id){
             $first=$group->first();$mentor=$group->contains('kind','mentor');
             $courses=collect($group->where('kind','teacher'))->flatMap(fn($r)=>json_decode($r->courses??'[]',true)?:[])->unique()->sort(SORT_NATURAL|SORT_FLAG_CASE)->values();
@@ -46,6 +47,7 @@ class MyClassesController extends Controller
     public function roster(Request $request,LibraryAccess $access,int $class)
     {
         $id=$this->staff($request,$access);
+        $access->requirePermission($request,'lvs.my_classes.view');
         $links=$this->links($id)->where('l.class_id',$class)->get();
         abort_if($links->isEmpty(),404);
         $mentor=$links->contains('kind','mentor');
