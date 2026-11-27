@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
     <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=54">
-    <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=6">
 </head>
 <body class="portal-body">
 @php
