@@ -50,7 +50,7 @@ try {
         $destination = $BlobContainer.TrimEnd('/')+'/'+[IO.Path]::GetFileName($encrypted)
         if ($AzureApplicationId -notmatch '^[0-9a-fA-F-]{36}$' -or $AzureTenantId -notmatch '^[0-9a-fA-F-]{36}$') { throw 'Azure application/tenant ID missing or invalid.' }
         if (!(Test-Path -LiteralPath $AzureCertificatePath -PathType Leaf) -or !(Test-Path -LiteralPath $AzurePasswordFile -PathType Leaf)) { throw 'Azure certificate or protected password file missing.' }
-        $secret = Get-Content -LiteralPath $AzurePasswordFile -Raw | ConvertTo-SecureString
+        $secret = (Get-Content -LiteralPath $AzurePasswordFile -Raw).Trim() | ConvertTo-SecureString
         try {
             $env:AZCOPY_AUTO_LOGIN_TYPE = 'SPN'
             $env:AZCOPY_SPA_APPLICATION_ID = $AzureApplicationId
