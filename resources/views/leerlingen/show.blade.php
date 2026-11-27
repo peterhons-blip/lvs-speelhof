@@ -13,16 +13,20 @@
 
 @section('content')
 <main class="screen lvs-screen">
-    <div class="lvs-page-heading student-photo-inline lvs-dossier-heading">
+    <div class="lvs-page-heading student-photo-inline lvs-dossier-heading card">
         @include('partials.student-photo',['studentId'=>$leerling->id,'large'=>true])
         <div class="lvs-dossier-heading-info">
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
             <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
             <p>{{ $leerling->klas?->klasnaam ?? 'Geen klas' }} · {{ $leerling->geboortedatum ? $leerling->geboortedatum->age.' jaar' : 'Leeftijd onbekend' }}</p>
             @if($mentors->isNotEmpty())<p>Klastitularis(sen): {{ $mentors->implode(', ') }}</p>@endif
-            @if($canCreate)<a href="{{ route('meldingen.create',$leerling->id) }}" class="lvs-link-button lvs-link-button-primary">+ Nieuwe melding</a>@endif
             @if(!$leerling->active)<p><strong>Historisch dossier · inactieve leerling</strong> — alleen raadplegen.</p>@endif
         </div>
+        @if($canCreate)
+        <div class="lvs-dossier-heading-actions">
+            <a href="{{ route('meldingen.create',$leerling->id) }}" class="lvs-link-button lvs-link-button-primary"><span aria-hidden="true">+</span> Nieuwe melding</a>
+        </div>
+        @endif
     </div>
 
     @if(session('success'))
