@@ -141,6 +141,7 @@ return [
         'permissions' => [
             'beheer.permissions.manage' => 'Rechten per rol en module beheren',
             'beheer.staff.manage' => 'Personeelsbeheer: medewerkers en schoolrollen beheren',
+            'beheer.classes.manage' => 'Klassen en personeelskoppelingen beheren',
             'beheer.students.manage' => 'Leerlingenbeheer bekijken',
             'beheer.students.edit' => 'Leerlinggegevens wijzigen',
             'beheer.students.status' => 'Leerlingstatus wijzigen',
