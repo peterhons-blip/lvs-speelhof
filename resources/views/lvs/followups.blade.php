@@ -41,7 +41,7 @@
                         </div>
                         <p><strong>Leerling:</strong>
                             @if($canSeeStudents)
-                                <a href="{{ route('leerlingen.show', $entry->leerling_id) }}">{{ $entry->voornaam }} {{ $entry->naam }}</a>
+                                <a class="student-photo-inline" href="{{ route('leerlingen.show', $entry->leerling_id) }}">@include('partials.student-photo',['studentId'=>$entry->leerling_id])<span>{{ $entry->voornaam }} {{ $entry->naam }}</span></a>
                             @else
                                 {{ $entry->voornaam }} {{ $entry->naam }}
                             @endif
