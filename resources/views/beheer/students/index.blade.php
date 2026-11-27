@@ -27,11 +27,12 @@
             <span class="portal-users-total" data-management-total>{{ $students->total() }} leerlingen</span>
         </div>
         <nav class="portal-users-account-filters" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;">
-            <a class="library-button {{ $showInactive ? 'library-button-secondary' : 'library-button-primary' }}" href="{{ route('beheer.students.index', array_filter(['zoek'=>$search,'klas'=>$classId])) }}">Actieve leerlingen</a>
-            <a class="library-button {{ $showInactive ? 'library-button-primary' : 'library-button-secondary' }}" href="{{ route('beheer.students.index', array_merge(['toon_inactief' => 1], $search !== '' ? ['zoek' => $search] : [])) }}">Alle leerlingen</a>
+            @foreach(['active'=>'Actieve leerlingen','inactive'=>'Inactieve leerlingen','all'=>'Alle leerlingen'] as $key=>$label)
+                <a class="library-button {{ $statusFilter===$key ? 'library-button-primary' : 'library-button-secondary' }}" href="{{ route('beheer.students.index',array_merge(request()->except(['status','toon_inactief','page']),['status'=>$key])) }}">{{ $label }}</a>
+            @endforeach
         </nav>
         <form method="get" action="{{ route('beheer.students.index') }}" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:end;margin-bottom:1rem;">
-            @if($showInactive)<input type="hidden" name="toon_inactief" value="1">@endif
+            <input type="hidden" name="status" value="{{ $statusFilter }}">
             <div class="library-field" style="flex:1 1 240px;margin:0;">
                 <label for="leerlingenbeheer-zoek">Leerling of klas zoeken</label>
                 <input id="leerlingenbeheer-zoek" data-live-search type="search" name="zoek" maxlength="100" value="{{ $search }}" placeholder="Naam, klas, stam- of internnummer...">
@@ -43,7 +44,7 @@
             </select></div>
             <button class="library-button library-button-primary" type="submit">Zoeken</button>
             @if($search !== '' || $classId)
-                <a class="library-button library-button-secondary" href="{{ route('beheer.students.index', $showInactive ? ['toon_inactief' => 1] : []) }}">Wissen</a>
+                <a class="library-button library-button-secondary" href="{{ route('beheer.students.index', ['status'=>$statusFilter]) }}">Wissen</a>
             @endif
         </form>
         <form method="post" action="{{ route('beheer.students.bulk') }}" id="students-bulk-form" data-bulk-form style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:end;margin:1rem 0;">
