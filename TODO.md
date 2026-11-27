@@ -19,7 +19,7 @@ Bijgewerkt: 27 november 2026. Dit is een werkdocument; testfase betekent niet da
 ## P1 — Klassen, leerkrachten en toegangsbeheer
 - [ ] Klastitularissen per klas en schooljaar registreren (meerdere titularissen mogelijk).
 - [ ] Leerkrachten koppelen aan de klassen waarin ze lesgeven, eventueel met vak en lesgroep.
-- [x] Smartschool Lkr-groepen en getClassTeachers als bron; preview en nachtelijke synchronisatie om 05.00 uur voorzien.
+- [x] Smartschool Skore en getClassTeachers als bron; preview en nachtelijke synchronisatie om 05.00 uur voorzien.
 - [ ] Klaskoppelingen in productie valideren, inclusief gesplitste groepen en ontbrekende groepen; manuele correcties indien nodig.
 - [ ] Koppelingen per schooljaar bewaren; wijzigingen en vervangingen kunnen verwerken.
 - [ ] Beheerpagina met overzicht per klas en per leerkracht; zoeken, filteren en koppelingen beheren.
