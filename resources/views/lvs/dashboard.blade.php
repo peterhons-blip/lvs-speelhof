@@ -20,6 +20,15 @@
         </div>
     </div>
 
+    @if($canSeeStudents)
+    <section class="card lvs-panel lvs-dashboard-search" data-lvs-quick-search="{{ route('lvs.students.search') }}">
+        <div class="lvs-panel-heading lvs-panel-heading-wrap"><h2>Leerling zoeken</h2><a class="library-button library-button-secondary" href="{{ route('lvs.my-classes.index') }}">Mijn klassen</a></div>
+        <label for="dashboard-student-search" class="lvs-field-label">Naam of klas</label>
+        <input id="dashboard-student-search" class="lvs-search" type="search" placeholder="Typ de naam of klas van een leerling…" autocomplete="off">
+        <p class="lvs-field-help" data-search-status role="status">Typ minstens twee tekens.</p>
+        <div class="class-roster" data-search-results></div>
+    </section>
+    @endif
     <section class="lvs-dashboard-stats" aria-label="LVS in cijfers">
         @foreach([
             ['value' => $stats['students'], 'label' => 'Actieve leerlingen', 'hint' => 'Volgens de laatste leerlingensynchronisatie'],
@@ -104,3 +113,7 @@
     @endif
 </main>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/lvs-quick-search.js') }}?v=1" defer></script>
+@endpush
