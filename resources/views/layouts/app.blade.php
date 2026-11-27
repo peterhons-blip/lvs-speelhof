@@ -115,7 +115,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                     @if($isExternal)
                         @include('external.partials.profile-navigation')
                     @endif
-                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*'))
+                    @php($lvsActive = request()->routeIs('lvs.*') || request()->routeIs('leerlingen.*') || request()->routeIs('meldingen.*') || request()->routeIs('beheer.incident-release.*') || request()->routeIs('secretariat-visits.*'))
                     @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.dashboard.view'))
                     <div class="portal-nav-module">
                         <a href="{{ route('lvs.dashboard') }}" class="portal-nav-link {{ $lvsActive ? 'is-current' : '' }}" @if($lvsActive) aria-expanded="true" @endif>
@@ -144,6 +144,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.followups.view'))
                                 <a href="{{ route('lvs.followups.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.followups.*') ? 'is-active' : '' }}">Opvolging</a>
+                                @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.secretariat_visits.manage'))
+                                <a href="{{ route('secretariat-visits.index') }}" class="portal-nav-subitem {{ request()->routeIs('secretariat-visits.*') ? 'is-active' : '' }}">Secretariaatsbezoeken (18+)</a>
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
                                 <a href="{{ route('leerlingen.verjaardagen') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.verjaardagen') ? 'is-active' : '' }}">Verjaardagen</a>
