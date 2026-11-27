@@ -166,9 +166,9 @@ class ClassStaffLinks
         return ['rows'=>array_values($rows),'errors'=>$errors,'covered'=>array_values(array_unique($covered))];
     }
 
-    public function apply(array $preview,string $kind): int
+    public function apply(array $preview,string $kind,bool $allowPartialTeachers=false): int
     {
-        if(!in_array($kind,['teacher','mentor','mentor_smartschool'],true)||$preview['errors']||!$preview['rows']) throw new RuntimeException('Controleer eerst alle fouten; niets gewijzigd.');
+        if(!in_array($kind,['teacher','mentor','mentor_smartschool'],true)||($preview['errors'] && !($kind==='teacher' && $allowPartialTeachers))||!$preview['rows']) throw new RuntimeException('Controleer eerst alle fouten; niets gewijzigd.');
         $source=$kind==='mentor'?'excel':'smartschool';
         $kind=$kind==='mentor_smartschool'?'mentor':$kind;
         $year=self::year();
@@ -178,7 +178,7 @@ class ClassStaffLinks
             foreach($preview['rows'] as $row){
                 if(!in_array($row['class_id'],$classes,true)||!in_array($row['user_id'],$staff,true)) throw new RuntimeException('Klas of personeelsaccount gewijzigd. Maak een nieuwe preview.');
             }
-            // Only replace the same source/kind for explicitly covered classes.
+            // Only replace the same kind for explicitly covered, validated classes.
             DB::table('class_staff_links')->where('school_id',1)->where('school_year',$year)->where('kind',$kind)->whereIn('class_id',$preview['covered'])->delete();
             foreach($preview['rows'] as $row){
                 DB::table('class_staff_links')->insertOrIgnore(['school_id'=>1,'school_year'=>$year,'class_id'=>$row['class_id'],'user_id'=>$row['user_id'],'kind'=>$kind,'source'=>$source,'created_at'=>now(),'updated_at'=>now()]);
