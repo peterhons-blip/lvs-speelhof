@@ -61,7 +61,7 @@ class MeldingController extends Controller
         $access->requirePermission($request, 'lvs.meldingen.create');
         $leerlingen = \Illuminate\Support\Facades\DB::table('leerlingen as l')
             ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
-            ->where('l.active', 1)
+            ->where('l.schoolid',1)->where('l.active', 1)
             ->selectRaw('l.id, l.voornaam, COALESCE(l.naam, "") AS achternaam, COALESCE(k.klasnaam, "") AS klas')
             ->orderBy('l.naam')->orderBy('l.voornaam')->get();
 
@@ -71,7 +71,7 @@ class MeldingController extends Controller
     public function create($id)
     {
         try {
-            $leerling = Leerling::with('klas')->where('active', 1)->findOrFail($id);
+            $leerling = Leerling::with('klas')->where('schoolid',1)->where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
@@ -96,7 +96,7 @@ class MeldingController extends Controller
     public function store(Request $request, $id)
     {
         try {
-            $leerling = Leerling::where('active', 1)->findOrFail($id);
+            $leerling = Leerling::where('schoolid',1)->where('active', 1)->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             abort(404, 'Leerling niet gevonden');
         }
