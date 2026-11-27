@@ -15,11 +15,14 @@
     <div class="lvs-page-heading">
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM</p>
-            <h1>Leerlingen</h1>
+            <h1>{{ $historical ? 'Historische leerlingen' : 'Leerlingen' }}</h1>
             <p>Zoek een leerling of klas om gegevens te bekijken en meldingen op te volgen.</p>
         </div>
     </div>
 
+    @if($canHistory)
+    <nav style="display:flex;gap:12px;margin-bottom:16px"><a class="lvs-link-button {{ !$historical?'lvs-link-button-primary':'' }}" href="{{ route('leerlingen.index') }}">Actieve leerlingen</a><a class="lvs-link-button {{ $historical?'lvs-link-button-primary':'' }}" href="{{ route('leerlingen.index',['historisch'=>1]) }}">Historische leerlingen</a></nav>
+    @endif
     <div class="lvs-overview-grid">
     <section class="card lvs-panel lvs-search-panel" aria-labelledby="lvs-search-title">
         <div class="lvs-search-panel-heading">
@@ -39,6 +42,7 @@
         <p class="lvs-field-help">Typ minstens twee tekens om te zoeken.</p>
     </section>
 
+    @unless($historical)
     <section class="card lvs-panel lvs-birthday-panel" aria-labelledby="birthdays-title">
         <div class="lvs-panel-heading lvs-panel-heading-wrap">
             <div>
@@ -69,6 +73,7 @@
             </div>
         @endif
     </section>
+    @endunless
     </div>
 
     <div id="infoCard" class="lvs-feedback" data-hidden="true" role="status" aria-live="polite"></div>
