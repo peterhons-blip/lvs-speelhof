@@ -76,7 +76,7 @@
             <div class="lvs-panel-heading lvs-panel-heading-wrap"><h2>Recente meldingen</h2><a class="lvs-inline-link" href="{{ route('meldingen.index') }}">Alle meldingen →</a></div>
             @forelse($recent as $m)
                 <a class="lvs-dashboard-recent" href="{{ route('leerlingen.show', $m->leerlingId) }}">
-                    <span><strong>{{ $m->voornaam }} {{ $m->naam }}</strong><small>{{ $m->klasnaam ?: 'Geen klas' }} · {{ $m->categorie ?: 'Zonder categorie' }} / {{ $m->soort ?: 'Onbekend' }}</small></span>
+                    <span class="student-photo-inline">@include('partials.student-photo',['studentId'=>$m->leerlingId])<span><strong>{{ $m->voornaam }} {{ $m->naam }}</strong><small>{{ $m->klasnaam ?: 'Geen klas' }} · {{ $m->categorie ?: 'Zonder categorie' }} / {{ $m->soort ?: 'Onbekend' }}</small></span></span>
                     <time datetime="{{ $m->gebeurdop }}">{{ $m->gebeurdop ? \Illuminate\Support\Carbon::parse($m->gebeurdop)->format('d/m/Y') : '—' }}</time>
                 </a>
             @empty
