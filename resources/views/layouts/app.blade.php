@@ -8,7 +8,7 @@
     <link rel="shortcut icon" type="image/svg+xml" href="{{ asset('atheneum-portaal-favicon.svg') }}?v=1">
     <link rel="apple-touch-icon" href="{{ asset('images/atheneum-portaal-icon.png') }}">
     <link rel="stylesheet" href="{{ asset('css/lvs.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=47">
+    <link rel="stylesheet" href="{{ asset('css/portal.css') }}?v=48">
     <link rel="stylesheet" href="{{ asset('css/lvs-modern.css') }}?v=5">
 </head>
 <body class="portal-body">
@@ -124,6 +124,10 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                         @if($lvsActive)
                             <nav class="portal-nav-submenu" aria-label="LVS-subnavigatie">
                                 <a href="{{ route('lvs.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('lvs.dashboard')) aria-current="page" @endif>Dashboard</a>
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
+                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingen zoeken</a>
+                                <a href="{{ route('lvs.my-classes.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.my-classes.*') ? 'is-active' : '' }}">Mijn klassen</a>
+                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.view'))
                                 <a href="{{ route('meldingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.index') ? 'is-active' : '' }}">Alle meldingen</a>
                                 @endif
@@ -136,9 +140,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.reports.view'))
                                 <a href="{{ route('lvs.reports.index') }}" class="portal-nav-subitem {{ request()->routeIs('lvs.reports.*') ? 'is-active' : '' }}">Klassenraadoverzicht</a>
                                 @endif
-                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.view'))
-                                <a href="{{ route('leerlingen.index') }}" class="portal-nav-subitem {{ request()->routeIs('leerlingen.index') || request()->routeIs('leerlingen.show') ? 'is-active' : '' }}">Leerlingenoverzicht</a>
-                                @endif
+
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'lvs.meldingen.create'))
                                 <a href="{{ route('meldingen.select-student') }}" class="portal-nav-subitem {{ request()->routeIs('meldingen.select-student') || request()->routeIs('meldingen.create') ? 'is-active' : '' }}">Nieuwe melding</a>
                                 @endif
