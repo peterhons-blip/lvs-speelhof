@@ -164,6 +164,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
                                 <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>
                                 @endif
+                                @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.classes.manage'))
+                                <a href="{{ route('beheer.classes.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.classes.*') ? 'is-active' : '' }}">Klassenbeheer</a>
+                                @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.students.manage'))
                                 <a href="{{ route('beheer.students.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.students.*') ? 'is-active' : '' }}">Leerlingenbeheer</a>
                                 @endif
