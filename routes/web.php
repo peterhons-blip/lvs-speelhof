@@ -213,6 +213,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
         ->name('beheer.students.update');
 
     // Centraal portaalbeheer: rechten per rol en medewerker (ICT-coordinator heeft standaard alle rechten).
+    Route::get('/beheer/klassen/{class}/leerlingen',[\App\Http\Controllers\ClassStaffController::class,'students'])->whereNumber('class')->name('beheer.classes.students');
     Route::get('/beheer/klassen',[\App\Http\Controllers\ClassStaffController::class,'index'])->name('beheer.classes.index');
     Route::post('/beheer/klassen/preview',[\App\Http\Controllers\ClassStaffController::class,'preview'])->middleware('throttle:5,1')->name('beheer.classes.preview');
     Route::post('/beheer/klassen/toepassen',[\App\Http\Controllers\ClassStaffController::class,'apply'])->middleware('throttle:5,1')->name('beheer.classes.apply');
