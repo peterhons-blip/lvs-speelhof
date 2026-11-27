@@ -23,6 +23,9 @@
 
     <section class="library-form-card">
         <h2>Smartschoolgegevens</h2>
+        @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.view') && ($student->active || app(\App\Services\LibraryAccess::class)->has(request(),'lvs.history.view')))
+        <p><a class="library-button library-button-secondary" href="{{ route('leerlingen.show',$student->id) }}">LVS-dossier openen</a></p>
+        @endif
         <p class="portal-users-card-intro">Deze velden worden door de leerlingensynchronisatie beheerd en kunnen hier niet aangepast worden.</p>
         <dl class="lvs-details-grid">
             <div><dt>Smartschool-gebruikersnaam</dt><dd>{{ $student->gebruikersnaam ?: '—' }}</dd></div>
