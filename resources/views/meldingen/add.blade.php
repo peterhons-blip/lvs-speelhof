@@ -23,12 +23,14 @@
         </div>
 
         {{-- Compact overzicht van de leerling bij wie de melding hoort. --}}
-        <section class="card lvs-panel lvs-context-panel">
-            @include('partials.student-photo',['studentId'=>$leerling->id])
-            <div>
+        <section class="card lvs-panel lvs-context-panel lvs-photo-context">
+            <div class="student-photo-inline">
+                @include('partials.student-photo',['studentId'=>$leerling->id,'large'=>true])
+                <div class="lvs-context-info">
                 <p class="lvs-context-label">MELDING VOOR</p>
                 <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
                 <p>{{ optional($leerling->klas)->klasnaam ?? 'Geen klas' }} · {{ $leerling->gebruikersnaam ?: 'Geen gebruikersnaam' }}</p>
+            </div>
             </div>
             <a href="{{ route('leerlingen.show', $leerling->id) }}" class="lvs-context-link">Bekijk leerlinggegevens →</a>
         </section>
