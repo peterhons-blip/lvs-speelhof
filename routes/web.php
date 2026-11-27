@@ -253,6 +253,9 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     Route::get('/lvs', [\App\Http\Controllers\LvsDashboardController::class, 'index'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.dashboard.view')
         ->name('lvs.dashboard');
+    Route::get('/lvs/mijn-klassen',[\App\Http\Controllers\MyClassesController::class,'index'])->name('lvs.my-classes.index');
+    Route::get('/lvs/mijn-klassen/{class}/leerlingen',[\App\Http\Controllers\MyClassesController::class,'roster'])->whereNumber('class')->name('lvs.my-classes.roster');
+    Route::get('/lvs/leerlingen-zoeken',[\App\Http\Controllers\MyClassesController::class,'search'])->middleware('throttle:90,1')->name('lvs.students.search');
     Route::get('/lvs/klassenraad/export', [\App\Http\Controllers\LvsReportsController::class, 'export'])
         ->middleware(\App\Http\Middleware\RequirePortalPermission::class.':lvs.reports.export')
         ->name('lvs.reports.export');
