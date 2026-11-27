@@ -16,6 +16,7 @@ class SmartschoolSyncLeerlingen extends Command
                             {--dry-run : Niets schrijven in DB, enkel loggen}
                             {--limit=0 : Maximum # leerlingen verwerken (0 = geen limiet)}
                             {--only-class= : Alleen deze smartschool_code syncen}
+                            {--confirm-empty-classes : Bevestig dat lege klassen gecontroleerd zijn; deactivatie toestaan bij volledige sync}
                             {--skip-scancodes : QR-codes niet synchroniseren}
                             {--refresh-scancodes : Bestaande QR-codes opnieuw ophalen via getUserDetails}';
 
@@ -345,43 +346,28 @@ class SmartschoolSyncLeerlingen extends Command
 
         $deactivated = 0;
 
-        // Never deactivate absent pupils when Smartschool returned an incomplete snapshot.
-        if (!$dryRun && $failedClasses === 0 && $emptyClasses === 0 && count($seenUsernames) > 0) {
-
-            $query = Leerling::query()
-                ->where('schoolid', $schoolId);
-
-            if ($onlyCode !== '') {
-                // 🔥 enkel binnen deze klas deactiveren
-                $klas = Klas::query()
-                    ->where('schoolid', $schoolId)
-                    ->where('smartschool_code', $onlyCode)
-                    ->first();
-
-                if ($klas) {
-                    $query->where('klasid', $klas->id);
-                } else {
-                    $this->warn("Deactivatie overgeslagen: klas {$onlyCode} niet gevonden.");
-                    $query = null;
-                }
-            } elseif ($limit > 0) {
-                // bij limit nog steeds gevaarlijk → niet doen
-                $this->warn('Deactivatie overgeslagen wegens --limit.');
-                $query = null;
+        // Report only a complete school snapshot. Never deactivate from a limited run.
+        $completeScope = $failedClasses === 0 && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0;
+        $confirmedEmpty = (bool) $this->option('confirm-empty-classes');
+        if ($completeScope) {
+            $missing = Leerling::query()->where('schoolid', $schoolId)->where('active', 1)
+                ->whereNotIn('gebruikersnaam', $seenUsernames)->with('klas')->orderBy('naam')->orderBy('voornaam')->get();
+            $this->info('Unieke leerlingen ontvangen: '.count($seenUsernames));
+            $this->info('Lokaal actief maar niet ontvangen: '.$missing->count());
+            foreach ($missing as $student) {
+                $this->line('  '.$student->gebruikersnaam.' | '.($student->klas?->klasnaam ?? 'Geen klas'));
             }
-
-            if ($query) {
-                $deactivated = $query
-                    ->whereNotIn('gebruikersnaam', $seenUsernames)
-                    ->update(['active' => 0]);
-
-                $scope = $onlyCode !== '' ? "klas {$onlyCode}" : "volledige school";
-                $this->info("Niet meer gevonden in Smartschool ({$scope}) → active=0: {$deactivated}");
+            if (!$dryRun && ($emptyClasses === 0 || $confirmedEmpty) && $missing->isNotEmpty()) {
+                $deactivated = Leerling::query()->where('schoolid',$schoolId)->where('active',1)
+                    ->whereIn('id',$missing->pluck('id'))->whereNotIn('gebruikersnaam',$seenUsernames)->update(['active'=>0]);
+                $this->info('Niet meer gevonden in Smartschool → active=0: '.$deactivated);
             }
+        } else {
+            $this->warn('Vergelijking en deactivering overgeslagen: geen volledige schoolopvraging.');
         }
-
         if ($emptyClasses > 0) {
-            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen. Dit is geen fout; deactivering uit voorzorg overgeslagen.");
+            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen.");
+            if (!$confirmedEmpty) $this->warn('Deactivering uit voorzorg overgeslagen. Controleer lege klassen en ontbrekende leerlingen voordat je --confirm-empty-classes gebruikt.');
         }
         if ($failedClasses > 0) {
             $this->warn("WAARSCHUWING: {$failedClasses} klassen konden niet opgehaald worden. Deactivering overgeslagen.");
