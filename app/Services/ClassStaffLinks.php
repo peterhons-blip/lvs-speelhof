@@ -174,7 +174,7 @@ class ClassStaffLinks
         $classes=$this->classes();
         $byCode=$classes->groupBy(fn($c)=>(string)$c->smartschool_code);
         $byName=$classes->groupBy(fn($c)=>$this->normalize($c->klasnaam));
-        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$covered=[];
+        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$covered=[];$nameMatches=0;
         foreach($accounts as $account){
             if(!is_array($account)){$errors[]='Ongeldig titularisrecord.';continue;}
             if(!in_array($account['isOfficial']??null,[true,1,'1','true'],true))continue;
@@ -185,9 +185,12 @@ class ClassStaffLinks
             if($code===''||$name===''||$username===''){$errors[]='Onvolledig titularisrecord.';continue;}
             $matched=$byCode->get($code,collect());
             if($matched->isEmpty()){
-                // Ignore inactive classes; a name match with a different code is a conflict.
-                if($byName->has($this->normalize($name)))$errors[]=$name.': klas-ID wijkt af; controleer leerlingensync.';
-                continue;
+                // The roster API stores group codes, whereas getClassTeachers returns numeric class IDs.
+                // Match only a unique exact normalized name within the same school.
+                $matched=$byName->get($this->normalize($name),collect());
+                if($matched->isEmpty())continue;
+                if($matched->count()!==1){$errors[]=$name.': meerdere lokale klassen met dezelfde naam.';continue;}
+                $nameMatches++;
             }
             if($matched->count()!==1 || $this->normalize($matched->first()->klasnaam)!==$this->normalize($name)){
                 $errors[]=$name.': klas-ID niet eenduidig gekoppeld.';continue;
@@ -200,6 +203,7 @@ class ClassStaffLinks
             $covered[]=(int)$class->id;
         }
         $covered=array_values(array_unique($covered));
+        if($nameMatches)$notes[]='Titularisrecords gekoppeld via unieke klasnaam wegens verschil tussen groepscode en klas-ID: '.$nameMatches.'.';
         foreach($classes as $class)if(!in_array((int)$class->id,$covered,true))$notes[]=$class->klasnaam.': geen titularis ontvangen; bestaande koppelingen behouden.';
         return ['rows'=>array_values($rows),'errors'=>$errors,'covered'=>$covered,'notes'=>$notes];
     }
