@@ -150,7 +150,19 @@ class SmartschoolSyncLeerlingen extends Command
                 $className = $classCode;
             }
 
-            $klas = $this->findOrCreateKlas($schoolId, $classCode, $className, $dryRun, $createdClasses);
+            $ssClassId = trim((string) ($ssClass['id'] ?? ''));
+            if (!preg_match('/^[0-9]{1,40}$/D', $ssClassId)) {
+                $failedClasses++;
+                $this->warn("Ongeldige Smartschool klas-ID voor {$classCode}; klas overgeslagen.");
+                continue;
+            }
+            try {
+                $klas = $this->findOrCreateKlas($schoolId, $classCode, $className, $dryRun, $createdClasses, $ssClassId);
+            } catch (\RuntimeException $e) {
+                $failedClasses++;
+                $this->warn("Conflicterende Smartschool klas-ID voor {$classCode}; klas overgeslagen.");
+                continue;
+            }
 
             $this->line("→ Sync klas {$className} ({$classCode})");
 
@@ -448,19 +460,26 @@ class SmartschoolSyncLeerlingen extends Command
         return null;
     }
 
-    private function findOrCreateKlas(int $schoolId, string $classCode, string $className, bool $dryRun, int &$createdClasses): ?Klas
+    private function findOrCreateKlas(int $schoolId, string $classCode, string $className, bool $dryRun, int &$createdClasses, string $ssClassId): ?Klas
     {
         $existing = Klas::query()
             ->where('schoolid', $schoolId)
             ->where('smartschool_code', $classCode)
             ->first();
 
+        $byId = Klas::query()->where('schoolid',$schoolId)->where('smartschool_class_id',$ssClassId)->first();
+        if ($byId && (!$existing || (int)$byId->id !== (int)$existing->id)) {
+            throw new \RuntimeException('Smartschool klas-ID behoort reeds tot een andere groepscode.');
+        }
         if ($existing) {
-            if ($existing->klasnaam !== $className && !$dryRun) {
+            if ($existing->smartschool_class_id !== null && (string)$existing->smartschool_class_id !== $ssClassId) {
+                throw new \RuntimeException('Bestaande Smartschool klas-ID wijkt af.');
+            }
+            if (!$dryRun && ($existing->klasnaam !== $className || $existing->smartschool_class_id === null)) {
                 $existing->klasnaam = $className;
+                $existing->smartschool_class_id = $ssClassId;
                 $existing->save();
             }
-
             return $existing;
         }
 
@@ -473,6 +492,7 @@ class SmartschoolSyncLeerlingen extends Command
         $klas->schoolid = $schoolId;
         $klas->klasnaam = $className;
         $klas->smartschool_code = $classCode;
+        $klas->smartschool_class_id = $ssClassId;
         $klas->save();
 
         $createdClasses++;
