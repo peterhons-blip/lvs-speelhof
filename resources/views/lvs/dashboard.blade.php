@@ -22,7 +22,7 @@
 
     @if($canSeeStudents)
     <section class="card lvs-panel lvs-dashboard-search" data-lvs-quick-search="{{ route('lvs.students.search') }}">
-        <div class="lvs-panel-heading lvs-panel-heading-wrap"><h2>Leerling zoeken</h2><a class="library-button library-button-secondary" href="{{ route('lvs.my-classes.index') }}">Mijn klassen</a></div>
+        <div class="lvs-panel-heading lvs-panel-heading-wrap"><h2>Leerling zoeken</h2>@if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.my_classes.view'))<a class="library-button library-button-secondary" href="{{ route('lvs.my-classes.index') }}">Mijn klassen</a>@endif</div>
         <label for="dashboard-student-search" class="lvs-field-label">Naam of klas</label>
         <input id="dashboard-student-search" class="lvs-search" type="search" placeholder="Typ de naam of klas van een leerling…" autocomplete="off">
         <p class="lvs-field-help" data-search-status role="status">Typ minstens twee tekens.</p>
