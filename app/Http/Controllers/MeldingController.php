@@ -139,13 +139,22 @@ class MeldingController extends Controller
             $attributes['auteur_gebruikersnaam'] =
                 app(\App\Services\LibraryAccess::class)->username($request);
         }
+        $preview=$request->session()->get('portal_preview');
+        if($preview){
+            // Real test record, explicitly identified; never release or trigger automatic actions.
+            $attributes['visible_student']=false;
+            $attributes['visible_coaccount']=false;
+            $attributes['comment']='[TESTMODUS] '.$attributes['comment'];
+        }
         $saved = Melding::create($attributes);
-        app(\App\Services\LvsFollowupEngine::class)->evaluate($saved);
+        if($preview){
+            \Illuminate\Support\Facades\Log::notice('LVS testmelding opgeslagen',['actor'=>$preview['actor'],'target'=>$preview['target_id'],'melding_id'=>$saved->id]);
+        }else app(\App\Services\LvsFollowupEngine::class)->evaluate($saved);
 
         $destination = app(\App\Services\LibraryAccess::class)->has($request, 'lvs.view')
             ? route('leerlingen.show', $leerling->id).'#meldingen'
             : route('meldingen.select-student');
 
-        return redirect($destination)->with('success', 'Melding succesvol toegevoegd.');
+        return redirect($destination)->with('success', $preview ? 'Testmelding echt opgeslagen, zonder vrijgave of automatische berichten.' : 'Melding succesvol toegevoegd.');
     }
 }
