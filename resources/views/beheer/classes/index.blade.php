@@ -5,7 +5,7 @@
 <div class="library-page-head"><div><p class="portal-eyebrow">BEHEER / KLASSEN</p><h1>Klassenbeheer</h1><p>Schooljaar {{ $year }} · automatische Smartschool-synchronisatie om 05.00 uur.</p></div></div>
 @if(session('success'))<div class="library-message">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="library-errors">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
-<section class="library-form-card"><h2>Leerkrachten uit Smartschool</h2><p>Zoekt per klas de Smartschool-groep met voorvoegsel Lkr (bijvoorbeeld Lkr 3 BO). Eerst controleren, daarna bevestigen.</p>
+<section class="library-form-card"><h2>Leerkrachten uit Smartschool</h2><p>Haalt lesrelaties en vakken rechtstreeks uit Skore op. Eerst controleren, daarna bevestigen.</p>
 <form method="post" action="{{ route('beheer.classes.preview') }}">@csrf<input type="hidden" name="kind" value="teacher"><button class="library-button library-button-primary">Smartschool-koppelingen controleren</button></form></section>
 <section class="library-form-card"><h2>Klastitularissen uit Smartschool</h2><p>Haalt alle titularissen van officiële klassen rechtstreeks op, inclusief meerdere titularissen per klas.</p><form method="post" action="{{ route('beheer.classes.preview') }}">@csrf<input type="hidden" name="kind" value="mentor_smartschool"><button class="library-button library-button-primary">Klastitularissen controleren</button></form></section>
 <section class="library-form-card"><h2>Klassen</h2>
