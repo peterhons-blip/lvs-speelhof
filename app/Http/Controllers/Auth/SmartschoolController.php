@@ -19,14 +19,15 @@ class SmartschoolController extends Controller
 
     public function __construct()
     {
-        $this->clientId = env('SMARTSCHOOL_CLIENT_ID');
-        $this->clientSecret = env('SMARTSCHOOL_CLIENT_SECRET');
-        $this->redirectUri = env('SMARTSCHOOL_REDIRECT_URI');
-        $this->oauthUrl = env('SMARTSCHOOL_URL');
+        $this->clientId = config('services.smartschool.client_id');
+        $this->clientSecret = config('services.smartschool.client_secret');
+        $this->redirectUri = config('services.smartschool.redirect_uri');
+        $this->oauthUrl = config('services.smartschool.url');
     }
 
     public function redirect(Request $request)
     {
+        abort_unless($this->clientId && $this->clientSecret && $this->redirectUri && filter_var($this->oauthUrl, FILTER_VALIDATE_URL) && parse_url($this->oauthUrl, PHP_URL_SCHEME) === 'https', 503, 'Smartschool-aanmelding is tijdelijk niet beschikbaar.');
         $state = Str::random(64);
         $request->session()->put('smartschool_oauth_state',$state);
         $query = http_build_query([

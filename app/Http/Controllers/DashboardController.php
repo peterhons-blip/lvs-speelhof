@@ -23,20 +23,22 @@ class DashboardController extends Controller
         $canSeeBooks = $canSeeLibrary && $access->has(request(), 'bibliotheek.books.view');
         $canSeeLoans = $canSeeLibrary && $access->has(request(), 'bibliotheek.loans.view');
         if ($canSeeLvs && $access->has(request(),'lvs.view') && Schema::hasTable('leerlingen')) {
-            $lvs['leerlingen'] = DB::table('leerlingen')->where('active', 1)->count();
-            $lvs['jarig_vandaag'] = DB::table('leerlingen')
-                ->where('active', 1)->whereNotNull('geboortedatum')
-                ->whereRaw("DATE_FORMAT(geboortedatum, '%m-%d') = ?", [now()->format('m-d')])
-                ->count();
+            $counts = DB::table('leerlingen')->where('active', 1)
+                ->selectRaw('COUNT(*) AS total')
+                ->selectRaw("COUNT(CASE WHEN DATE_FORMAT(geboortedatum, '%m-%d') = ? THEN 1 END) AS birthdays", [now()->format('m-d')])
+                ->first();
+            $lvs['leerlingen'] = (int) $counts->total;
+            $lvs['jarig_vandaag'] = (int) $counts->birthdays;
         }
 
         if ($canSeeLvs && $access->has(request(),'lvs.meldingen.view') && Schema::hasTable('meldingen')) {
-            $lvs['meldingen'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count();
-            $lvs['meldingen_maand'] = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))
-                ->whereBetween('gebeurdop', [
-                    now()->startOfMonth()->toDateString(),
-                    now()->endOfMonth()->toDateString(),
-                ])->count();
+            $counts = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))
+                ->selectRaw('COUNT(*) AS total')
+                ->selectRaw('COUNT(CASE WHEN gebeurdop BETWEEN ? AND ? THEN 1 END) AS this_month', [
+                    now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString(),
+                ])->first();
+            $lvs['meldingen'] = (int) $counts->total;
+            $lvs['meldingen_maand'] = (int) $counts->this_month;
         }
 
         $bibliotheek = [
@@ -71,10 +73,12 @@ class DashboardController extends Controller
         // Uitleenstatistieken uit de nieuwe exemplaargebonden uitleentabel.
         // Geen Schema::hasColumn() op de oudere MariaDB-productieserver.
         if ($canSeeLoans && Schema::hasTable('library_loans')) {
-            $bibliotheek['uitleningen'] = DB::table('library_loans')->whereNull('returned_at')->count();
-            $bibliotheek['te_laat'] = DB::table('library_loans')
-                ->whereNull('returned_at')->where('due_date', '<', now('Europe/Brussels')->toDateString())
-                ->count();
+            $counts = DB::table('library_loans')->whereNull('returned_at')
+                ->selectRaw('COUNT(*) AS total')
+                ->selectRaw('COUNT(CASE WHEN due_date < ? THEN 1 END) AS overdue', [now('Europe/Brussels')->toDateString()])
+                ->first();
+            $bibliotheek['uitleningen'] = (int) $counts->total;
+            $bibliotheek['te_laat'] = (int) $counts->overdue;
         }
 
         return view('home', compact('lvs', 'bibliotheek'));

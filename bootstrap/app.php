@@ -11,7 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [\App\Http\Middleware\PortalPreview::class, \App\Http\Middleware\ExternalPortalBoundary::class, \App\Http\Middleware\MeasureRequestPerformance::class]);
+        $middleware->prepend(\App\Http\Middleware\MeasureRequestPerformance::class);
+        $middleware->web(append: [\App\Http\Middleware\PortalPreview::class, \App\Http\Middleware\ExternalPortalBoundary::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

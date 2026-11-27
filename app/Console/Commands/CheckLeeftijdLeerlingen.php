@@ -115,7 +115,7 @@ class CheckLeeftijdLeerlingen extends Command
                 $senderSecretariaat = trim((string)($school->smartschool_verzender ?? ''));
             }
             if ($senderSecretariaat === '') {
-                $senderSecretariaat = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+                $senderSecretariaat = config('services.smartschool.sender') ?: 'lvs';
             }
             if (trim((string) ($warningSettings['warning_sender'] ?? '')) !== '') {
                 $senderSecretariaat = trim((string) $warningSettings['warning_sender']);
@@ -207,7 +207,7 @@ class CheckLeeftijdLeerlingen extends Command
             // senders per school
             $senderCoAccounts = trim((string)($school->smartschool_verzender ?? ''));
             if ($senderCoAccounts === '') {
-                $senderCoAccounts = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+                $senderCoAccounts = config('services.smartschool.sender') ?: 'lvs';
             }
 
             $senderSecretariaat = trim((string)($school->smartschool_verzender_secretariaat ?? ''));
@@ -451,7 +451,7 @@ class CheckLeeftijdLeerlingen extends Command
             // Afzender: zelfde logica als 'vandaag 18' → co-accounts verzender
             $sender = trim((string)($school->smartschool_verzender ?? ''));
             if ($sender === '') {
-                $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+                $sender = config('services.smartschool.sender') ?: 'lvs';
             }
 
             $viewOverzicht = $this->pickView(

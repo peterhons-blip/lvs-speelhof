@@ -27,7 +27,6 @@ class BirthdaySettingsController extends Controller
             $resolved = trim((string) ($school->smartschool_verzender_beleid ?? ''))
                 ?: trim((string) ($school->smartschool_verzender ?? ''))
                 ?: config('services.smartschool.sender')
-                ?: env('SMARTSCHOOL_SENDER_USER')
                 ?: 'lvs';
             return [$school->id => $resolved];
         });
@@ -40,7 +39,6 @@ class BirthdaySettingsController extends Controller
             ? (trim((string) $warningPreviewSchool->smartschool_verzender_secretariaat)
                 ?: trim((string) $warningPreviewSchool->smartschool_verzender)
                 ?: config('services.smartschool.sender')
-                ?: env('SMARTSCHOOL_SENDER_USER')
                 ?: 'lvs')
             : null;
         $warningStudentDefault = "Beste {voornaam} {naam},\n\n"
@@ -129,7 +127,7 @@ class BirthdaySettingsController extends Controller
         ];
         // Display each school's real fallback without turning it into a global override.
         $adultSenderDefaults = $schools->map(function ($school) {
-            $general = trim((string) $school->smartschool_verzender) ?: (env('SMARTSCHOOL_SENDER_USER') ?: 'lvs');
+            $general = trim((string) $school->smartschool_verzender) ?: (config('services.smartschool.sender') ?: 'lvs');
             return ['school'=>$school->schoolnaam, 'general'=>$general,
                 'secretariat'=>trim((string) $school->smartschool_verzender_secretariaat) ?: $general];
         });

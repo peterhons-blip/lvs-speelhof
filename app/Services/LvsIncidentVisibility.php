@@ -9,13 +9,32 @@ class LvsIncidentVisibility
     public const LABELS=['directie'=>'Directie','leerlingbegeleiding'=>'Leerlingenbegeleiding','mentor'=>'Klastitularis van de leerling','teacher'=>'Vakleerkracht van de leerling','other'=>'Andere leerkracht','administratie'=>'Administratie','secretariaat'=>'Secretariaat','boekhouding'=>'Boekhouding','tac'=>'TAC'];
     public const FIELDS=['own','ordinary','confidential'];
 
+    private static function readOnce(string $key, \Closure $load): mixed
+    {
+        $request = request();
+        if (!$request->isMethodSafe()) return $load();
+        $key = 'lvs.visibility.metadata.'.$key;
+        if (!$request->attributes->has($key)) $request->attributes->set($key, $load());
+        return $request->attributes->get($key);
+    }
+
+    private static function hasTable(string $table): bool
+    {
+        return self::readOnce('table:'.$table, fn()=>Schema::hasTable($table));
+    }
+
     public static function matrix(): array
+    {
+        return self::readOnce('matrix', fn()=>self::loadMatrix());
+    }
+
+    private static function loadMatrix(): array
     {
         $rows=[];
         foreach(self::LABELS as $key=>$label){
             $rows[$key]=['own'=>in_array($key,['directie','leerlingbegeleiding','mentor','teacher','other'],true),'ordinary'=>in_array($key,['directie','leerlingbegeleiding','mentor','teacher'],true),'confidential'=>in_array($key,['directie','leerlingbegeleiding'],true)];
         }
-        if(Schema::hasTable('lvs_visibility_matrix')){
+        if(self::hasTable('lvs_visibility_matrix')){
             foreach(DB::table('lvs_visibility_matrix')->where('school_id',1)->get() as $row){
                 if(isset($rows[$row->relation]))foreach(self::FIELDS as $field)$rows[$row->relation][$field]=(bool)$row->$field;
             }
@@ -37,12 +56,12 @@ class LvsIncidentVisibility
         });
         $canConf=$access->has($request,'lvs.meldingen.confidential.view');
         if($role==='ict_coordinator')return $query;
-        if(!Schema::hasTable('lvs_visibility_matrix'))return $query->whereRaw('1=0');
+        if(!self::hasTable('lvs_visibility_matrix'))return $query->whereRaw('1=0');
         $matrix=self::matrix();
-        $hasAuthor=\App\Support\LegacyDatabaseSchema::hasColumn('meldingen','auteur_gebruikersnaam');
+        $hasAuthor=self::readOnce('author-column',fn()=>\App\Support\LegacyDatabaseSchema::hasColumn('meldingen','auteur_gebruikersnaam'));
         $username=$access->username($request);
-        $hasMentor=Schema::hasTable('class_staff_links');
-        $hasTeacher=Schema::hasTable('skore_student_teacher_links');
+        $hasMentor=self::hasTable('class_staff_links');
+        $hasTeacher=self::hasTable('skore_student_teacher_links');
         $year=ClassStaffLinks::year();
         $relation=function($q,string $kind,bool $negate=false)use($student,$staff,$year,$hasMentor,$hasTeacher){
             if(($kind==='mentor'&&!$hasMentor)||($kind==='teacher'&&!$hasTeacher)){

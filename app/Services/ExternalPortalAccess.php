@@ -14,7 +14,7 @@ class ExternalPortalAccess
     private function once(string $key, \Closure $load): mixed
     {
         $request = request();
-        if (!$request->isMethodSafe()) return $load();
+        if (!$request->isMethodSafe() || !$request->hasSession()) return $load();
         $identity = [
             $request->session()->get('ss_user.gebruikersnaam'),
             $request->session()->get('ss_user.principal_type'),

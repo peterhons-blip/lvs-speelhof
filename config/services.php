@@ -42,6 +42,9 @@ return [
     'smartschool' => [
         'client_id' => env('SMARTSCHOOL_CLIENT_ID'),
         'client_secret' => env('SMARTSCHOOL_CLIENT_SECRET'),
+        'url' => env('SMARTSCHOOL_URL'),
+        'redirect_uri' => env('SMARTSCHOOL_REDIRECT_URI'),
+        'sender' => env('SMARTSCHOOL_SENDER_USER'),
         'oauth_url' => env('SMARTSCHOOL_OAUTH_URL'), // je eigen Smartschool-platform
         'wsdl'       => env('SMARTSCHOOL_WSDL'),
         'accesscode' => env('SMARTSCHOOL_ACCESSCODE'),
