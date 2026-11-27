@@ -34,7 +34,7 @@
                         <a href="{{ route('leerlingen.show', $l->id) }}" class="bday-row-link">
                             <div class="bday-row">
                                 <div class="bday-name">
-                                    <strong>{{ $l->voornaam }} {{ $l->achternaam }}</strong>
+                                    <span class="student-photo-inline">@include('partials.student-photo',['studentId'=>$l->id])<strong>{{ $l->voornaam }} {{ $l->achternaam }}</strong></span>
                                     <span class="badge badge-klas">{{ optional($l->klas)->klasnaam ?? '—' }}</span>
                                 </div>
                                 <div class="bday-age">Wordt <strong>{{ $l->turns }}</strong> jaar</div>
