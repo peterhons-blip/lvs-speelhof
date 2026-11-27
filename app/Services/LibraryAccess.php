@@ -108,6 +108,7 @@ class LibraryAccess
 
         // ICT-coördinator behoudt altijd volledige beheertoegang.
         if ($role === 'ict_coordinator') return true;
+        if ($permission==='lvs.visibility.manage') return false;
         if (str_starts_with($permission,'leerling.') || str_starts_with($permission,'coaccount.')) return false;
         if (Schema::hasTable('portal_user_permissions')) {
             $id=DB::table('users')->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->value('id');
