@@ -1,60 +1,90 @@
 # Atheneum Portaal — TODO en roadmap
 
-Bijgewerkt: 27 november 2026. Dit is een werkdocument; testfase betekent niet dat productievalidatie al is afgerond.
+Bijgewerkt: 27 november 2026.
+Een afgevinkt ontwikkelpunt betekent dat de code op main staat, niet noodzakelijk dat de functie al op productie is gevalideerd.
 
-## P0 — Bibliotheek in gebruik nemen
+## P0 — Eerst testen en in gebruik nemen
+### Bibliotheek
 - [ ] Volledige uitleencyclus, QR-etiketten, herinneringen, reserveringen/wachtlijst en verlengingen testen.
-- [ ] Rechten en toegang per leerling, co-account, personeelslid en bibliotheekmedewerker testen.
-- [ ] Feedback bibliotheekmedewerkers verzamelen na ingebruikname; voorlopig alleen fouten oplossen.
+- [ ] Rechten per leerling, co-account, personeelslid en bibliotheekmedewerker testen.
+- [ ] Feedback bibliotheekmedewerkers verzamelen; voorlopig alleen noodzakelijke fixes.
 
-## P1 — Leerlingenbeheer
-- [x] Stamnummer en Informat-internnummer synchroniseren.
-- [x] Individuele foto-upload en ZIP-import met controle.
-- [x] Historische dossiers met afzonderlijk recht.
-- [x] Veiligheidsregels voor leerlingensync als unit-test voorzien.
-- [x] StudentSyncSafetyTest lokaal uitgevoerd: 3 tests, 9 assertions geslaagd.
-- [ ] ZIP-import, historische rechten en volledige live sync op de server valideren.
+### LVS en klaskoppelingen
+- [ ] Nieuwste main binnenhalen en expliciete migraties controleren (090000 Smartschool-klas-ID, 100000 individuele Skore-relaties; 080000 vakken indien nog niet uitgevoerd).
+- [ ] Leerlingensync uitvoeren en numerieke Smartschool-klas-ID's controleren.
+- [ ] Klaskoppelingen in preview controleren: referentie 1037 leerkracht-klaskoppelingen en 119 titulariskoppelingen voor 87 klassen vóór de ID-wijziging.
+- [ ] Aantal individuele Skore-lesrelaties controleren en steekproeven doen bij gesplitste klassen, keuzevakken, gezamenlijke lesgroepen en 6 APD.
+- [ ] Na geslaagde preview --apply uitvoeren; opgeslagen vakken, titularissen en individuele lesrelaties controleren.
+- [ ] Klassenbeheer, Mijn klassen, AJAX-fotolijsten, sessieherstel en dashboardzoekfunctie testen.
+- [ ] Met verschillende personeelsaccounts testen: titularis, vakleerkracht, geen lesopdracht, directie en ICT; directe AJAX-URL van onbevoegde klas moet geweigerd worden.
+- [ ] Nachtelijke taak 05.00 uur op productie controleren, inclusief status/log en gedrag bij onvolledige respons. Geen globale toegangsbeperking activeren vóór validatie.
+- [ ] ZIP-foto-import, historische rechten, leerlingensync en externe portaalrechten op productie valideren.
+
+## P1 — Klassen en leerlinggegevens
+### Gebouwd
+- [x] Leerlingen en personeel synchroniseren; stamnummer en Informat-internnummer bewaren.
+- [x] Individuele foto-upload, ZIP-import en historische dossiers met afzonderlijk recht.
+- [x] StudentSyncSafetyTest lokaal geslaagd (3 tests, 9 assertions).
+- [x] Leerkrachten en vakken via Skore; titularissen via getClassTeachers, meerdere titularissen mogelijk.
+- [x] Preview 1037 leerkracht-klas- en 119 titulariskoppelingen over 87 klassen succesvol vóór ID-wijziging.
+- [x] Numerieke Smartschool-klas-ID naast groepscode opslaan; titularissen op ID koppelen, naam enkel controle.
+- [x] Klaskoppelingen en individuele lesrelaties per schooljaar opslaan.
+- [x] Nachtelijke klaskoppeling 05.00 uur en manuele preview/bevestiging; Excel-upload uitgeschakeld.
+- [x] Klassenbeheer met volledige personeelsnamen, vakken en uitklapbare fotoklaslijsten.
+- [x] Mijn klassen: titularisklassen bovenaan, eigen lesklassen met vakken, AJAX, foto's, zoeken, sessieherstel en dossier/nieuwe melding.
+- [x] Dashboard: leerlingen zoeken vanaf twee tekens, foto's en links zonder reload; zoeken en Mijn klassen bovenaan navigatie.
+
+### Nog uitwerken
+- [ ] Personeelsgerichte beheerweergave (per leerkracht alle klassen, vakken en titularisklassen; zoeken en filteren).
+- [ ] Synchronisatiekwaliteit per klas bewaken: lege/onvolledige respons, sterke daling van relaties, individuele afwijkingen; bron en laatste succesvolle sync zichtbaar maken.
+- [ ] Schooljaarovergang en vervangingen testen; gecontroleerde handmatige uitzonderingen met einddatum en audit.
 - [ ] Automatische Smartschool-fotosync onderzoeken.
+- [ ] Skore-klasnaamfallback bij ontbrekende leerlinglijsten beoordelen; nooit onbevestigde lesrelaties gebruiken om dossierrechten toe te kennen.
 
-## P1 — Klassen, leerkrachten en toegangsbeheer
-- [ ] Klastitularissen per klas en schooljaar registreren (meerdere titularissen mogelijk).
-- [ ] Leerkrachten koppelen aan de klassen waarin ze lesgeven, eventueel met vak en lesgroep.
-- [x] Smartschool Skore en getClassTeachers als bron; preview en nachtelijke synchronisatie om 05.00 uur voorzien.
-- [ ] Klaskoppelingen in productie valideren, inclusief gesplitste groepen en ontbrekende groepen; manuele correcties indien nodig.
-- [ ] Koppelingen per schooljaar bewaren; wijzigingen en vervangingen kunnen verwerken.
-- [ ] Beheerpagina met overzicht per klas en per leerkracht; zoeken, filteren en koppelingen beheren.
-- [x] LVS > Mijn klassen: leerkracht ziet eigen lesklassen en titularisklassen, met duidelijke aanduiding van rol.
-- [x] Mijn klassen: compacte uitklapbare accordeon, zonder page reload; leerlingen pas bij eerste openen via AJAX ophalen, meerdere klassen tegelijk open, geopende klassen per gebruiker en schooljaar tijdens de sessie onthouden.
-- [x] Fotoklaslijst per uitgeklapte klas: alfabetisch op familienaam en voornaam, snel zoeken, dossier/nieuwe melding/opvolging volgens rechten; laadstatus en foutmelding met opnieuw proberen.
-- [x] AJAX-endpoints server-side autoriseren voor elke klas en leerling; geen gegevens van onbevoegde klassen vooraf laden.
-- [ ] Rollen/rechten onderscheiden: eigen lesklassen, titularisklassen, toegewezen begeleidingsleerlingen en alle klassen (expliciet recht voor bevoegde functies).
-- [ ] Toegang server-side afdwingen op lijsten, individuele dossiers, meldingen, opvolging, zoekresultaten, statistieken en exports; geen toegang via directe URL buiten scope.
-- [ ] Vertrouwelijke gegevens blijven apart afgeschermd; klaslidmaatschap geeft geen automatisch recht op gevoelige gegevens.
-- [ ] Werkbare uitzonderingen voor vervangers, leerlingbegeleiding, secretariaat en directie; expliciete bevoegdheid en audit.
-- [ ] Migratie/overgang testen zonder bestaande werking te blokkeren; pas strikte toegang activeren na controle van koppelingen.
+## P1 — LVS: volgende ontwikkelvolgorde
+### 1. Leerlingendossier
+- [ ] Tabbladen Algemeen, Meldingen, Opvolging, Gesprekken, Begeleiding, Sancties en Historiek.
+- [ ] Klastitularissen en relevante klasgegevens zichtbaar maken; snelacties volgens rechten.
+- [ ] Opvolging vanuit Mijn klassen rechtstreeks openen zodra een geschikte leerlinggebonden route bestaat.
+- [ ] Later bibliotheek, ICT-materiaal en afwezigheden integreren indien bevoegd.
 
-## P1 — LVS en leerlingendossiers
-- [ ] Leerlingendossier met tabbladen algemeen, meldingen, opvolging, gesprekken, begeleiding en historiek; later bibliotheek/ICT indien bevoegd.
-- [ ] Meldingscategorieën, meldingssoorten en vrijgave-instellingen functioneel testen.
-- [ ] Automatische opvolgingsregels uitbreiden: drempel, periode, graad, finaliteit, categorie/soort; verantwoordelijke en menselijke goedkeuring voor sancties.
+### 2. Klasgebonden toegangsrechten (na validatie)
+- [ ] Vakleerkracht: enkel effectieve eigen lesleerlingen uit Skore.
+- [ ] Titularis: eigen volledige titularisklassen.
+- [ ] Leerlingbegeleiding: toegewezen leerlingen of expliciet recht op alle leerlingen.
+- [ ] Secretariaat, directie en ICT: toegang volgens expliciete bevoegdheden; vervangers via tijdelijke koppeling.
+- [ ] Centrale server-side toegangscontrole op alle lijsten, zoekresultaten, foto's, dossiers, meldingen, opvolging, statistieken, exports en directe URL's.
+- [ ] Vertrouwelijke meldingen blijven afzonderlijk afgeschermd; klaslidmaatschap geeft geen extra vertrouwelijke rechten.
+- [ ] Testmatrix voor rollen, individuele uitzonderingen, inactieve leerlingen, andere scholen, directe URL's en verlopen relaties.
+- [ ] Eerst proefmodus/controle, daarna pas strikte beperking activeren. Bestaande algemene LVS-rechten zijn nu nog ongewijzigd.
+
+### 3. Automatische opvolging en sancties
+- [ ] Automatische melding naar de werkelijke klastitularis(sen) via de gevalideerde koppelingen, zonder dubbele berichten.
+- [ ] Opvolgingsregels uitbreiden: drempel, periode, graad, finaliteit, categorie/soort, verantwoordelijke en menselijke goedkeuring.
+- [ ] Meldingscategorieën, soorten en vrijgave-instellingen functioneel testen.
+- [ ] Taken met verantwoordelijke, deadline, status, herinnering en historiek.
+- [ ] Sanctiebeheer en uitvoering opvolgen; geen automatische sancties zonder menselijke beoordeling.
 - [ ] Secretariaatsbezoeken 18+ en herinneringen testen.
-- [ ] Taken en opvolging: verantwoordelijke, deadline, status, herinnering en historiek.
-- [ ] Gespreksregistratie en afspraken met beperkte zichtbaarheid.
-- [ ] Huiswerkklas en taalklas: aanwezigheden, reden, opdrachten en opvolging.
-- [ ] Sanctiebeheer en uitvoering opvolgen.
-- [ ] Klassenraaddashboard, overzicht per klas en afdruk/export.
-- [ ] Leerlingen-/co-accountportaal en rollen/rechten verder testen.
+
+### 4. Begeleiding en klassenraad
+- [ ] Gespreksregistratie, afspraken en beperkte zichtbaarheid.
+- [ ] Huiswerkklas en taalklas: aanwezigheid, reden, opdrachten en opvolging.
+- [ ] Klassenraaddashboard per klas, leerlingoverzicht, afdruk/export en commentaren.
+- [ ] Leerlingen-/co-accountportaal en vrijgave/rechten verder testen.
 
 ## P2 — Andere portaalmodules
-- [ ] EMA-aanvragen met goedkeuringsprocedure.
-- [ ] ICT-helpdesk en laptop-/materiaalbeheer (materiaalbeheer uitgesteld tot herprioritering).
-- [ ] Aanvragen bestellingen.
+- [ ] EMA-aanvragen met goedkeuring door bevoegde personen en boekhouding.
+- [ ] ICT-helpdesk; laptop-/materiaalbeheer voorlopig uitgesteld tot herprioritering.
+- [ ] Bestelaanvragen.
 - [ ] Onboarding en offboarding personeel.
 - [ ] Nascholingsaanvragen.
 - [ ] EDBI-instrument.
 - [ ] Later evalueren: lokaalreservaties, interne formulieren, kennisbank.
 
 ## Uitgangspunten
-Smartschool blijft communicatie- en leerplatform; Atheneum Portaal ondersteunt interne processen. Prioriteiten en bronkoppelingen worden met de school afgestemd. Geen automatische sancties zonder menselijke beoordeling.
-
-- [ ] Individuele Skore-lesrelaties, Mijn klassen en dashboardzoekfunctie lokaal en op productie valideren; globale LVS-rechten blijven voorlopig ongewijzigd.
+Smartschool blijft communicatie- en leerplatform; Atheneum Portaal ondersteunt interne processen.
+Gebruik waar passend AJAX zonder volledige page reload, uniforme foto's en volledige namen.
+Gebruik stabiele ID's voor koppelingen, nooit alleen weergavenamen voor toegangsrechten.
+Bewaar schooljaarhistoriek; respecteer schoolgrenzen, rechten en vertrouwelijkheid.
+Bij onbetrouwbare synchronisatie bestaande koppelingen behouden en afwijkingen melden.
+Voer bij legacy-databank uitsluitend de benodigde migraties expliciet uit; geen migrate:fresh/reset/refresh.
