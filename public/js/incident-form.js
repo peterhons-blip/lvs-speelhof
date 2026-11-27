@@ -25,8 +25,7 @@
         student.disabled=locked;parent.disabled=locked;
         note.textContent=locked?'Deze vertrouwelijke melding is niet zichtbaar voor leerling of co-accounts.':'Vertrouwelijke meldingen worden nooit vrijgegeven.';
     }
-    cat.addEventListener('change',()=>{filter();if(!confidential?.checked)student.checked=false;});
-    kind.addEventListener('change',()=>{if(!confidential?.checked)student.checked=kind.selectedOptions[0]?.dataset.student==='1';});
+    cat.addEventListener('change',()=>{filter();});
     confidential?.addEventListener('change',syncConfidential);
     filter(true);
     syncConfidential();
