@@ -214,6 +214,11 @@ class SmartschoolSoap
         );
     }
 
+    public function getClassTeachers(): array
+    {
+        return $this->decodeSmartschoolJson($this->client->getClassTeachers($this->accesscode,true));
+    }
+
     public function getClassListJson(): array
     {
         try {
