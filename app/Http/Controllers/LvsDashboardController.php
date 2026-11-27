@@ -30,10 +30,7 @@ class LvsDashboardController extends Controller
 
         $categories = DB::table('meldingscategorien as c')
             ->leftJoin('meldingssoorten as s', 's.meldingscategorieId', '=', 'c.id')
-            ->leftJoin('meldingen as m', function($join) use($access,$request) {
-                $join->on('m.meldingssoortId','=','s.id');
-                if (!$access->has($request,'lvs.meldingen.confidential.view')) $join->where('m.vertrouwelijk',0);
-            })
+            ->leftJoinSub(\App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->select('id','meldingssoortId'),'m',fn($join)=>$join->on('m.meldingssoortId','=','s.id'))
             ->select('c.id', 'c.naam')
             ->selectRaw('COUNT(m.id) AS totaal')
             ->groupBy('c.id', 'c.naam')
