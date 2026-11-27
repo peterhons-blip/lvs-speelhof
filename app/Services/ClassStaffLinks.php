@@ -49,7 +49,7 @@ class ClassStaffLinks
         }
         $staff=$this->staff(); $rows=[]; $errors=[]; $covered=[];
         foreach($this->classes() as $class){
-            $name=$class->klasnaam.' LK';
+            $name='Lkr '.$class->klasnaam;
             $codes=array_values(array_unique($byName[preg_replace('/\s+/u','',$this->normalize($name))]??[]));
             if(count($codes)>1){$errors[]=$name.': meerdere groepen gevonden (codes: '.implode(', ',$codes).').';continue;}
             $identifier=$codes[0]??$name;
