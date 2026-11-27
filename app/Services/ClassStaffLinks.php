@@ -47,18 +47,46 @@ class ClassStaffLinks
             $key=preg_replace('/\s+/u','',$this->normalize((string)$groupName));
             $byName[$key][]=(string)$code;
         }
-        $staff=$this->staff(); $rows=[]; $errors=[]; $covered=[];
+        $staff=$this->staff(); $rows=[]; $errors=[]; $covered=[]; $notes=[]; $accountCache=[];
         foreach($this->classes() as $class){
             $name='Lkr '.$class->klasnaam;
-            $codes=array_values(array_unique($byName[preg_replace('/\s+/u','',$this->normalize($name))]??[]));
+            $key=preg_replace('/\s+/u','',$this->normalize($name));
+            $codes=array_values(array_unique($byName[$key]??[]));
             if(count($codes)>1){$errors[]=$name.': meerdere groepen gevonden (codes: '.implode(', ',$codes).').';continue;}
-            $identifier=$codes[0]??$name;
-            try{
-                $accounts=$soap->getAllAccountsExtended($identifier,false);
-                if(!array_is_list($accounts)){
-                    $accounts=$accounts['accounts']??$accounts['users']??$accounts['data']??$accounts['items']??$accounts['result']??null;
+            if(!$codes){
+                // Only numeric split suffixes; do not conflate distinct tracks such as EWt/EWw.
+                if(preg_match('/^(lkr[0-9]+[a-z]+)[0-9]+$/D',$key,$match)){
+                    $codes=array_values(array_unique($byName[$match[1]]??[]));
+                    if(count($codes)>1){$errors[]=$name.': gezamenlijke groep is dubbel.';continue;}
+                }elseif(preg_match('/^lkr[0-9]+[a-z]+$/D',$key)){
+                    $split=[];
+                    foreach($byName as $groupKey=>$groupCodes){
+                        if(!preg_match('/^'.preg_quote($key,'/').'[0-9]+$/D',$groupKey))continue;
+                        $groupCodes=array_values(array_unique($groupCodes));
+                        if(count($groupCodes)!==1){$errors[]=$name.': gesplitste groep is dubbel.';continue 2;}
+                        $split[$groupKey]=$groupCodes[0];
+                    }
+                    if(count($split)>=2){ksort($split);$codes=array_values(array_unique($split));}
                 }
-                if(!is_array($accounts)||!array_is_list($accounts)||!count($accounts)) throw new RuntimeException('lege of ongeldige groep');
+                if($codes)$notes[]=$name.' → '.implode(' + ',$codes).' (afwijkende klasindeling; controleer koppeling).';
+            }
+            $identifiers=$codes?:[$name];
+            $identifier=implode(' + ',$identifiers);
+            try{
+                $accounts=[];
+                foreach($identifiers as $group){
+                    if(!isset($accountCache[$group])){
+                        // Recursive fetch includes members in nested subgroups as well.
+                        $result=$soap->getAllAccountsExtended($group,true);
+                        if(!array_is_list($result)){
+                            $result=$result['accounts']??$result['users']??$result['data']??$result['items']??$result['result']??null;
+                        }
+                        if(!is_array($result)||!array_is_list($result))throw new RuntimeException('ongeldige structuur van ledenlijst');
+                        if(!$result)throw new RuntimeException('lege ledenlijst, ook bij recursieve opvraging');
+                        $accountCache[$group]=$result;
+                    }
+                    array_push($accounts,...$accountCache[$group]);
+                }
                 $local=[]; $valid=true;
                 foreach($accounts as $account){
                     if(!is_array($account)){$valid=false;break;}
@@ -74,9 +102,12 @@ class ClassStaffLinks
                 if(!$valid||!$local){$errors[]=$name.': bestaande koppelingen behouden.';continue;}
                 $covered[]=(int)$class->id;
                 array_push($rows,...array_values($local));
-            }catch(\Throwable $e){$errors[]=$name.': '.($codes?'groep gevonden via code '.$identifier:'niet in groepslijst; rechtstreeks op naam geprobeerd').'; geen geldige, niet-lege ledenlijst ontvangen. Bestaande koppelingen behouden.';}
+            }catch(\Throwable $e){
+                $reason=$e instanceof RuntimeException?$e->getMessage():($e instanceof \SoapFault?'SOAP-fout ('.$e->faultcode.')':'technische fout ('.class_basename($e).')');
+                $errors[]=$name.': '.($codes?'groep gevonden: '.$identifier:'niet in groepslijst; rechtstreeks op naam geprobeerd').'; '.$reason.'. Bestaande koppelingen behouden.';
+            }
         }
-        return compact('rows','errors','covered');
+        return compact('rows','errors','covered','notes');
     }
 
     public function mentorPreview(array $input): array
