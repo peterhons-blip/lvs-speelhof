@@ -14,7 +14,7 @@ Deze instructies gelden voor AI-codeassistenten die in deze repository werken. C
 1. Vraag bij onduidelijke functionele eisen kort door, maar begin bij duidelijke opdrachten met de relevante bestanden te inspecteren.
 2. Identificeer vóór een wijziging alle betrokken routes, controllers, modellen, Blade-views, JavaScript, services, configuratie en taken.
 3. Hergebruik bestaande code. Maak kleine, gerichte wijzigingen; voer geen onverwachte herstructurering of upgrades uit.
-4. Werk bij voorkeur op een aparte `feature/`, `fix/` of `docs/` Git-branch. Push, merge en deploy niet zonder expliciete opdracht.
+4. Werk standaard rechtstreeks op `main` voor gevraagde LVS-wijzigingen (afspraak 27 november 2026). De opdracht omvat commit/push naar `main`; geen aparte mergebevestiging nodig. Controleer de actuele HEAD, gebruik normale fast-forward updates zonder force-push en respecteer gelijktijdige wijzigingen. Bij uitzonderlijk risicovolle wijzigingen kan een aparte branch aangewezen zijn. Productie-deploy, databankwijzigingen en externe acties blijven afzonderlijk te beoordelen.
 5. Licht achteraf kort toe wat is gewijzigd, welke bestanden zijn geraakt, welke tests zijn uitgevoerd en welke risico's overblijven.
 6. Houd `PROJECT_CONTEXT.md` bij wanneer belangrijke architectuur- of werkafspraken veranderen, maar wijzig die documentatie niet louter om een kleine bugfix te registreren.
 7. Beschouw productiecode en databank als bestaand systeem: behoud compatibiliteit, namen, bestaande gebruikersflows en gegevens.
@@ -24,7 +24,7 @@ Deze instructies gelden voor AI-codeassistenten die in deze repository werken. C
 - Houd rekening met `schoolid`, schoolspecifieke afzenders, ontvangers en Blade-templates, inclusief fallbacktemplates.
 - Laat berichten, co-accountwijzigingen en leerlingensynchronisatie niet onbedoeld plaatsvinden bij tests.
 - Een optie met `test` in de naam is niet noodzakelijk zonder externe effecten. Lees de concrete code: `leerlingen:check-18 --test-ss-overzicht` **verstuurt** bijvoorbeeld echte Smartschool-overzichten.
-- De geplande taken in `routes/console.php` draaien volgens `Europe/Brussels`: 01:00 18-jaarscontrole, 02:00 verjaardagen, 03:00 Smartschool-leerlingensynchronisatie school 1.
+- De geplande taken in `routes/console.php` draaien volgens `Europe/Brussels`: 01:00 18-jaarscontrole, 02:00 verjaardagen, 03:00 leerlingensync school 1, 04:00 personeelssync, 05:00 klaskoppelingen, 08:00 bibliotheekherinneringen en 08:15 secretariaatsherinneringen (controleer de actuele routes/console.php).
 - Bij synchronisatie: voorkom onbedoelde deactivatie bij gedeeltelijke SOAP-fouten, beperkte datasets of ontbrekende klassen. Wijzig dit gedrag alleen doelbewust en met passende tests.
 - Respecteer toegang per school en gebruikersrechten bij nieuwe functies; ga er niet van uit dat het tonen van een groepsnaam al autorisatie afdwingt.
 
@@ -46,7 +46,16 @@ Deze instructies gelden voor AI-codeassistenten die in deze repository werken. C
 - Run alleen veilige tests op een gescheiden testomgeving. Ga niet uit van een veilige testdatabase zonder dat dit is vastgesteld.
 - Als een test niet kan worden uitgevoerd, zeg dat expliciet; claim nooit dat de functie op productie getest is.
 - Toon voor grotere wijzigingen een samenvatting van de diff en geef concrete handmatige teststappen.
-- Code kan lokaal aangepast worden wanneer de gebruiker dat vraagt; GitHub-pushes, merges, deploys en externe berichten vereisen afzonderlijke toestemming.
+- Gevraagde code- en documentatiewijzigingen mogen rechtstreeks naar GitHub `main`; productie-deploys, databasewrites en externe berichten vereisen afzonderlijke toestemming. Geef concrete PowerShell-commando's voor het binnenhalen en de relevante cacheverversing.
+
+## Productie, prestaties en back-ups
+- SRV-WEB is de lokale schoolserver, niet de Azure-VM. Laravel en MariaDB 10.4.32 draaien lokaal; geen MariaDB-upgrade zonder nieuwe expliciete opdracht.
+- Behoud de werkende OAuth/config-cache, lokale file-sessies/cache en de bestaande indexen. Bij nieuwe routes: routecache wissen/opbouwen en route controleren; bij Blade-wijzigingen viewcache verversen.
+- ICT-only Systeemprestaties en Back-ups lezen uitsluitend statusmetadata. Geen toegang vanuit de webapplicatie tot dumps, private sleutels of PFX/DPAPI-bestanden. Blokkeer deze modules tijdens portal_preview.
+- De onafhankelijke Windows-taak maakt ieder uur een GnuPG-versleutelde databaseback-up, lokaal en naar private Azure Blob Storage via Entra-serviceprincipal met certificaat (geen Managed Identity voor SRV-WEB). De taak gebruikt voorlopig het bestaande administratoraccount; DPAPI is gebruikers- en computergebonden.
+- Foto's, documenten en .env worden door ICT afzonderlijk bewaard; geen nieuwe automatische bestandsback-up zonder gewijzigde opdracht. Bewaak ook de APP_KEY. Download/decryptie is getest, daadwerkelijke import in geïsoleerde testdatabank nog niet.
+- Nooit echte dumps, PFX, private GPG-sleutels, wachtwoorden of DPAPI-bestanden in GitHub of antwoorden opnemen.
+- Raadpleeg de modulegerichte TODO-lijst in PROJECT_CONTEXT.md; verifieer eerst bestaande implementaties en werk de status bij bij wezenlijke wijzigingen. Voorstellen zijn geen automatisch goedgekeurde bouwopdrachten.
 
 ## Communicatiestijl
 - Werk praktisch en stapsgewijs, met bruikbare commando's voor Windows PowerShell / XAMPP.

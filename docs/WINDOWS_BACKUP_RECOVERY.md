@@ -1,5 +1,7 @@
 # Windows LVS: monitoring, logrotatie en databankback-up
 
+> Operationele stand 27 november 2026: zie PROJECT_CONTEXT.md sectie 5. SRV-WEB is lokaal; certificaatauthenticatie SPN en DPAPI worden gebruikt, niet Managed Identity. De onderstaande voorbereiding is een algemene checklist, geen lijst van nog uit te voeren stappen.
+
 ## Voorbereiding (ICT)
 - Maak C:\LVS-Status, C:\LVS-Backup\private en C:\LVS-Backup\encrypted buiten alle publieke webroots en Git. Beperk NTFS-rechten: back-upaccount schrijft; ICT beheert; Apache leest alleen C:\LVS-Status, niet de back-upmap. Controleer ook Apache DocumentRoot en toegang tot .env.
 - Maak een afzonderlijk lokaal MariaDB-back-upaccount met uitsluitend benodigde leesrechten op speelhof_lvs (SELECT, SHOW VIEW, TRIGGER, EVENT; routines kunnen aanvullende metadatarechten vereisen). Controleer tabel-engines; single-transaction is alleen consistent voor transactionele tabellen. Voor niet-transactionele tabellen of DDL plan een onderhoudsmoment. Geen accountwachtwoord in Git.
@@ -18,4 +20,4 @@ Gebruik in .env LOG_CHANNEL=daily en LOG_DAILY_DAYS=14, daarna php artisan confi
 Download een specifieke externe .sql.gpg naar een afgeschermde herstelomgeving. Controleer de decryptie met de offline private sleutel. Importeer uitsluitend in een nieuwe, geïsoleerde databank, nooit over productie heen. Schakel scheduler, queue, Smartschool-berichten en mail uit in de herstelomgeving. Controleer tabellen, aantallen, indexen, enkele fictieve/afgeschermde functionele controles en documenteer hersteltijd. Herstel de private bestanden en APP_KEY vanuit de afzonderlijke back-up. Bij echte uitval: stop schrijvers, kies gecontroleerde herstelversie, herstel naar nieuwe server, verifieer rechten en gegevens, schakel verkeer en taken pas daarna over. Herhaal regelmatig.
 
 ## Beperkingen
-Scripts zijn voorbereid maar niet op de schoolserver uitgevoerd. Externe uploads, encryptiesleutel, NTFS-ACLs, taakaccount, monitoring en hersteltest vereisen daadwerkelijke inrichting. Status is een momentopname van de laatste poging, geen bewijs van externe duurzaamheid. Geen MariaDB-upgrade of schemawijzigingen.
+Monitoring, beveiligde lokale export, externe upload, Windows-taak en download/decryptie zijn door ICT getest. De taak gebruikt voorlopig het bestaande administratoraccount. Volledige import in geïsoleerde testdatabase is nog niet getest. Foto's, documenten en .env zijn volgens ICT afzonderlijk bewaard; geen nieuwe automatische bestandsback-up gevraagd. Status is een momentopname, geen bewijs van externe duurzaamheid. Geen MariaDB-upgrade of schemawijzigingen.

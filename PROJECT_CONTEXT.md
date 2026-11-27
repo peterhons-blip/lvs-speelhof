@@ -1,225 +1,165 @@
 # LVS Speelhof — technische projectcontext
 
-> Bijgewerkt op 11 november 2026 op basis van de volledige lokale Codex-analyse (checkout `main`, commit `bbb5831`) en de eerdere GitHub-inventarisatie. **Documentatie, geen live statuscontrole of functionele audit.** Controleer bij elke nieuwe taak de actuele code. De databankbevindingen zijn afkomstig uit alleen-lezen metadata-inspectie van de lokaal ingestelde MySQL-databank, niet uit GitHub.
+> Actuele stand 27 november 2026, gebaseerd op de GitHub-wijzigingen, actuele routes en door ICT gerapporteerde productiecontroles. Geen nieuwe volledige code- of beveiligingsaudit. De eerdere analyse van 11 november is historisch en beschikbaar in Git-geschiedenis; oude bevindingen mogen niet zonder hercontrole als actuele bugs worden beschouwd.
 
 ## 1. Doel, omgeving en werkwijze
 
-Leerlingvolgsysteem voor GO! Atheneum Sint-Truiden, campus Speelhof, met voorbereiding op meerdere scholen.
+Intern schoolportaal voor GO! Atheneum Sint-Truiden, campus Speelhof, met voorbereiding op meerdere scholen. Omvat LVS, leerlingen- en personeelsbeheer, bibliotheek en technische/administratieve beheerfuncties.
 
 - Repository: https://github.com/peterhons-blip/lvs-speelhof
-- Branch: `main`; wijzigingen liefst via feature/fix-branch en Pull Request.
-- Publieke toepassing: https://lvs.atheneumsinttruidencampusspeelhof.be/
-- Ontwikkeling: VS Code op Windows, XAMPP; productie haalt code binnen uit GitHub.
-- Laravel 12 (lokaal vastgesteld 12.34.0), PHP 8.2+ (lokaal 8.2.12), MySQL, Eloquent en query builder.
-- UI: Blade, `public/css/lvs.css`, `public/js/lvs.js`; Vite/Tailwind/Axios staan in het project maar worden niet via de actieve layout geladen.
-- E-mail: Laravel Mailable via SMTP. Een queueconfiguratie is aanwezig maar de huidige zakelijke processen worden direct uitgevoerd.
-- AI-ontwikkelafspraken staan in `AGENTS.md`. Dit document beschrijft **hoe het LVS nu werkt**; `AGENTS.md` beschrijft **hoe wijzigingen worden uitgevoerd**.
+- Standaard rechtstreeks naar main voor gevraagde wijzigingen; geen afzonderlijke mergebevestiging. Geen force-push. Productie-deploy blijft een afzonderlijke stap.
+- Productie: https://lvs.atheneumsinttruidencampusspeelhof.be/
+- SRV-WEB is de **lokale schoolserver**, niet een Azure-VM. Windows/XAMPP.
+- Productiecheckout: C:\xampp\htdocs\lvs.atheneumsinttruidencampusspeelhof.be\public_html
+- Lokale ontwikkelcheckout onder meer C:\xampp\htdocs\LVS; VS Code/Windows.
+- Laravel 12, PHP 8.2, Blade, public/css/lvs.css en public/js/lvs.js. Eloquent/query builder.
+- AGENTS.md bevat de ontwikkelafspraken. Controleer altijd de actuele relevante code en scheiding tussen test en productie.
 
-## 2. Applicatie-architectuur
+## 2. Modules en architectuur
 
-Monolithische Laravel-app met webfunctionaliteit en nachtelijke Artisan-commando's.
-
-| Onderdeel | Bestanden | Rol |
+| Module | Belangrijkste aanknopingspunten | Status |
 | --- | --- | --- |
-| Routes | `routes/web.php`, `routes/console.php` | Webtoegang en scheduler |
-| OAuth | `app/Http/Controllers/Auth/SmartschoolController.php` | Smartschool-login, userinfo, lokaal account, sessie |
-| Middleware | `app/Http/Middleware/EnsureSmartschoolAuthenticated.php` | Controle op `session('ss_user')` |
-| Leerlingen | `app/Http/Controllers/LeerlingenController.php` | Lijst, detail, verjaardagen |
-| Meldingen | `app/Http/Controllers/MeldingController.php` | Meldingen bekijken en toevoegen |
-| Modellen | `app/Models/` | Scholen, klassen, leerlingen, users, meldingen, soorten, categorieën |
-| SOAP-service | `app/Services/SmartschoolSoap.php` | Berichten, co-accounts, klassen en accounts ophalen |
-| Sync | `app/Console/Commands/SmartschoolSyncLeerlingen.php` | Smartschoolklassen en -leerlingen in MySQL bijwerken |
-| 18-jaarflow | `app/Console/Commands/CheckLeeftijdLeerlingen.php` | Voorafberichten, accountaanpassingen, overzichten |
-| Verjaardagen | `app/Console/Commands/CheckVerjaardagen.php` | Felicitaties voor leerlingen en personeel |
-| Mail | `app/Mail/LeerlingenWorden18.php` | E-mailoverzicht |
-| Templates | `resources/views/` | Webpagina's, e-mails, Smartschool-berichten |
+| Dashboard | DashboardController, home, beheer.dashboard | Rolgebonden portaal en beheer |
+| Aanmelding | Auth/SmartschoolController, EnsureSmartschoolAuthenticated | Smartschool OAuth; geen Google-login in gebruik |
+| Rollen/rechten | LibraryAccess, RequirePortalPermission, portal_role_permissions, portal_user_permissions, portal_student_permissions | Bestaande rechten en individuele overrides; controleer per actie |
+| Testen als gebruiker | PortalPreviewController, portal_preview | ICT kan medewerker/leerling/co-account simuleren; gecontroleerde opslag mogelijk; technische ICT-modules tijdens preview geblokkeerd |
+| LVS | LeerlingenController, MeldingController, IncidentReleaseController | Dossiers, meldingen, vertrouwelijkheid, vrijgave en opvolging |
+| Mijn klassen | class_staff_links, skore_student_teacher_links, class_staff_sync | Klaskoppelingen bestaan; functionele volledigheid nog toetsen |
+| Leerlingenbeheer | StudentManagementController, StudentPhotoController | Filters, detail, bulkacties, portaalrechten, foto-import en upload, stamnummer/InternNr |
+| Personeelsbeheer | SmartschoolStaffSyncController, beheer.users.* | Accounts, rollen, loginrechten en synchronisatie |
+| Leerling-/ouderportaal | ExternalPortalController, ExternalLibraryWorkflowController, /mijn-portaal | Externe toegang, bibliotheekaanvragen, vrijgegeven LVS-informatie; rollen testen |
+| Bibliotheek | LibraryBookController, LibraryLoanController, LibraryImportController, LibraryReportController, LibraryEscalationController | Boeken, exemplaren, ISBN/zoekdiensten, QR, import, uitleen, aanvragen, herinneringen, rapporten |
+| Mijn bibliotheek | /mijn-bibliotheek | Persoonlijke uitleningen en aanvragen personeel |
+| 18 jaar en secretariaat | adult_secretariat_visits, birthday_18_actions, birthday_18_privacy_audit | Privacy/co-accounts, uitnodigingen en bezoekopvolging |
+| Verjaardagen | BirthdaySettingsController, birthday_deliveries | Instellingen en verzendregistratie |
+| Schoolkalender | SchoolCalendarController, school_calendar_closures | Vakanties en sluitingen |
+| Verzonden items | SentItemsController, portal_sent_items | Verzonden Smartschool-berichten/e-mail opvolgen |
+| Geplande taken | ScheduledTasksController, scheduled_task_runs | Uitvoeringen en logs |
+| Systeemprestaties | SystemPerformanceController, DatabaseIndexAudit, PerformanceLogReader, MeasureRequestPerformance, WindowsOperationsStatus | ICT-only diagnostiek |
+| Back-ups | BackupDashboardController, WindowsOperationsStatus, ops/windows/Backup-LvsDatabase.ps1 | ICT-only status en historiek; onafhankelijke Windows-taak |
 
-Er zijn geen uitgewerkte eigen policies, queue-jobs of afzonderlijke domeinservices aangetroffen. De webcontrollers en Artisan-commando's bevatten de meeste bedrijfslogica.
+Routes in routes/web.php; geplande Artisan-taken in routes/console.php. Controleer autorisatie op serverniveau en schoolscoping; verborgen knoppen zijn geen toegangscontrole.
 
-## 3. Webroutes en functionaliteit
+## 3. Databank en prestaties
 
-| Methode | Pad | Functie |
-| --- | --- | --- |
-| GET | `/` | Publieke welkomstpagina |
-| GET | `/login` | Smartschool OAuth starten |
-| GET | `/auth/smartschool/callback` | OAuth-code verwerken |
-| GET | `/logout` | `ss_user` uit sessie verwijderen |
-| GET | `/leerlingen` | Actieve leerlingen zoeken (sessie vereist) |
-| GET | `/leerlingen/verjaardagen` | Jarigen van vandaag t/m +7 dagen (sessie vereist) |
-| GET | `/leerlingen/{id}` | Leerlingfiche en meldingen (sessie vereist) |
-| GET/POST | `/meldingen/add/{id}` | Meldingen bekijken/toevoegen (sessie vereist) |
+- Productiedatabank speelhof_lvs is op 27 november van externe Azure MariaDB naar lokale XAMPP MariaDB 10.4.32 verhuisd. Verbinding via 127.0.0.1. Geen MariaDB-upgrade gewenst.
+- Productiecontrole: 49 InnoDB-tabellen, 115 indexen na toevoeging van zeven kandidaat-indexen. De volledige zakelijke schemahistoriek is niet uitsluitend uit migraties reproduceerbaar.
+- Kern: scholen, klassen, leerlingen, users, groups, meldingen, meldingscategorien, meldingssoorten; daarnaast bibliotheek, rechten, externe toegang, opvolgacties, klaskoppelingen, taak- en synchronisatiehistoriek.
+- Toegevoegde indexen: idx_users_ss_login, idx_users_school_ss, idx_leerlingen_school_klas_active, idx_meldingen_leerling_datum, idx_meldingen_soort, idx_meldingen_created, idx_meldingssoorten_categorie. Aanwezigheid bevestigd; queryplan/snelheidswinst per index niet afzonderlijk bewezen. Handmatige productie-indexen zijn niet automatisch migraties. Dubbele unieke klassenindex niet verwijderd.
+- SESSION_DRIVER=file, CACHE_STORE=file; queueconfiguratie database. OPcache actief. OAuth gebruikt config-cache-compatibele configuratie.
+- Gemeten indicaties: DB-querylatentie van circa 19,56 ms naar 0,32 ms; dashboard circa 1039 naar 303 ms; leerlingfoto circa 400 naar 28 ms. Verschillende meetomstandigheden; geen gecontroleerde benchmark.
+- Profiler configureerbaar via LVS_PERFORMANCE_ENABLED, LVS_PERFORMANCE_SLOW_MS en LVS_PERFORMANCE_QUERY_DETAILS. Geen SQL-tekst, bindings of persoonsgegevens in profilerlogs; optionele HMAC-fingerprints.
+- Systeemprestaties (/beheer/systeemprestaties) toont routegemiddelden/P95, SQL, uurgrafiek, HTTP-status voor geregistreerde antwoorden, indexinventaris, tabelgrootte, disk, PHP, cache en Windows-status. Gelogde aanvragen zijn geen volledige verkeersstatistiek. Indexaudit is alleen-lezen.
+- CPU/RAM: ops/windows/Measure-LvsServer.ps1, Windows-taak LVS - Systeemprestaties, iedere minuut, SYSTEM; statusbestand C:\LVS-Status\server-health.json. Taak getest. Beperk schrijfrechten op scripts/statusmap.
+- Logrotatie: LOG_CHANNEL=daily en LOG_DAILY_DAYS=14 is de afgesproken configuratie; afzonderlijke taaklogs en oude laravel.log worden hierdoor niet automatisch verwijderd. Controleer actuele productieconfiguratie zonder secrets uit te lezen.
 
-Daarnaast bestaan test-/diagnostische Smartschool-routes en een `/fake-login`-route in `routes/web.php`; laat deze ongemoeid bij niet-gerelateerde wijzigingen. Hun aanwezigheid is **geen** toestemming om ze te gebruiken tegen productie. Laravel heeft ook de health-route `/up`.
+## 4. Smartschool, rollen en geplande taken
 
-De navigatie verwijst naar `/ema`, maar bij de analyse bestond daarvoor nog geen uitgewerkte route, model of controller. `HomeController` is niet in gebruik via de huidige routes. Er zijn geen eigen API-routes aangetroffen.
+OAuth en SOAP zijn verschillende integraties. Controleer schoolid, schoolspecifieke afzenders/ontvangers, accountsoorten (hoofdaccount 0, co-accounts 1–6), rechten en externe bijwerkingen. Neem niet aan dat alle multi-schoolflows volledig gescheiden zijn zonder test. Bij incomplete SOAP-resultaten geen onterechte deactivatie. Controleer actuele commando-opties.
 
-### Leerlingen en meldingen
-- Lijst en fiche filteren op `leerlingen.active = 1`.
-- Leerlingenlijst brengt actieve leerlingen in de pagina; JavaScript zoekt lokaal op naam of klas, vanaf twee tekens of met een klas-prefix.
-- De verjaardagspagina houdt rekening met jaarwisselingen; periode inclusief vandaag en zeven volgende dagen.
-- Meldingen hebben categorie, soort, gebeurtenisdatum en commentaar; de gekozen soort moet bij de categorie horen; datum niet in de toekomst, commentaar minstens vijf tekens.
-- Meldingen toevoegen stuurt geen automatisch Smartschool-bericht/e-mail; bewerken, verwijderen en escaleren ontbreken.
-- Het veld `warn_after` bij meldingssoorten is aanwezig maar werd niet actief gebruikt.
-- Bij het opslaan wordt geen meldingsauteur vastgelegd.
-- Meldingsroutes zoeken ook leerlingen op ID zonder dezelfde `active=1`-controle als de leerlingfiche.
+Actuele routes/console.php gebruikt monitor:scheduled, Europe/Brussels en withoutOverlapping:
 
-## 4. Smartschool OAuth en sessies
-
-De OAuth-flow:
-1. Redirect naar Smartschool met scope `userinfo`.
-2. Autorisatiecode omwisselen voor access token.
-3. Smartschool-userinfo ophalen.
-4. Lokaal `User` zoeken op `gebruikersnaam`.
-5. Alleen login toelaten als `allowed_login = 1`.
-6. Groepsnaam uit `groups` ophalen en identiteit in `session('ss_user')` plaatsen.
-
-Het token wordt niet bewaard voor de nachtelijke SOAP-processen. De middleware controleert of `ss_user` bestaat; `Auth::login()` wordt niet gebruikt.
-
-Huidige toegangsbeperkingen: groepsnamen worden getoond maar geven nog geen afzonderlijke rechten; schooltoegang op leerlingen en meldingen wordt niet per sessiegebruiker afgedwongen; `allowed_login` wordt niet opnieuw gecheckt in bestaande sessies. In de analyse werd ook vastgesteld dat `intended_url` niet door de callback wordt gebruikt en dat OAuth-sessiehardening nog aandacht verdient. Beoordeel autorisatie expliciet bij nieuwe functies.
-
-## 5. MySQL-databank
-
-**Codex heeft via metadataquery's 11 bestaande lokale MySQL-tabellen vastgesteld:**
-
-| Tabel | Model | Relevante velden/functie |
-| --- | --- | --- |
-| `scholen` | `School` | Schoolnaam, nummers, Smartschool-configuratie, afzenders, ontvangers |
-| `klassen` | `Klas` | `schoolid`, `klasnaam`, `smartschool_code` |
-| `leerlingen` | `Leerling` | `schoolid`, `klasid`, namen, gebruikersnaam, geboortedatum, `e-mailadres`, `active` |
-| `users` | `User` | Personeel, `schoolid`, `groupId`, `allowed_login`, Smartschool-naam, geboortedatum |
-| `groups` | geen eigen model | Groepsnamen voor personeelsgebruikers |
-| `meldingen` | `Melding` | `leerlingId`, `meldingssoortId`, `comment`, `gebeurdop` |
-| `meldingscategorien` | `Meldingscategorie` | Categorieën |
-| `meldingssoorten` | `Meldingssoort` | `meldingscategorieId`, naam, omschrijving, `warn_after` |
-| `sessions` | framework | Sessieopslag |
-| `smartschool_koppeling` | geen eigen model | Namen en Smartschool-gebruikersnaam |
-| `geboortedatum_koppeling` | geen eigen model | Gebruikersnaam en geboortedatum |
-
-Relaties: school → leerlingen/users; klas → leerlingen; leerling → school/klas; melding → leerling/soort; soort → categorie; user → school. Groepsinformatie wordt via join opgehaald.
-
-Volgens de lokale metadata-analyse:
-- Unieke index op `leerlingen(schoolid, gebruikersnaam)`.
-- Unieke indexen op `klassen(schoolid, smartschool_code)`, met een duplicaat.
-- Geen databank-foreign-keys, triggers of events vastgesteld.
-- De twee koppeltabellen worden niet door de onderzochte code gebruikt.
-- De drie aanwezige migraties in GitHub beschrijven slechts standaard Laravel-tabellen; het echte zakelijke LVS-schema ontbreekt. Er zijn lokaal ook geen `migrations`, `jobs`, `cache` en `failed_jobs`-tabellen aangetroffen.
-
-**Belangrijk:** gebruik niet zomaar `php artisan migrate` of een nieuw schema zonder eerst de concrete bestaande database en back-up te controleren. Een schone installatie op basis van GitHub-migraties reproduceert het volledige LVS momenteel niet. Documenteer bestaande kolommen en constraints wanneer databasewerk nodig is.
-
-## 6. Smartschool SOAP
-
-`SmartschoolSoap.php` bevat o.a.:
-
-- `sendMessage()`: bericht met afzender, bijlagen, `copyToLVS`, co-account-index.
-- `disableCoAccounts()`: probeert index 1–6 op `niet actief` te zetten.
-- `enableCoAccount()`: één co-account activeren.
-- `getClassListJson()`, `getAllAccountsExtended()`, `getAllGroupsAndClasses()`: klas-/gebruikersgegevens.
-- `getUserDetails()` en foutcodehelpers.
-
-Co-account 0 = hoofdaccount, index 1–6 = co-accounts.
-
-**Multi-school is deels geïmplementeerd:**
-- Sync gebruikt WSDL en accesscode van de geselecteerde school.
-- Verjaardagen en 18-jaarflow gebruiken een algemene SOAP-client uit `config/services.php`, maar selecteren afzenders/ontvangers/templates per school.
-- OAuth gebruikt globale configuratie, hoewel aanvullende schoolspecifieke OAuth-velden in de database aanwezig zijn.
-
-Controleer daarom bij schooloverstijgende nieuwe functies niet enkel de `schoolid`-groep, maar ook het Smartschool-platform waarop een externe actie wordt uitgevoerd.
-
-## 7. Leerlingensynchronisatie
-
-`smartschool:sync-leerlingen`:
-1. School en SOAP-instellingen ophalen.
-2. Officiële klassen selecteren.
-3. Klassen vinden of aanmaken per school + Smartschool-code.
-4. Leerlingaccounts ophalen per klas.
-5. Leerlingen aanmaken/updaten of opnieuw actief zetten.
-6. Niet aangetroffen gebruikers aan het eind op `active=0` zetten.
-
-Opties: `--schoolid=`, `--dry-run`, `--limit=`, `--only-class=`.
-
-Naamconventie e-mail: `gebruikersnaam@atheneumsinttruiden.be`; datums worden uit verschillende formaten omgezet.
-
-**Bekende aandachtspunten uit code-analyse:**
-- Bij mislukte/incomplete SOAP-klasophaling kan einddeactivatie onterecht leerlingen uitschakelen.
-- Bij combinatie `--limit` + `--only-class` is de deactivatiebescherming onvolledig.
-- Geen transactie rond de volledige sync; gedeeltelijke wijzigingen kunnen blijven staan.
-- Ontbrekende namen/geboortedatums kunnen botsen met verplichte DB-kolommen.
-- Datum-parser controleert vooral formaat en niet alle kalendergeldigheid.
-- Geen synchronisatie van personeelsgebruikers aangetroffen.
-
-Voer een sync niet onvoorbereid uit tegen een echte database. `--dry-run` schrijft geen zakelijke data, maar benadert wel Smartschool en logt gegevens.
-
-## 8. Scheduler en berichten
-
-In `routes/console.php`, tijdzone `Europe/Brussels`, met `withoutOverlapping()` en eigen uitvoerlog:
-
-| Tijd | Commando | Logbestand |
-| --- | --- | --- |
-| 01:00 | `leerlingen:check-18` | `storage/logs/leerlingen_check.log` |
-| 02:00 | `verjaardagen:check` | `storage/logs/verjaardagen_check.log` |
-| 03:00 | `smartschool:sync-leerlingen --schoolid=1` | `storage/logs/smartschool_sync_leerlingen.log` |
-
-Berichten worden dus vóór de dagelijkse sync uitgevoerd. Alleen school 1 wordt automatisch gesynchroniseerd; berichtentaken kijken over scholen heen. De daadwerkelijke Windows-scheduler op productie is niet geverifieerd.
-
-### 18-jaarsproces
-- Exact 7 dagen vóór verjaardag: waarschuwing naar leerling en pogingen voor co-accounts 1–6.
-- Op 18e verjaardag: leerlingbericht, co-accounts uitschakelen, secretariaatsbericht, Smartschool-overzicht en e-mailoverzicht per school.
-- De selectie gebruikt momenteel geen `active`-filter.
-- Als het eerste leerlingbericht faalt met SOAP-exceptie, kunnen volgende co-accountstappen voor die leerling uitblijven.
-- `disableCoAccounts()` logt interne SOAP-fouten, maar de flow kan daarna toch succes registreren; overzichten zijn dus niet altijd een hard bewijs van effectieve wijziging.
-- Geen blijvende 'al verzonden voor persoon en datum'-registratie; handmatig opnieuw uitvoeren kan dubbele berichten veroorzaken.
-
-### Verjaardagen
-- Felicitatie aan leerlingen via `gebruikersnaam`, personeel via `smartschool_gebruikersnaam`.
-- Schoolafzender: beleid → algemene schoolafzender → fallback.
-- 18-jarige leerlingen worden overgeslagen omdat het andere commando ze verwerkt.
-- Ook verjaardagscommando filtert niet op `active` of `allowed_login`.
-- `--date` selecteert jarigen voor gekozen datum maar berekent leeftijd deels tegen de werkelijke datum.
-- Geen blijvende verzendregistratie.
-
-### Testopties: werkelijke effecten
-
-| Optie | Gevolg |
+| Tijd | Taaksleutel |
 | --- | --- |
-| `leerlingen:check-18 --test` | Geen bericht, mail of accountwijziging; wel initialisatie/logging |
-| `leerlingen:check-18 --test-ss-overzicht` | **Verstuurt echte Smartschool-overzichten** |
-| `--test` samen met `--test-ss-overzicht` | **Verstuurt nog steeds**, omdat de overzichtstak voorrang heeft |
-| `verjaardagen:check --test` | Geen verzendaanroepen |
-| `verjaardagen:check --dummy` of `--to` | Kan echte berichten versturen zonder `--test` |
-| `smartschool:sync-leerlingen --dry-run` | Geen zakelijke DB-schrijfoperaties, wel externe reads/logging |
+| 01:00 | becoming_18 |
+| 02:00 | birthdays |
+| 03:00 | student_sync |
+| 04:00 | staff_sync |
+| 05:00 | class_staff_sync |
+| 08:00 | library_reminders |
+| 08:15 | secretariat_reminders |
 
-Ook sommige testmodi initialiseren een SOAP-client; beschouw ze niet als offline unit tests.
+Bibliotheekverzending standaard uit totdat expliciet geactiveerd. Controleer daadwerkelijke instellingen en uitvoering bij praktijktests. Testopties zijn niet per definitie zonder externe effecten: leerlingen:check-18 --test-ss-overzicht verstuurt echte Smartschool-overzichten; geen live verzendtests zonder toestemming. Dry-run kan externe reads en logging veroorzaken.
 
-## 9. Berichten en frontend
+## 5. Back-up en herstel
 
-- Er zijn zeven standaard Smartschool-berichttemplates en kopieën voor school 1 en 2.
-- De bij de analyse gevonden schooltemplates waren inhoudelijk gelijk aan hun standaardvariant.
-- School 2 heeft twee verjaardagtemplates met een dubbele extensie `*.blade.php.php`, waardoor de gewenste viewnaam niet matcht en de fallback wordt gebruikt.
-- `public/js/lvs.js` wordt op alle pagina's geladen maar verwacht `LEERLINGEN_DATA` en zoekelementen die niet overal bestaan; dat kan JavaScript-fouten geven.
-- Zoekresultaten gebruiken `innerHTML` met leerling-/klaswaarden; controleer escaping bij wijzigingen.
-- De frontend gebruikt `localStorage` voor een geselecteerde leerling en wist dit bij uitloggen.
+- Windows-taak LVS - Databank Backup draait ieder uur op lokale SRV-WEB, onafhankelijk van Laravel, onder het bestaande Windows-administratoraccount. Handmatige start via Taakplanner succesvol; LastTaskResult 0 en volgende uitvoering een uur later bevestigd.
+- Script ops/windows/Backup-LvsDatabase.ps1 gebruikt een afzonderlijk lokaal MariaDB-back-upaccount, mysqldump --single-transaction, GnuPG en AzCopy. Geen schemawijzigingen tijdens export. Alle 49 tabellen gebruiken InnoDB.
+- GnuPG: C:\Program Files\GnuPG\bin\gpg.exe. Publieke sleutel in C:\LVS-Backup\private\gnupg. Private decryptiesleutel buiten webserver bij ICT. Sleutel verloopt 27 november 2029.
+- Lokale bestanden: C:\LVS-Backup\encrypted, formaat speelhof_lvs-<UTC-tijdstempel>.sql.gpg. Retentie 14 dagen, opruiming alleen na succesvolle externe upload. Private map en archive zijn afgeschermd voor Administrators/SYSTEM; webapplicatie krijgt geen toegang tot dumps.
+- Azure: atheneumstlvsbackup, private container lvs-backups; lifecycle-regel 30 dagen, versie-/snapshotretentie ingesteld, soft delete voorzien. Geen aparte Azure-VM nodig voor back-up.
+- Entra-app LVS-Backup-Service, containergebonden Storage Blob Data Contributor, certificaatauthenticatie SPN (geen Managed Identity op lokale schoolserver). PFX en DPAPI-wachtwoordbestand in beveiligde private map; DPAPI werkt alleen onder hetzelfde Windows-account op dezelfde computer. Certificaat tijdig vernieuwen. ICT heeft Blob Data Reader voor downloaden. Contributor kan ook verwijderen; verdere hardening optioneel.
+- C:\LVS-Status\backup-status.json en backup-run-*.json bevatten uitsluitend metadata. Historiek 31 dagen, maximaal 800 records getoond. Waarschuwing na 90 minuten of mislukte status. /beheer/back-ups is ICT-only, alleen-lezen en geen live inventaris van blobbestanden.
+- Eerste externe upload, volgende geplande uitvoering en download uit Azure + decryptie in Kleopatra + openen SQL bevestigd door ICT. **Volledige import in geïsoleerde testdatabank nog niet uitgevoerd**.
+- Herstel: Azure Portal > Storage accounts > atheneumstlvsbackup > Containers > lvs-backups > Download. Ontsleutel met Kleopatra/private sleutel op vertrouwd toestel, importeer uitsluitend in geïsoleerde testdatabase voor test, schakel externe acties uit en verwijder onversleutelde testkopie veilig.
+- Foto's, documenten en .env worden afzonderlijk bewaard door ICT. Geen extra automatische bestandsback-ups gevraagd. Houd .env inclusief APP_KEY actueel. Geen secrets, dumps, PFX, DPAPI of private sleutels in Git.
+- Zie docs/WINDOWS_BACKUP_RECOVERY.md voor algemene instructies; actuele operationele stand in deze sectie heeft voorrang op oudere voorbereidingsinstructies.
 
-## 10. Kwaliteit, tests en open vragen
+## 6. Deploy en controles
 
-Codex controleerde lokaal de syntaxis van **41 PHP-bronbestanden** zonder syntaxisfouten. Er zijn alleen twee standaard Laravel-voorbeeldtests in `tests/` gevonden; geen zakelijke tests voor OAuth, SOAP, synchronisatie, meldingen of berichtverzending. Geen functionele HTTP-tests of echte Smartschool-verzendtests uitgevoerd.
+Gebruik PowerShell op de correcte server/checkout. Git pull origin main. Composer install --no-dev --optimize-autoloader indien afhankelijkheden wijzigen. Bij routes: php artisan route:clear, php artisan route:cache, php artisan route:list --name=<route>. Bij config: php artisan config:cache; bij views: php artisan view:cache. Alleen migreren na expliciete toestemming en schema/back-upcontrole. Geen database-reset of productie-integratietests met echte bijwerkingen. Bij routefout na deploy eerst cache en actuele route controleren. Documentatiewijzigingen vereisen geen cacheverversing.
 
-Bij nieuwe functies prioriteit geven aan:
-- Tests voor Smartschool-fouten en gedeeltelijke synchronisatie.
-- Idempotentie van automatische berichten en correcte statusrapportage.
-- Autorisatie per school en gebruikersgroep.
-- Compleet versiebeheer van de echte DB-structuur.
-- Stabiel laden van JavaScript per pagina en veilige HTML-output.
-- Duidelijke scheiding tussen ontwikkel-, test- en productiegegevens.
+## 7. TODO per module
 
-Nog niet geverifieerd: actieve productiescheduler, daadwerkelijke bezorging van externe berichten, productie-back-ups, monitoring, deploymentstappen, volledige Git-geschiedenis op secrets en live gedragingen van de site.
+Status: [x] = afgewerkt/bevestigd binnen beschreven scope; [ ] = nog testen, verfijnen of ontwikkelen. De lijst is de werkplanning op 27 november; controleer eerst bestaande code. Nieuwe voorstellen zijn geen vastgelegde functionele eisen.
 
-## 11. Werkafspraken voor ChatGPT en Codex
+### Bibliotheek — hoge prioriteit, ingebruikname
+- [x] Boeken/exemplaren, ISBN en zoeken op titel/naam, QR-labels, import, uitleen/inlevering, kalender, rapporten en aanvragen in code aanwezig.
+- [ ] Praktijktest bibliotheekmedewerkers en feedback verwerken.
+- [ ] Reserveringen versus verlengingsaanvragen verder verfijnen/onderscheiden; bestaande workflows eerst toetsen.
+- [ ] Rechten voor personeel, leerlingen en co-accounts consistent controleren; Mijn bibliotheek en Mijn portaal testen.
+- [ ] Herinneringen, herhalingsinterval, pauzeren en escalaties naar beleid in praktijk controleren; geen ongewenste echte berichten.
+- [ ] ISBN-bronnen (Open Library, Google Books; aanvullende bronnen indien nodig), foutafhandeling, dubbel ISBN als extra exemplaar en QR-scan/wissen testen.
+- [ ] Uitleen-/retourproces, snelle filters, rapporten en vakantie-inleverdata testen.
+- Voorraadcontrole niet opnieuw als tegel toevoegen zonder vraag; eerdere verwijdering behouden.
 
-1. Code in de actuele repository is de technische bron van waarheid; dit document is de kaart, niet de uitvoering.
-2. Raadpleeg bij een taak de huidige relevante codebestanden. Neem geen verouderde bestandsinhoud aan.
-3. Maak zo klein mogelijke, verklaarde wijzigingen met aandacht voor andere scholen en bestaande Smartschool-flows.
-4. Gebruik bij voorkeur een aparte Git-branch en Pull Request. Geen ongevraagde push, merge, deploy of productieacties.
-5. Geen echte leerlinggegevens, wachtwoorden of `.env`-inhoud in GitHub, documentatie of antwoorden opnemen.
-6. Test waar mogelijk zonder externe effecten en maak expliciet onderscheid tussen syntaxcheck, unit test, integratietest en productiecontrole.
-7. Onderscheid **bevestigd uit code**, **vastgesteld in lokale DB-metadata** en **nog niet geverifieerd**.
-8. Update dit bestand als nieuwe functionaliteit, architectuur of datamodellen wezenlijk veranderen.
+### LVS en zichtbaarheid — hoge prioriteit
+- [x] Meldingsvrijgave, vertrouwelijk-vink, externe portaalrechten en previewfunctionaliteit in code aanwezig.
+- [ ] Volledige rechtenmatrix testen per rol, school en relatie met leerling (titularis/vakleerkracht/andere medewerker).
+- [ ] Leerkracht kan altijd vertrouwelijke melding aanmaken; zichtbaarheid voor leerling/co-account uitsluitend volgens expliciete instelling. Controleer formuliertekst en server-side autorisatie.
+- [ ] Vrijgegeven LVS-meldingen in leerling-/ouderportaal verder testen/verfijnen.
+- [ ] Automatische opvolgacties en escalatie bij meldingen controleren; rapportering en nuttige dossieroverzichten verder uitwerken.
+- [ ] Login als andere rol: correcte opslag van toegestane acties, duidelijke testbalk en uitsluiting van ICT-only technische functies.
+
+### Mijn klassen / titularissen / vakleerkrachten — hoge prioriteit
+- [x] Tabellen class_staff_links en skore_student_teacher_links en geplande class_staff_sync bestaan.
+- [ ] Smartschool-klaskoppelingen, titularissen en vakleerkrachten valideren, schooljaar en schoolscoping controleren.
+- [ ] Mijn klassen en relevante klas-/leerlingenoverzichten voor leerkrachten verder afwerken.
+- [ ] LVS-informatie per klas met passende zichtbaarheid, filters en toegang tot dossiers.
+
+### Leerlingenbeheer — normale prioriteit
+- [x] Detail, foto-upload/ZIP, stamnummer en InformatInternNr, actief/klasfilter, bulkacties en individuele portaalrechten aanwezig.
+- [ ] Uitgeschreven leerlingen en ontbrekende gegevens: procedure en opvolging verder uitwerken.
+- [ ] Historiek klaswijzigingen onderzoeken als mogelijke uitbreiding.
+- [ ] Zoeken/filters verfijnen op basis van praktijkfeedback; rechten en fototoegang testen.
+- [ ] Sync testen bij ontbrekende klassen, onvolledige data en heractivering, zonder echte onbedoelde updates.
+
+### Personeelsbeheer en rechten — normale prioriteit
+- [x] Personeelssync, filters, loginrechten, rollen en beheerpagina's aanwezig.
+- [ ] Synchronisatie, technische accounts en inactieve medewerkers opvolgen; toegangsrechten bij uitdiensttreding testen.
+- [ ] Groeps- en individuele rechten, bulkacties, schoolgebonden toegang en beheerpagina's controleren.
+
+### Leerling- en ouderportaal — hoge/normale prioriteit
+- [ ] Smartschool-login leerling/co-account, accountkoppeling en toegangsbeperkingen volledig testen.
+- [ ] Persoonlijke bibliotheek, reserveren/verlengen, status en vrijgegeven LVS-meldingen controleren; geen inzage in andere leerlingen.
+- [ ] Gebruiksvriendelijkheid op smartphone beoordelen.
+
+### 18 jaar, secretariaatsbezoeken en verjaardagen
+- [x] Instellingen, bezoekopvolging, privacyacties en verzendhistoriek aanwezig.
+- [ ] Uitnodiging, langs geweest, herinneringsinterval, weekend en vakanties in praktijk evalueren.
+- [ ] Idempotentie, foutafhandeling, juiste afzenders/ontvangers en co-accountstatus controleren; geen dubbele berichten.
+
+### Schoolkalender, geplande taken en verzonden items
+- [x] Beheer schoolkalender, taakoverzicht en verzonden items aanwezig.
+- [ ] Kalenderwerking in bibliotheek en secretariaatsherinneringen controleren; schooljaarwissel opvolgen.
+- [ ] Werkelijke nachtelijke taakuitvoering, logstatus en foutmeldingen periodiek controleren.
+
+### Rapportering en algemene portaalfuncties — toekomstige voorstellen
+- [ ] LVS-rapportering en exports verder uitwerken na afstemming met beleid.
+- [ ] Persoonlijk roldashboard, intern meldingscentrum, globale zoekfunctie, aanvullende auditlog, centrale instellingen, tegelvolgorde en mobiele UX onderzoeken. Eerst prioriteren; bestaande functies niet dupliceren.
+
+### Technisch beheer — afgewerkt / lage prioriteit
+- [x] Lokale DB, sessies/cache, OAuth-cachefix, foto-optimalisatie, indexen, Systeemprestaties, CPU/RAM, versleutelde lokale/externe databankback-up, back-updashboard en download/decryptie.
+- [x] PROJECT_CONTEXT.md en AGENTS.md actualiseren (27 november 2026).
+- [ ] Optioneel: AzCopy-logopschoning, apart Windows-serviceaccount, Azure-deletebescherming, volledige import-/hersteltest in geïsoleerde databank. Geen dringende nieuwe bouwopdracht; volledige hersteltest blijft aanbevolen.
+- Geen MariaDB-upgrade; foto's/documenten/.env geen extra automatische back-up nodig volgens ICT.
+
+## 8. Voorgestelde volgende werksessie
+
+1. Bibliotheek: praktijkfeedback en operationele controles.
+2. LVS-rechten/vertrouwelijkheid en zichtbaarheid.
+3. Mijn klassen, titularissen en vakleerkrachten vanuit perspectief leerkracht.
+4. Leerling-/ouderportaal en rapportering.
+5. Overige uitbreidingen na prioritering.
+
+Bewaar bestaande werkende flows. Actualiseer deze planning na wezenlijke wijzigingen en onderscheid code-aanwezigheid, functionele test, productiebevestiging en open voorstellen.
