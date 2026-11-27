@@ -13,7 +13,8 @@
 
 @section('content')
 <main class="screen lvs-screen">
-    <div class="lvs-page-heading">
+    <div class="lvs-page-heading student-photo-inline">
+        @include('partials.student-photo',['studentId'=>$leerling->id,'large'=>true])
         <div>
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
             <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
