@@ -35,10 +35,24 @@ class PerformanceLogReader
                 'at'=>$match[1], 'route'=>$route, 'duration_ms'=>(float)$data['duration_ms'],
                 'sql_queries'=>(int)$data['sql_queries'], 'sql_time_ms'=>(float)$data['sql_time_ms'],
                 'memory'=>(float)$data['php_memory_peak_mb'],
+                'status'=>isset($data['status']) && is_int($data['status']) && $data['status'] >= 100 && $data['status'] <= 599 ? $data['status'] : null,
             ];
             if (count($rows) >= $limit) break;
         }
         return $rows;
+    }
+
+    public function hourly(array $rows): array
+    {
+        $groups = [];
+        foreach ($rows as $row) {
+            $hour = substr($row['at'],0,13).':00';
+            $groups[$hour][] = $row['duration_ms'];
+        }
+        ksort($groups);
+        $result = [];
+        foreach ($groups as $hour=>$times) $result[] = ['hour'=>$hour,'count'=>count($times),'avg'=>array_sum($times)/count($times)];
+        return $result;
     }
 
     public function summarize(array $rows): array

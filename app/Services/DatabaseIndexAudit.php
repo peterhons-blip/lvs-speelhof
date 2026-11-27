@@ -35,6 +35,8 @@ class DatabaseIndexAudit
         foreach ($indexes as $index) {
             $entry = &$existing[$index->table_name][$index->index_name];
             $entry['columns'][] = $index->column_name;
+            $entry['parts'][] = $index->column_name.($index->sub_part === null ? '' : ' ('.$index->sub_part.')');
+            $entry['type'] = $index->index_type;
             $entry['full'] = ($entry['full'] ?? true) && $index->sub_part === null && strtoupper($index->index_type) === 'BTREE';
             $entry['unique'] = !(bool)$index->non_unique;
             unset($entry);
@@ -56,6 +58,10 @@ class DatabaseIndexAudit
                 $result[] = ['table'=>$table,'columns'=>$candidate,'status'=>$match === null ? 'review' : 'covered','index'=>$match];
             }
         }
-        return $result;
+        $inventory = [];
+        foreach ($existing as $table => $items) {
+            foreach ($items as $name => $index) $inventory[] = ['table'=>$table,'name'=>$name,'columns'=>$index['parts'],'unique'=>$index['unique'],'type'=>$index['type']];
+        }
+        return ['candidates'=>$result,'inventory'=>$inventory];
     }
 }
