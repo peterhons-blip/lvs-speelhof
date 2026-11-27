@@ -20,7 +20,7 @@ class LvsDashboardController extends Controller
         $until = $today->toDateString();
 
         $stats = [
-            'students' => DB::table('leerlingen')->where('active', 1)->count(),
+            'students' => DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)->count(),
             'notifications' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count(),
             'this_month' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [$from, $until])->count(),
             'last_7_days' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [
