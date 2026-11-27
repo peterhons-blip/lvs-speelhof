@@ -18,6 +18,8 @@ class Leerling extends Model
         'klasid',
         'schoolid',
         'geboortedatum',
+        'stamnummer',
+        'InformatInternNr',
     ];
 
     protected $casts = [
