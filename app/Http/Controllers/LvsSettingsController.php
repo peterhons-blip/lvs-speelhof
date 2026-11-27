@@ -20,6 +20,7 @@ class LvsSettingsController extends Controller
         $rules = $ready ? DB::table('lvs_followup_rules')->orderBy('threshold')
             ->orderBy('id')->get() : collect();
         $events = $ready ? DB::table('lvs_followup_events as e')
+            ->whereIn('e.melding_id',\App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->select('meldingen.id'))
             ->leftJoin('lvs_followup_rules as r', 'r.id', '=', 'e.rule_id')
             ->leftJoin('leerlingen as l', 'l.id', '=', 'e.leerling_id')
             ->select('e.*', 'r.title as rule_title', 'l.voornaam', 'l.naam')
