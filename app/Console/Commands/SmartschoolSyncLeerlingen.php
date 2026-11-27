@@ -16,7 +16,7 @@ class SmartschoolSyncLeerlingen extends Command
                             {--dry-run : Niets schrijven in DB, enkel loggen}
                             {--limit=0 : Maximum # leerlingen verwerken (0 = geen limiet)}
                             {--only-class= : Alleen deze smartschool_code syncen}
-                            {--confirm-empty-classes : Bevestig dat lege klassen gecontroleerd zijn; deactivatie toestaan bij volledige sync}
+                            {--confirm-empty-classes : Compatibiliteitsoptie; niet meer vereist}
                             {--skip-scancodes : QR-codes niet synchroniseren}
                             {--refresh-scancodes : Bestaande QR-codes opnieuw ophalen via getUserDetails}';
 
@@ -361,54 +361,43 @@ class SmartschoolSyncLeerlingen extends Command
 
         $deactivated = 0;
 
-        // Only complete, plausible school snapshots advance absence counters.
+        // Reconcile immediately, but only after a complete, plausible school snapshot.
         $completeScope = $failedClasses === 0 && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0;
-        $confirmedEmpty = (bool) $this->option('confirm-empty-classes');
         $pendingMissing = 0;
         if ($completeScope) {
             $activeCount = Leerling::query()->where('schoolid',$schoolId)->where('active',1)->count();
             $missing = Leerling::query()->where('schoolid',$schoolId)->where('active',1)
                 ->whereNotIn('gebruikersnaam',$seenUsernames)->with('klas')->orderBy('naam')->orderBy('voornaam')->get();
-            // Large unexpected drops require investigation, never automatic deactivation.
             $plausible = $activeCount===0 || $missing->count() <= max(5,(int)floor($activeCount*0.10));
             $this->info('Unieke leerlingen ontvangen: '.count($seenUsernames));
             $this->info('Lokaal actief maar niet ontvangen: '.$missing->count());
             foreach ($missing as $student) {
-                $next = min(2,(int)($student->sync_missing_count??0)+1);
-                $this->line('  '.$student->gebruikersnaam.' | '.($student->klas?->klasnaam ?? 'Geen klas').' | ontbreekt '.$next.'/2');
+                $this->line('  '.$student->gebruikersnaam.' | '.($student->klas?->klasnaam ?? 'Geen klas'));
             }
             if (!$plausible) {
-                $this->warn('Onverwacht grote daling: geen afwezigheidstellers bijgewerkt of leerlingen gedeactiveerd.');
-                if (!$dryRun && $trackMissing) Leerling::query()->where('schoolid',$schoolId)->where('sync_missing_count','>',0)->update(['sync_missing_count'=>0]);
-            } elseif (!$trackMissing) {
-                $this->warn('Voer de migratie voor sync_missing_count uit. Automatische deactivatie overgeslagen.');
+                $pendingMissing=$missing->count();
+                $this->warn('Onverwacht grote daling: geen leerlingen gedeactiveerd.');
             } elseif (!$dryRun) {
-                \Illuminate\Support\Facades\DB::transaction(function() use ($missing,$schoolId,$seenUsernames,$confirmedEmpty,&$deactivated,&$pendingMissing) {
+                \Illuminate\Support\Facades\DB::transaction(function() use ($missing,$schoolId,$seenUsernames,$trackMissing,&$deactivated) {
                     foreach ($missing as $student) {
                         $row=Leerling::query()->where('schoolid',$schoolId)->where('id',$student->id)->where('active',1)->whereNotIn('gebruikersnaam',$seenUsernames)->lockForUpdate()->first();
                         if (!$row) continue;
-                        $row->sync_missing_count=min(2,(int)$row->sync_missing_count+1);
-                        if ($confirmedEmpty || $row->sync_missing_count>=2) {
-                            $row->active=0;
-                            $deactivated++;
-                            $this->info('  Gedeactiveerd: '.$row->gebruikersnaam);
-                        } else {
-                            $pendingMissing++;
-                        }
+                        $row->active=0;
+                        if ($trackMissing) $row->sync_missing_count=0;
                         $row->save();
+                        $deactivated++;
+                        $this->info('  Gedeactiveerd: '.$row->gebruikersnaam);
                     }
                 });
             } else {
                 $pendingMissing=$missing->count();
+                $this->info('DRY-RUN: '.$pendingMissing.' leerlingen zouden gedeactiveerd worden.');
             }
         } else {
             $this->warn('Vergelijking en deactivering overgeslagen: geen volledige schoolopvraging.');
-            if (!$dryRun && $trackMissing && $limit===0 && $onlyCode==='') {
-                Leerling::query()->where('schoolid',$schoolId)->where('sync_missing_count','>',0)->update(['sync_missing_count'=>0]);
-            }
         }
         if ($emptyClasses > 0) {
-            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen; dubbele afwezigheidscontrole blijft van toepassing.");
+            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen; lege klassen blokkeren de deactivering niet.");
         }
         if ($failedClasses > 0) {
             $this->warn("WAARSCHUWING: {$failedClasses} onvolledige klasopvragingen. Geen deactivering.");
