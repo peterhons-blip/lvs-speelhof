@@ -1034,3 +1034,6 @@ a.portal-page-link:hover,a.portal-page-link:focus-visible{border-color:#81b7c5;b
 @media(max-width:600px){.portal-today-summary-grid{grid-template-columns:1fr}.portal-today-summary-stat{flex-direction:row;align-items:center;gap:12px}}
 
 .student-photo-inline{display:flex;align-items:center;gap:12px}.student-photo{width:42px;height:52px;object-fit:cover;border-radius:8px;background:#e5edf2;flex:none;display:block}.student-photo-large{width:100px;height:125px;object-fit:cover}.lvs-student-avatar:has(.student-photo){position:relative;overflow:hidden}.lvs-student-avatar .student-photo{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit}
+
+/* Shared portrait treatment for all student-facing staff views. */
+.student-photo{box-sizing:border-box;border:1px solid #b9cbd7;padding:2px;background:#fff;box-shadow:0 1px 3px #12365b12;object-fit:cover;object-position:center 35%}.student-photo-large{border-radius:10px;padding:3px}.lvs-student-avatar:has(.student-photo){background:#fff;border:1px solid #b9cbd7;box-sizing:border-box}.lvs-student-avatar .student-photo{border:0;box-shadow:none;padding:2px}.student-photo-inline{align-items:center;gap:10px}.student-photo-inline>a{min-width:0}.student-photo-inline .student-photo{flex-shrink:0}
