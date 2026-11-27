@@ -43,7 +43,7 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
 
         @if(session('portal_preview'))
         <div role="status" style="background:#fff1d5;border-bottom:1px solid #e5bf72;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#604000">
-            <div><strong>Testmodus: {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}</strong> · Alleen-lezen · {{ $ss_user['groupname'] ?? '' }}
+            <div><strong>Testmodus: {{ $ss_user['voornaam'] ?? '' }} {{ $ss_user['naam'] ?? '' }}</strong> · {{ isset(session('portal_preview')['target_role']) ? 'Alleen-lezen / aanvragen simuleren' : 'Testmeldingen kunnen echt worden opgeslagen; geen automatische berichten' }} · {{ $ss_user['groupname'] ?? '' }}
                 @if(session('preview_warning'))<div>{{ session('preview_warning') }}</div>@endif
             </div>
             <form method="post" action="{{ route('portal-preview.stop') }}">@csrf<button type="submit" class="library-button library-button-secondary">Terug naar ICT</button></form>
