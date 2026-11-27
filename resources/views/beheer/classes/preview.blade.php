@@ -2,6 +2,7 @@
 @section('title','Klaskoppelingen controleren')
 @section('content')
 <main class="library-page portal-users-page"><div class="library-page-head"><div><h1>Klaskoppelingen controleren</h1><p>{{ count($preview['rows']) }} koppelingen · {{ count($preview['covered']) }} klassen · niets opgeslagen.</p></div><a class="library-button library-button-secondary" href="{{ route('beheer.classes.index') }}">Terug</a></div>
+@if(!empty($preview['notes']))<section class="library-form-card"><h2>Afwijkende klasindelingen</h2><p>Controleer deze gezamenlijke of gesplitste groepen vóór bevestiging.</p>@foreach($preview['notes'] as $note)<p>{{ $note }}</p>@endforeach</section>@endif
 @if($preview['errors'])<section class="library-form-card"><h2>Controle vereist</h2><p>Er worden geen wijzigingen opgeslagen zolang er fouten zijn.</p>@foreach($preview['errors'] as $error)<p>{{ $error }}</p>@endforeach</section>@endif
 <section class="library-form-card"><h2>{{ $kind==='teacher'?'Leerkrachten':'Klastitularissen' }}</h2>
 @foreach(collect($preview['rows'])->groupBy('class') as $class=>$rows)
