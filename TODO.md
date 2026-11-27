@@ -7,6 +7,14 @@ Bijgewerkt: 27 november 2026. Dit is een werkdocument; testfase betekent niet da
 - [ ] Rechten en toegang per leerling, co-account, personeelslid en bibliotheekmedewerker testen.
 - [ ] Feedback bibliotheekmedewerkers verzamelen na ingebruikname; voorlopig alleen fouten oplossen.
 
+## P1 — Leerlingenbeheer
+- [x] Stamnummer en Informat-internnummer synchroniseren.
+- [x] Individuele foto-upload en ZIP-import met controle.
+- [x] Historische dossiers met afzonderlijk recht.
+- [x] Veiligheidsregels voor leerlingensync als unit-test voorzien.
+- [ ] ZIP-import, historische rechten en sync op de server valideren.
+- [ ] Automatische Smartschool-fotosync onderzoeken.
+
 ## P1 — Klassen, leerkrachten en toegangsbeheer
 - [ ] Klastitularissen per klas en schooljaar registreren (meerdere titularissen mogelijk).
 - [ ] Leerkrachten koppelen aan de klassen waarin ze lesgeven, eventueel met vak en lesgroep.
