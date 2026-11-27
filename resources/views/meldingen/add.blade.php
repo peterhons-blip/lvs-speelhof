@@ -141,7 +141,7 @@
                         <div class="melding-row">
                             <div class="melding-meta">
                                 <div class="melding-datum">
-                                    <strong>Gebeurt op:</strong>
+                                    <strong>Gebeurd op:</strong>
                                     {{ optional($melding->gebeurdop)->format('d/m/Y') ?? '—' }}
                                     <br>
                                     <small class="muted">
@@ -157,10 +157,10 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="melding-comment">
-                                @if($melding->vertrouwelijk)<strong>Vertrouwelijk</strong><br>@endif
-                                {{ $melding->comment }}
-                            </div>
+                            @if($melding->vertrouwelijk)
+                                <span class="melding-confidential-label">Vertrouwelijk</span>
+                            @endif
+                            <p class="melding-comment">{{ $melding->comment }}</p>
                         </div>
                     @endforeach
                 </div>
