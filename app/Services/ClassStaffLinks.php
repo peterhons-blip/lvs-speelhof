@@ -39,6 +39,60 @@ class ClassStaffLinks
         $school=School::findOrFail(1);
         if (!trim((string)$school->smartschool_wsdl)||!trim((string)$school->smartschool_accesscode)) throw new RuntimeException('Smartschool-configuratie ontbreekt.');
         $soap=new SmartschoolSoap($school->smartschool_wsdl,$school->smartschool_accesscode);
+        $relations=$soap->getSkoreRelations();
+        $classes=$this->classes();
+        $byName=$classes->groupBy(fn($c)=>$this->normalize($c->klasnaam));
+        $pupils=DB::table('leerlingen')->where('schoolid',1)->where('active',1)->get(['gebruikersnaam','klasid'])->groupBy(fn($p)=>$this->normalize((string)$p->gebruikersnaam));
+        $staff=$this->staff();$rows=[];$errors=[];$notes=[];$bad=[];$covered=[];$seenClasses=[];
+        foreach($relations as $rel){
+            $name=$this->normalize($rel['class']);
+            $username=$this->normalize($rel['username']);
+            $course=trim($rel['course']);
+            $matches=$byName->get($name,collect());
+            $actual=[];
+            foreach($rel['students'] as $student){
+                $pupil=$pupils->get($this->normalize($student),collect());
+                if($pupil->count()===1)$actual[(int)$pupil->first()->klasid]=true;
+            }
+            $targets=$classes->filter(fn($c)=>isset($actual[(int)$c->id]));
+            if($targets->isEmpty() && $matches->count()===1 && !$rel['students'])$targets=$matches;
+            if($targets->isEmpty()){
+                if($matches->isNotEmpty())foreach($matches as $c)$bad[(int)$c->id]=true;
+                continue;
+            }
+            $u=$staff->get($username,collect());
+            foreach($targets as $class){
+                $id=(int)$class->id;
+                $seenClasses[$id]=true;
+                if($u->count()!==1 || $course===''){
+                    $bad[$id]=true;
+                    $errors[]=$class->klasnaam.': onbekende leerkracht of ontbrekend vak ('.$username.').';
+                    continue;
+                }
+                $user=$u->first();$key=$id.':'.$user->id;
+                if(!isset($rows[$key]))$rows[$key]=['class_id'=>$id,'user_id'=>(int)$user->id,'class'=>$class->klasnaam,'username'=>$username,'courses'=>[]];
+                $rows[$key]['courses'][$course]=$course;
+            }
+        }
+        foreach($classes as $class){
+            $id=(int)$class->id;
+            if(isset($bad[$id])||!isset($seenClasses[$id])){
+                $notes[]=$class->klasnaam.': onvolledige of ontbrekende Skore-relaties; bestaande koppelingen behouden.';
+                continue;
+            }
+            $covered[]=$id;
+        }
+        $rows=array_values(array_filter($rows,fn($row)=>in_array($row['class_id'],$covered,true)));
+        foreach($rows as &$row){$row['courses']=array_values($row['courses']);natcasesort($row['courses']);$row['courses']=array_values($row['courses']);}unset($row);
+        if(count($covered)<max(1,(int)ceil($classes->count()*0.8)))throw new RuntimeException('Te weinig betrouwbare Skore-klassen; niets gewijzigd.');
+        return ['rows'=>$rows,'errors'=>array_values(array_unique($errors)),'covered'=>$covered,'notes'=>$notes,'source'=>'skore'];
+    }
+
+    public function groupTeacherPreview(): array
+    {
+        $school=School::findOrFail(1);
+        if (!trim((string)$school->smartschool_wsdl)||!trim((string)$school->smartschool_accesscode)) throw new RuntimeException('Smartschool-configuratie ontbreekt.');
+        $soap=new SmartschoolSoap($school->smartschool_wsdl,$school->smartschool_accesscode);
         // Group names are also accepted by getAllAccountsExtended (as in staff sync).
         // Prefer a uniquely discovered code; tolerate differences in whitespace.
         try { $groups=$soap->getAllGroupsAndClasses(); } catch (\Throwable $e) { $groups=[]; }
@@ -169,7 +223,7 @@ class ClassStaffLinks
     public function apply(array $preview,string $kind,bool $allowPartialTeachers=false): int
     {
         if(!in_array($kind,['teacher','mentor','mentor_smartschool'],true)||($preview['errors'] && !($kind==='teacher' && $allowPartialTeachers))||!$preview['rows']) throw new RuntimeException('Controleer eerst alle fouten; niets gewijzigd.');
-        $source=$kind==='mentor'?'excel':'smartschool';
+        $source=$kind==='mentor'?'excel':($preview['source']??'smartschool');
         $kind=$kind==='mentor_smartschool'?'mentor':$kind;
         $year=self::year();
         return DB::transaction(function()use($preview,$kind,$source,$year){
@@ -181,7 +235,9 @@ class ClassStaffLinks
             // Only replace the same kind for explicitly covered, validated classes.
             DB::table('class_staff_links')->where('school_id',1)->where('school_year',$year)->where('kind',$kind)->whereIn('class_id',$preview['covered'])->delete();
             foreach($preview['rows'] as $row){
-                DB::table('class_staff_links')->insertOrIgnore(['school_id'=>1,'school_year'=>$year,'class_id'=>$row['class_id'],'user_id'=>$row['user_id'],'kind'=>$kind,'source'=>$source,'created_at'=>now(),'updated_at'=>now()]);
+                $data=['school_id'=>1,'school_year'=>$year,'class_id'=>$row['class_id'],'user_id'=>$row['user_id'],'kind'=>$kind,'source'=>$source,'created_at'=>now(),'updated_at'=>now()];
+                if(isset($row['courses'])) $data['courses']=json_encode($row['courses'],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+                DB::table('class_staff_links')->insertOrIgnore($data);
             }
             return count($preview['rows']);
         });
