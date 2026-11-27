@@ -14,7 +14,7 @@
     <div class="portal-preview-menu">
         <label for="portal-preview-search">Gebruiker zoeken</label>
         <input id="portal-preview-search" type="search" placeholder="Naam, account of rol…" autocomplete="off">
-        <p class="portal-preview-hint">Alleen-lezen testmodus</p>
+        <p class="portal-preview-hint">Testmodus: testmeldingen worden echt opgeslagen; overige acties beperkt.</p>
         <div class="portal-preview-list">
             @foreach($previewStaff as $person)
                 <form method="post" action="{{ route('portal-preview.start',$person->id) }}" data-preview-person>
