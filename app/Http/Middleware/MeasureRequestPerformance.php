@@ -38,18 +38,20 @@ class MeasureRequestPerformance
             });
         }
 
+        $response = null;
         try {
-            return $next($request);
+            return $response = $next($request);
         } finally {
             if ($enabled) {
                 $durationMs = (microtime(true) - $startedAt) * 1000;
                 $thresholdMs = (int) config('lvs_performance.slow_request_ms', 1000);
 
-                if ($durationMs >= $thresholdMs) {
+                if ($durationMs >= $thresholdMs || ($response && $response->getStatusCode() >= 400)) {
                     uasort($groups, fn($a,$b)=>$b['total_ms'] <=> $a['total_ms']);
                     Log::warning('LVS slow web request', [
                         'route' => $request->route()?->getName() ?? 'unnamed',
                         'method' => $request->method(),
+                        'status' => $response?->getStatusCode(),
                         'duration_ms' => round($durationMs, 1),
                         'sql_queries' => $queryCount,
                         'sql_time_ms' => round($queryTimeMs, 1),

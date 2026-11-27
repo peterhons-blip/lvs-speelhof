@@ -16,7 +16,7 @@ class SystemPerformanceController extends Controller
         $rows = $reader->read(storage_path('logs/laravel.log'));
         // Support the standard daily Laravel log channel as well.
         $daily = storage_path('logs/laravel-'.now()->format('Y-m-d').'.log');
-        $rows = array_merge($rows, $reader->read($daily));
+        $rows = array_merge($rows, $reader->read($daily), $reader->read(storage_path('logs/laravel-'.now()->subDay()->format('Y-m-d').'.log')));
         usort($rows, fn($a,$b)=>strcmp($b['at'],$a['at']));
         $rows = array_slice($rows,0,2000);
         $period = $request->query('period','60');
@@ -26,11 +26,16 @@ class SystemPerformanceController extends Controller
             $rows = array_values(array_filter($rows,fn($row)=>$row['at'] >= $cutoff));
         }
         $summary = $reader->summarize($rows);
+        $hourly = $reader->hourly($rows);
+        $errors = array_count_values(array_map(fn($row)=>(string)$row['status'],array_filter($rows,fn($row)=>$row['status'] !== null && $row['status'] >= 400)));
+        $statusKnown = count(array_filter($rows,fn($row)=>$row['status'] !== null));
         $recent = array_slice($rows,0,30);
         $version = null;
         $latency = null;
         $size = null;
         $indexes = [];
+        $inventory = [];
+        $tableSizes = [];
         $databaseError = false;
         try {
             $version = DB::selectOne('SELECT VERSION() AS version')->version;
@@ -38,7 +43,10 @@ class SystemPerformanceController extends Controller
             for ($i=0;$i<5;$i++) DB::selectOne('SELECT 1');
             $latency = (microtime(true)-$start)*1000/5;
             $size = DB::selectOne('SELECT COALESCE(SUM(DATA_LENGTH + INDEX_LENGTH),0) AS bytes FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()')->bytes;
-            $indexes = $audit->inspect();
+            $report = $audit->inspect();
+            $indexes = $report['candidates'];
+            $inventory = $report['inventory'];
+            $tableSizes = DB::select('SELECT TABLE_NAME AS table_name, TABLE_ROWS AS estimated_rows, COALESCE(DATA_LENGTH,0) AS data_bytes, COALESCE(INDEX_LENGTH,0) AS index_bytes FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = \'BASE TABLE\' ORDER BY COALESCE(DATA_LENGTH,0)+COALESCE(INDEX_LENGTH,0) DESC');
         } catch (\Throwable $e) {
             $databaseError = true;
         }
@@ -46,7 +54,7 @@ class SystemPerformanceController extends Controller
         $host = config('database.connections.'.$driver.'.host');
         $local = in_array($host,['127.0.0.1','localhost','::1'],true);
         $disk = @disk_free_space(storage_path());
-        $response = response()->view('beheer.performance', compact('rows','summary','recent','period','version','latency','size','indexes','databaseError','local','disk'));
+        $response = response()->view('beheer.performance', compact('rows','summary','recent','period','version','latency','size','indexes','databaseError','local','disk','inventory','tableSizes','hourly','errors','statusKnown'));
         $response->headers->set('Cache-Control','private, no-store');
         return $response;
     }
