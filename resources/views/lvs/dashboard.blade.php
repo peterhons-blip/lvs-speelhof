@@ -77,7 +77,7 @@
             @forelse($recent as $m)
                 <a class="lvs-dashboard-recent" href="{{ route('leerlingen.show', $m->leerlingId) }}">
                     <span class="student-photo-inline">@include('partials.student-photo',['studentId'=>$m->leerlingId])<span><strong>{{ $m->voornaam }} {{ $m->naam }}</strong><small>{{ $m->klasnaam ?: 'Geen klas' }} · {{ $m->categorie ?: 'Zonder categorie' }} / {{ $m->soort ?: 'Onbekend' }}</small></span></span>
-                    <time datetime="{{ $m->gebeurdop }}">{{ $m->gebeurdop ? \Illuminate\Support\Carbon::parse($m->gebeurdop)->format('d/m/Y') : '—' }}</time>
+                    <time datetime="{{ $m->gebeurdop }}">{{ $m->gebeurdop && preg_match('/^[1-9][0-9]{3}-/', (string)$m->gebeurdop) ? \Illuminate\Support\Carbon::parse($m->gebeurdop)->format('d/m/Y') : 'Datum onbekend' }}</time>
                 </a>
             @empty
                 <p class="lvs-empty">Nog geen meldingen geregistreerd.</p>
