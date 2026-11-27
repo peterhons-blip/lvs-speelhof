@@ -24,6 +24,7 @@
 
         {{-- Compact overzicht van de leerling bij wie de melding hoort. --}}
         <section class="card lvs-panel lvs-context-panel">
+            @include('partials.student-photo',['studentId'=>$leerling->id])
             <div>
                 <p class="lvs-context-label">MELDING VOOR</p>
                 <h2>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h2>
