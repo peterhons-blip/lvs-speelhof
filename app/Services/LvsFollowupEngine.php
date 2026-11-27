@@ -38,6 +38,7 @@ class LvsFollowupEngine
                 $query = DB::table('meldingen as m')
                     ->join('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
                     ->where('m.vertrouwelijk',0)
+                    ->where('m.comment','not like','[TESTMODUS]%')
                     ->where('m.leerlingId', $incident->leerlingId)
                     ->where('m.id', '<=', $incident->id);
                 if ($rule->category_id !== null) $query->where('s.meldingscategorieId', $rule->category_id);
