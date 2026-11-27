@@ -22,6 +22,8 @@ class StudentManagementController extends Controller
             'klas' => 'klassen.klasnaam',
             'account' => 'leerlingen.gebruikersnaam',
             'status' => 'leerlingen.active',
+            'stamnummer'=>'leerlingen.stamnummer',
+            'internnummer'=>'leerlingen.InformatInternNr',
         ];
         $sort = (string) $request->query('sort', 'leerling');
         if (! array_key_exists($sort, $sortColumns)) $sort = 'leerling';
@@ -38,11 +40,13 @@ class StudentManagementController extends Controller
                     $q->where('leerlingen.voornaam', 'like', $term)
                         ->orWhere('leerlingen.naam', 'like', $term)
                         ->orWhere('leerlingen.gebruikersnaam', 'like', $term)
-                        ->orWhere('klassen.klasnaam', 'like', $term);
+                        ->orWhere('klassen.klasnaam', 'like', $term)
+                        ->orWhere('leerlingen.stamnummer','like',$term)
+                        ->orWhere('leerlingen.InformatInternNr','like',$term);
                 });
             })
             ->select('leerlingen.id', 'leerlingen.voornaam', 'leerlingen.naam', 'leerlingen.gebruikersnaam',
-                'leerlingen.active', 'leerlingen.geboortedatum', 'klassen.klasnaam')
+                'leerlingen.active', 'leerlingen.geboortedatum', 'leerlingen.stamnummer','leerlingen.InformatInternNr','klassen.klasnaam')
             ->orderBy($sortColumns[$sort], $direction)
             ->orderBy('leerlingen.naam')->orderBy('leerlingen.voornaam', $sort==='leerling'?$direction:'asc')->orderBy('leerlingen.id')
             ->paginate(40)->withQueryString();
