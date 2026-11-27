@@ -13,7 +13,14 @@
 @php($items=$members->get($class->id,collect()))
 <details class="class-admin-details" data-roster-url="{{ route('beheer.classes.students',$class->id) }}"><summary style="cursor:pointer;font-weight:650">{{ $class->klasnaam }} · {{ $counts[$class->id]??0 }} leerlingen · {{ $items->where('kind','teacher')->count() }} leerkrachten · {{ $items->where('kind','mentor')->count() }} titularissen</summary>
 <p><strong>Klastitularissen:</strong> {{ $items->where('kind','mentor')->pluck('display_name')->implode(', ') ?: 'Niet gekoppeld' }}</p>
-<p><strong>Leerkrachten:</strong> {{ $items->where('kind','teacher')->pluck('display_name')->implode(', ') ?: 'Niet gekoppeld' }}</p>
+<h3>Leerkrachten en vakken</h3>
+<div class="class-staff-grid">
+@forelse($items->where('kind','teacher') as $teacher)
+<div class="class-staff-item"><strong>{{ $teacher->display_name }}</strong><small>{{ implode(' · ',json_decode($teacher->courses??'[]',true)?:[]) ?: 'Geen vakinformatie' }}</small></div>
+@empty
+<p>Niet gekoppeld</p>
+@endforelse
+</div>
 <h3>Leerlingen</h3>
 <div data-class-roster aria-live="polite">Open de klas om de leerlingen te laden.</div>
 </details>
