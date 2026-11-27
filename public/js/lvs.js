@@ -63,6 +63,15 @@
             avatar.className = 'lvs-student-avatar';
             avatar.textContent = normalize(student.voornaam).charAt(0).toLocaleUpperCase('nl-BE') || 'L';
 
+            if (window.LVS_PHOTO_BASE) {
+                const img=document.createElement('img');
+                img.src=window.LVS_PHOTO_BASE+encodeURIComponent(student.id);
+                img.alt='';
+                img.loading='lazy';
+                img.className='student-photo';
+                img.addEventListener('error',()=>img.remove(),{once:true});
+                avatar.append(img);
+            }
             const textWrap = document.createElement('span');
             textWrap.className = 'lvs-student-meta';
 
