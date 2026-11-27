@@ -13,9 +13,13 @@ class LeerlingenController extends Controller
 {
     public function index(Request $request)
     {
+        $canHistory = app(\App\Services\LibraryAccess::class)->has($request,'lvs.history.view');
+        $historical = $request->boolean('historisch');
+        abort_if($historical && !$canHistory,403);
         $rows = DB::table('leerlingen')
             ->leftJoin('klassen', 'leerlingen.klasid', '=', 'klassen.id')
-            ->where('leerlingen.active', 1)
+            ->where('leerlingen.schoolid',1)
+            ->where('leerlingen.active', $historical ? 0 : 1)
             ->selectRaw('
                 leerlingen.id,
                 leerlingen.voornaam,
@@ -69,6 +73,7 @@ class LeerlingenController extends Controller
 
         return view('leerlingen.index', [
             'leerlingen'    => $rows,
+            'canHistory'=>$canHistory,'historical'=>$historical,
             'ss_user'       => $request->session()->get('ss_user'),
             'vandaagJarig'  => $vandaagJarig,
             'upcomingCount' => $upcomingCount,
@@ -80,8 +85,9 @@ class LeerlingenController extends Controller
     {
         try {
             $leerling = Leerling::with('klas')
-                ->where('active', 1)
+                ->where('schoolid',1)
                 ->findOrFail($id);
+            if (!(int)$leerling->active) abort_unless(app(\App\Services\LibraryAccess::class)->has($request,'lvs.history.view'),403);
 
             $canSeeMeldingen = app(\App\Services\LibraryAccess::class)
                 ->has($request, 'lvs.meldingen.view');
@@ -98,10 +104,10 @@ class LeerlingenController extends Controller
         $meldingGroepen = $meldingen->groupBy(fn ($melding) =>
             $melding->soort?->categorie?->naam ?: 'Overige meldingen'
         )->sortKeys(SORT_NATURAL | SORT_FLAG_CASE);
-        $canCreate = app(\App\Services\LibraryAccess::class)
+        $canCreate = (bool)$leerling->active && app(\App\Services\LibraryAccess::class)
             ->has($request, 'lvs.meldingen.create');
 
-        $canManageVisit=app(\App\Services\LibraryAccess::class)->has($request,'lvs.secretariat_visits.manage') && \Illuminate\Support\Facades\Schema::hasTable('adult_secretariat_visits');
+        $canManageVisit=(bool)$leerling->active && app(\App\Services\LibraryAccess::class)->has($request,'lvs.secretariat_visits.manage') && \Illuminate\Support\Facades\Schema::hasTable('adult_secretariat_visits');
         $adultVisit=$canManageVisit ? \Illuminate\Support\Facades\DB::table('adult_secretariat_visits')->where('student_id',$leerling->id)->where('school_id',$leerling->schoolid)->first() : null;
         return view('leerlingen.show', compact('canManageVisit','adultVisit','leerling', 'meldingen', 'meldingGroepen',
             'canCreate', 'canSeeMeldingen'));
