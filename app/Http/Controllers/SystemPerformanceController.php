@@ -54,7 +54,10 @@ class SystemPerformanceController extends Controller
         $host = config('database.connections.'.$driver.'.host');
         $local = in_array($host,['127.0.0.1','localhost','::1'],true);
         $disk = @disk_free_space(storage_path());
-        $response = response()->view('beheer.performance', compact('rows','summary','recent','period','version','latency','size','indexes','databaseError','local','disk','inventory','tableSizes','hourly','errors','statusKnown'));
+        $operations = app(\App\Services\WindowsOperationsStatus::class);
+        $health = $operations->health();
+        $backup = $operations->backup();
+        $response = response()->view('beheer.performance', compact('rows','summary','recent','period','version','latency','size','indexes','databaseError','local','disk','inventory','tableSizes','hourly','errors','statusKnown','health','backup'));
         $response->headers->set('Cache-Control','private, no-store');
         return $response;
     }
