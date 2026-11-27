@@ -30,7 +30,7 @@ class PortalPreview
             }
             if ($request->routeIs('logout')) { $request->session()->forget('portal_preview'); return $next($request); }
             $simulate=$request->isMethod('POST') && $request->routeIs('external.requests.submit');
-            if (!$simulate && !in_array($request->method(),['GET','HEAD'],true)) return redirect()->route('external.dashboard')->with('preview_warning','Testmodus is alleen-lezen. Er werd niets opgeslagen.');
+            if (!$simulate && !in_array($request->method(),['GET','HEAD'],true)) return redirect()->route('external.dashboard')->with('preview_warning','Deze actie is niet toegestaan in testmodus. Er werd niets opgeslagen.');
             if (!$request->routeIs('external.dashboard','home','bibliotheek.*','external.requests.submit')) abort(403);
             $request->session()->put('ss_user',['id'=>$student->id,'voornaam'=>$role==='leerling'?$student->voornaam:'Co-account','naam'=>$role==='leerling'?$student->naam:'(testmodus)','gebruikersnaam'=>$student->gebruikersnaam,'principal_type'=>$role,'leerling_id'=>$student->id,'platform'=>$actor['platform']??null,'groupname'=>$role]);
             try {
@@ -53,7 +53,8 @@ class PortalPreview
             Log::notice('Portal staff preview ended by logout',['actor'=>$preview['actor'],'target'=>$preview['target_id']]);
             return $next($request);
         }
-        if ((!in_array($request->method(),['GET','HEAD'],true) && !($request->isMethod('POST') && $request->routeIs('personal-library.submit'))) || $request->routeIs('login','smartschool.callback') || $request->is('fake-login')) {
+        $write=$request->isMethod('POST') && $request->routeIs('meldingen.store','personal-library.submit');
+        if ((!in_array($request->method(),['GET','HEAD'],true) && !$write) || $request->routeIs('login','smartschool.callback') || $request->is('fake-login')) {
             return redirect()->route('home')->with('preview_warning','Testmodus is alleen-lezen. Er werd niets opgeslagen.');
         }
         $request->session()->put('ss_user',[
@@ -62,6 +63,7 @@ class PortalPreview
             'groupId'=>$target->groupId,'groupname'=>$target->groupname,
         ]);
         try {
+            if($write) Log::notice('Portal preview write attempted',['actor'=>$preview['actor'],'target'=>$target->id,'route'=>$request->route()->getName()]);
             $response = $next($request);
             $response->headers->set('Cache-Control','no-store, private');
             return $response;
