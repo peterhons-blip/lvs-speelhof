@@ -7,11 +7,33 @@ use Carbon\CarbonImmutable;
 
 class ExternalPortalAccess
 {
+    /**
+     * Memoize read-only checks for this HTTP request only. Include the
+     * session identity to avoid leaking permissions during preview switches.
+     */
+    private function once(string $key, \Closure $load): mixed
+    {
+        $request = request();
+        if (!$request->isMethodSafe()) return $load();
+        $identity = [
+            $request->session()->get('ss_user.gebruikersnaam'),
+            $request->session()->get('ss_user.principal_type'),
+            $request->session()->get('ss_user.leerling_id'),
+        ];
+        $attribute = 'lvs.external_access.'.hash('sha256', serialize([$identity, $key]));
+        if (!$request->attributes->has($attribute)) {
+            $request->attributes->set($attribute, $load());
+        }
+        return $request->attributes->get($attribute);
+    }
+
     public function student(string $username, string $role, ?int $id = null): ?object
     {
         if (!in_array($role,['leerling','coaccount'],true) || trim($username)==='') return null;
-        $rows=DB::table('leerlingen')->where('schoolid',1)->where('active',1)
-            ->where('gebruikersnaam',$username)->limit(2)->get();
+        $rows=$this->once('student:'.$role.':'.$username,fn()=>
+            DB::table('leerlingen')->where('schoolid',1)->where('active',1)
+                ->where('gebruikersnaam',$username)->limit(2)->get()
+        );
         if ($rows->count()!==1) return null;
         $student=$rows->first();
         if ($id!==null && (int)$student->id!==$id) return null;
@@ -41,10 +63,14 @@ class ExternalPortalAccess
         if (!in_array($permission,$implemented,true)) return false;
         if (str_starts_with($permission,'library.help') && ($role!=='leerling' || !$studentId)) return false;
         if ($role==='leerling' && $studentId) {
-            $override=DB::table('portal_student_permissions')->where('leerling_id',$studentId)->where('permission',$key)->value('allowed');
+            $override=$this->once('student-permission:'.$studentId.':'.$key,fn()=>
+                DB::table('portal_student_permissions')->where('leerling_id',$studentId)->where('permission',$key)->value('allowed')
+            );
             if ($override!==null) return (bool)$override;
         }
         if (str_starts_with($permission,'library.help')) return false; // Individual grants only.
-        return DB::table('portal_role_permissions')->where('role',$role)->where('permission',$key)->exists();
+        return $this->once('role-permission:'.$role.':'.$key,fn()=>
+            DB::table('portal_role_permissions')->where('role',$role)->where('permission',$key)->exists()
+        );
     }
 }
