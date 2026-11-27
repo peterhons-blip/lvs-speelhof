@@ -14,19 +14,28 @@
         placeholder.textContent=cat.value?'— Kies soort —':'— Kies eerst een categorie —';
         if(restore && options.some(o=>!o.disabled&&o.value===old))kind.value=old;
     }
+    const confirmBox=form.querySelector('#confidential-release-confirm');
+    const confirm=form.querySelector('#confirm_confidential_release');
+    function updateRelease(){
+        const needs=!!confidential?.checked && (student.checked||parent.checked);
+        if(confirmBox)confirmBox.hidden=!needs;
+        if(confirm){confirm.required=needs;if(!needs)confirm.checked=false;}
+        note.textContent=confidential?.checked?'Vertrouwelijkheid beperkt de inzage door medewerkers. Je kunt bewust vrijgeven aan leerling en/of co-accounts.':'Kies wie deze melding mag raadplegen.';
+    }
     function syncConfidential(){
-        const locked=!!confidential?.checked;
-        if(locked){
-            if(!previous)previous=[student.checked,parent.checked];
+        if(confidential?.checked){
+            previous=[student.checked,parent.checked];
             student.checked=false;parent.checked=false;
         }else if(previous){
             [student.checked,parent.checked]=previous;previous=null;
         }
-        student.disabled=locked;parent.disabled=locked;
-        note.textContent=locked?'Deze vertrouwelijke melding is niet zichtbaar voor leerling of co-accounts.':'Vertrouwelijke meldingen worden nooit vrijgegeven.';
+        if(confirm)confirm.checked=false;
+        updateRelease();
     }
+    student.addEventListener('change',()=>{if(confirm)confirm.checked=false;updateRelease();});
+    parent.addEventListener('change',()=>{if(confirm)confirm.checked=false;updateRelease();});
     cat.addEventListener('change',()=>{filter();});
     confidential?.addEventListener('change',syncConfidential);
     filter(true);
-    syncConfidential();
+    updateRelease();
 })();
