@@ -29,6 +29,15 @@ class ClassStaffController extends Controller
         return view('beheer.classes.index',compact('classes','year','members','counts'));
     }
 
+    public function students(Request $request,LibraryAccess $access,int $class)
+    {
+        $this->authorizeManager($request,$access);
+        abort_unless(DB::table('klassen')->where('schoolid',1)->where('id',$class)->exists(),404);
+        $students=DB::table('leerlingen')->where('schoolid',1)->where('klasid',$class)->where('active',1)
+            ->orderBy('naam')->orderBy('voornaam')->orderBy('id')->get(['id','naam','voornaam']);
+        return response()->view('beheer.classes.students',['students'=>$students,'canOpen'=>$access->has($request,'beheer.students.manage'),'canLvs'=>$access->has($request,'lvs.view')])->header('Cache-Control','private, no-store');
+    }
+
     public function preview(Request $request,LibraryAccess $access,ClassStaffLinks $links,ClassMentorSpreadsheet $sheet)
     {
         $this->authorizeManager($request,$access);
