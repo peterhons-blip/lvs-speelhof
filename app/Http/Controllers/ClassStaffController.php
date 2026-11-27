@@ -2,7 +2,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\ClassStaffLinks;
-use App\Services\ClassMentorSpreadsheet;
 use App\Services\LibraryAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,23 +37,20 @@ class ClassStaffController extends Controller
         return response()->view('beheer.classes.students',['students'=>$students,'canOpen'=>$access->has($request,'beheer.students.manage'),'canLvs'=>$access->has($request,'lvs.view')])->header('Cache-Control','private, no-store');
     }
 
-    public function preview(Request $request,LibraryAccess $access,ClassStaffLinks $links,ClassMentorSpreadsheet $sheet)
+    public function preview(Request $request,LibraryAccess $access,ClassStaffLinks $links)
     {
         $this->authorizeManager($request,$access);
-        $request->validate(['kind'=>'required|in:teacher,mentor,mentor_smartschool','file'=>'required_if:kind,mentor|nullable|file|max:5120']);
+        $request->validate(['kind'=>'required|in:teacher,mentor_smartschool']);
         $kind=$request->input('kind');
         try {
-            if($kind==='mentor'){
-                $file=$request->file('file');
-                $preview=$links->mentorPreview($sheet->read($file->getRealPath(),strtolower($file->getClientOriginalExtension())));
-            }elseif($kind==='mentor_smartschool'){
+            if($kind==='mentor_smartschool'){
                 $preview=$links->smartschoolMentorPreview();
             }else{
                 $preview=$links->teacherPreview();
             }
         }catch(\Throwable $e){
             report($e);
-            return back()->withErrors(['preview'=>$kind==='mentor' && $e instanceof \RuntimeException?$e->getMessage():'Smartschool-preview mislukt. Er zijn geen wijzigingen uitgevoerd.']);
+            return back()->withErrors(['preview'=>'Smartschool-preview mislukt. Er zijn geen wijzigingen uitgevoerd.']);
         }
         $token=Str::random(48);
         Cache::put('class-staff-preview:'.$token,['actor'=>$access->staffId($request),'year'=>ClassStaffLinks::year(),'kind'=>$kind,'preview'=>$preview],now()->addMinutes(15));
@@ -66,12 +62,12 @@ class ClassStaffController extends Controller
         $this->authorizeManager($request,$access);
         $request->validate(['token'=>'required|string|size:48']);
         $key='class-staff-preview:'.$request->input('token');
-        $lock=Cache::lock('class-staff-apply:1',60);
+        $lock=Cache::lock('class-staff-apply:1',1800);
         if(!$lock->get())return back()->withErrors(['preview'=>'Er loopt al een import.']);
         try{
             $record=Cache::get($key);
             abort_unless($record && $record['actor']===$access->staffId($request) && $record['year']===ClassStaffLinks::year(),403);
-            try{$count=$links->apply($record['preview'],$record['kind']);}
+            try{$count=$links->apply($record['preview'],$record['kind'],$record['kind']==='teacher');}
             catch(\RuntimeException $e){return redirect()->route('beheer.classes.index')->withErrors(['preview'=>$e->getMessage()]);}
             Cache::forget($key);
             \Illuminate\Support\Facades\Log::info('Class staff links imported',['actor'=>$access->username($request),'kind'=>$record['kind'],'count'=>$count]);
