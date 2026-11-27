@@ -50,6 +50,8 @@ class SmartschoolSyncLeerlingen extends Command
         $identifierFields = array_filter(['stamnummer'=>'stamboeknummer','InformatInternNr'=>'internnummer'],fn($source,$column)=>\App\Support\LegacyDatabaseSchema::hasColumn('leerlingen',$column),ARRAY_FILTER_USE_BOTH);
         $identifierCounts = ['stamnummer'=>0,'InformatInternNr'=>0];
         $identifierConflicts = 0;
+        $trackMissing = \App\Support\LegacyDatabaseSchema::hasColumn('leerlingen','sync_missing_count');
+        $reactivated = 0;
         $detailsCallsDisabled = false;
         $detailsFailures = 0;
         $codesUpdated = 0;
@@ -160,6 +162,11 @@ class SmartschoolSyncLeerlingen extends Command
             }
 
             $list = $this->extractAccountList($accounts);
+            if ($accounts !== [] && !array_is_list($accounts) && !collect(['accounts','users','data','items','result'])->contains(fn($key)=>isset($accounts[$key]) && is_array($accounts[$key]))) {
+                $failedClasses++;
+                $this->warn("Onverwachte accountrespons voor {$classCode}; deactivatie geblokkeerd.");
+                continue;
+            }
 
             if (count($list) === 0) {
                 $emptyClasses++;
@@ -169,6 +176,7 @@ class SmartschoolSyncLeerlingen extends Command
 
             foreach ($list as $row) {
                 if (!is_array($row)) {
+                    $failedClasses++;
                     continue;
                 }
 
@@ -179,6 +187,7 @@ class SmartschoolSyncLeerlingen extends Command
                 $username = trim((string) ($row['gebruikersnaam'] ?? $row['username'] ?? $row['userIdentifier'] ?? ''));
 
                 if ($username === '') {
+                    $failedClasses++;
                     continue;
                 }
 
@@ -292,6 +301,12 @@ class SmartschoolSyncLeerlingen extends Command
 
                 if ((int) $existing->active !== 1) {
                     $existing->active = 1;
+                    $reactivated++;
+                    $dirty = true;
+                }
+
+                if ($trackMissing && (int)$existing->sync_missing_count !== 0) {
+                    $existing->sync_missing_count = 0;
                     $dirty = true;
                 }
 
@@ -346,34 +361,60 @@ class SmartschoolSyncLeerlingen extends Command
 
         $deactivated = 0;
 
-        // Report only a complete school snapshot. Never deactivate from a limited run.
+        // Only complete, plausible school snapshots advance absence counters.
         $completeScope = $failedClasses === 0 && $limit === 0 && $onlyCode === '' && count($seenUsernames) > 0;
         $confirmedEmpty = (bool) $this->option('confirm-empty-classes');
+        $pendingMissing = 0;
         if ($completeScope) {
-            $missing = Leerling::query()->where('schoolid', $schoolId)->where('active', 1)
-                ->whereNotIn('gebruikersnaam', $seenUsernames)->with('klas')->orderBy('naam')->orderBy('voornaam')->get();
+            $activeCount = Leerling::query()->where('schoolid',$schoolId)->where('active',1)->count();
+            $missing = Leerling::query()->where('schoolid',$schoolId)->where('active',1)
+                ->whereNotIn('gebruikersnaam',$seenUsernames)->with('klas')->orderBy('naam')->orderBy('voornaam')->get();
+            // Large unexpected drops require investigation, never automatic deactivation.
+            $plausible = $activeCount===0 || $missing->count() <= max(5,(int)floor($activeCount*0.10));
             $this->info('Unieke leerlingen ontvangen: '.count($seenUsernames));
             $this->info('Lokaal actief maar niet ontvangen: '.$missing->count());
             foreach ($missing as $student) {
-                $this->line('  '.$student->gebruikersnaam.' | '.($student->klas?->klasnaam ?? 'Geen klas'));
+                $next = min(2,(int)($student->sync_missing_count??0)+1);
+                $this->line('  '.$student->gebruikersnaam.' | '.($student->klas?->klasnaam ?? 'Geen klas').' | ontbreekt '.$next.'/2');
             }
-            if (!$dryRun && ($emptyClasses === 0 || $confirmedEmpty) && $missing->isNotEmpty()) {
-                $deactivated = Leerling::query()->where('schoolid',$schoolId)->where('active',1)
-                    ->whereIn('id',$missing->pluck('id'))->whereNotIn('gebruikersnaam',$seenUsernames)->update(['active'=>0]);
-                $this->info('Niet meer gevonden in Smartschool → active=0: '.$deactivated);
+            if (!$plausible) {
+                $this->warn('Onverwacht grote daling: geen afwezigheidstellers bijgewerkt of leerlingen gedeactiveerd.');
+                if (!$dryRun && $trackMissing) Leerling::query()->where('schoolid',$schoolId)->where('sync_missing_count','>',0)->update(['sync_missing_count'=>0]);
+            } elseif (!$trackMissing) {
+                $this->warn('Voer de migratie voor sync_missing_count uit. Automatische deactivatie overgeslagen.');
+            } elseif (!$dryRun) {
+                \Illuminate\Support\Facades\DB::transaction(function() use ($missing,$schoolId,$seenUsernames,$confirmedEmpty,&$deactivated,&$pendingMissing) {
+                    foreach ($missing as $student) {
+                        $row=Leerling::query()->where('schoolid',$schoolId)->where('id',$student->id)->where('active',1)->whereNotIn('gebruikersnaam',$seenUsernames)->lockForUpdate()->first();
+                        if (!$row) continue;
+                        $row->sync_missing_count=min(2,(int)$row->sync_missing_count+1);
+                        if ($confirmedEmpty || $row->sync_missing_count>=2) {
+                            $row->active=0;
+                            $deactivated++;
+                            $this->info('  Gedeactiveerd: '.$row->gebruikersnaam);
+                        } else {
+                            $pendingMissing++;
+                        }
+                        $row->save();
+                    }
+                });
+            } else {
+                $pendingMissing=$missing->count();
             }
         } else {
             $this->warn('Vergelijking en deactivering overgeslagen: geen volledige schoolopvraging.');
+            if (!$dryRun && $trackMissing && $limit===0 && $onlyCode==='') {
+                Leerling::query()->where('schoolid',$schoolId)->where('sync_missing_count','>',0)->update(['sync_missing_count'=>0]);
+            }
         }
         if ($emptyClasses > 0) {
-            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen.");
-            if (!$confirmedEmpty) $this->warn('Deactivering uit voorzorg overgeslagen. Controleer lege klassen en ontbrekende leerlingen voordat je --confirm-empty-classes gebruikt.');
+            $this->info("INFO: {$emptyClasses} lege Smartschoolklassen aangetroffen; dubbele afwezigheidscontrole blijft van toepassing.");
         }
         if ($failedClasses > 0) {
-            $this->warn("WAARSCHUWING: {$failedClasses} klassen konden niet opgehaald worden. Deactivering overgeslagen.");
+            $this->warn("WAARSCHUWING: {$failedClasses} onvolledige klasopvragingen. Geen deactivering.");
         }
 
-        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, stamnummers_received={$identifierCounts['stamnummer']}, informatnummers_received={$identifierCounts['InformatInternNr']}, identifier_conflicts={$identifierConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
+        $msg = "Klaar. Processed={$processed}, created={$created}, updated={$updated}, classes_created={$createdClasses}, deactivated={$deactivated}, reactivated={$reactivated}, pending_missing={$pendingMissing}, scancodes_updated={$codesUpdated}, scancodes_missing={$codesMissing}, scancodes_conflicts={$codeConflicts}, stamnummers_received={$identifierCounts['stamnummer']}, informatnummers_received={$identifierCounts['InformatInternNr']}, identifier_conflicts={$identifierConflicts}, failed_classes={$failedClasses}, empty_classes={$emptyClasses}" . ($dryRun ? ' [DRY-RUN]' : '');
 
         $this->info($msg);
         Log::info('Smartschool sync leerlingen: ' . $msg);
