@@ -54,7 +54,7 @@ class SmartschoolSoap
         // - anders: 'lvs'
         $sender = $senderIdentifier;
         if ($sender === null || trim($sender) === '') {
-            $sender = env('SMARTSCHOOL_SENDER_USER') ?: 'lvs';
+            $sender = config('services.smartschool.sender') ?: 'lvs';
         }
 
         // Coaccount afkappen op 0..6 (fail-safe)

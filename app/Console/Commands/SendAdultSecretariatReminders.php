@@ -23,7 +23,7 @@ class SendAdultSecretariatReminders extends Command {
                 if(!$student || !trim((string)$student->gebruikersnaam)) return null;
                 $school=DB::table('scholen')->where('id',$v->school_id)->first(); if(!$school) return null;
                 if($this->option('test')) return 'test';
-                $sender=trim((string)$settings['adult_sender_secretariat']) ?: trim((string)$school->smartschool_verzender_secretariaat) ?: trim((string)$school->smartschool_verzender) ?: (env('SMARTSCHOOL_SENDER_USER') ?: 'lvs');
+                $sender=trim((string)$settings['adult_sender_secretariat']) ?: trim((string)$school->smartschool_verzender_secretariaat) ?: trim((string)$school->smartschool_verzender) ?: (config('services.smartschool.sender') ?: 'lvs');
                 $vars=['voornaam'=>$student->voornaam,'naam'=>$student->naam,'school'=>$school->schoolnaam];
                 $ok=$actions->run((int)$v->school_id,(int)$v->student_id,$date,'adult_secretariat_reminder',$student->gebruikersnaam,function() use($birthday,$settings,$vars,$student,$sender){
                     app(SmartschoolSoap::class)->sendMessage($student->gebruikersnaam,$birthday->render($settings['secretariat_reminder_subject'],$vars),nl2br(e($birthday->render($settings['secretariat_reminder_body'],$vars))),$sender,false,0);

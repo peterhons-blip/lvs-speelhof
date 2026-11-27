@@ -19,43 +19,41 @@ class LvsDashboardController extends Controller
         $from = $today->copy()->startOfMonth()->toDateString();
         $until = $today->toDateString();
 
-        $stats = [
-            'students' => DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)->count(),
-            'notifications' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->count(),
-            'this_month' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [$from, $until])->count(),
-            'last_7_days' => \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->whereBetween('gebeurdop', [
-                $today->copy()->subDays(6)->toDateString(), $until,
-            ])->count(),
-        ];
-
-        $categories = DB::table('meldingscategorien as c')
-            ->leftJoin('meldingssoorten as s', 's.meldingscategorieId', '=', 'c.id')
-            ->leftJoinSub(\App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'))->select('id','meldingssoortId'),'m',fn($join)=>$join->on('m.meldingssoortId','=','s.id'))
-            ->select('c.id', 'c.naam')
-            ->selectRaw('COUNT(m.id) AS totaal')
-            ->groupBy('c.id', 'c.naam')
-            ->orderByDesc('totaal')->orderBy('c.naam')->get();
-
-        $recent = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
-            ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
-            ->where('l.active', 1)
-            ->where('l.schoolid', 1)
-            ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
-            ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
-            ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
-            ->select('m.id', 'm.leerlingId', 'm.gebeurdop', 'm.created_at',
-                'l.voornaam', 'l.naam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie')
-            ->orderByDesc('m.created_at')->limit(8)->get();
-
-        if (!$canSeeNotifications) {
-            $categories = collect();
-            $recent = collect();
-            $stats['notifications'] = null;
-            $stats['this_month'] = null;
-            $stats['last_7_days'] = null;
+        $stats = ['students' => null, 'notifications' => null, 'this_month' => null, 'last_7_days' => null];
+        $categories = collect();
+        $recent = collect();
+        if ($canSeeStudents) {
+            $stats['students'] = DB::table('leerlingen')->where('schoolid', 1)->where('active', 1)->count();
         }
-        if (!$canSeeStudents) {
-            $stats['students'] = null;
+        if ($canSeeNotifications) {
+            $visible = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen'));
+            $counts = (clone $visible)->selectRaw('COUNT(*) AS total')
+                ->selectRaw('COUNT(CASE WHEN gebeurdop BETWEEN ? AND ? THEN 1 END) AS this_month', [$from, $until])
+                ->selectRaw('COUNT(CASE WHEN gebeurdop BETWEEN ? AND ? THEN 1 END) AS last_7_days', [$today->copy()->subDays(6)->toDateString(), $until])
+                ->first();
+            $stats['notifications'] = (int) $counts->total;
+            $stats['this_month'] = (int) $counts->this_month;
+            $stats['last_7_days'] = (int) $counts->last_7_days;
+
+            $categories = DB::table('meldingscategorien as c')
+                ->leftJoin('meldingssoorten as s', 's.meldingscategorieId', '=', 'c.id')
+                ->leftJoinSub((clone $visible)->select('id','meldingssoortId'),'m',fn($join)=>$join->on('m.meldingssoortId','=','s.id'))
+                ->select('c.id', 'c.naam')
+                ->selectRaw('COUNT(m.id) AS totaal')
+                ->groupBy('c.id', 'c.naam')
+                ->orderByDesc('totaal')->orderBy('c.naam')->get();
+
+            $recent = \App\Services\LvsIncidentVisibility::apply(DB::table('meldingen as m'),'m.vertrouwelijk')
+                ->join('leerlingen as l', 'l.id', '=', 'm.leerlingId')
+                ->where('l.active', 1)
+                ->where('l.schoolid', 1)
+                ->leftJoin('klassen as k', 'k.id', '=', 'l.klasid')
+                ->leftJoin('meldingssoorten as s', 's.id', '=', 'm.meldingssoortId')
+                ->leftJoin('meldingscategorien as c', 'c.id', '=', 's.meldingscategorieId')
+                ->select('m.id', 'm.leerlingId', 'm.gebeurdop', 'm.created_at',
+                    'l.voornaam', 'l.naam', 'k.klasnaam', 's.naam as soort', 'c.naam as categorie')
+                ->orderByDesc('m.created_at')->limit(8)->get();
+
         }
         $canSeeFollowups = $access->has($request, 'lvs.followups.view');
         $canSeeReports = $access->has($request, 'lvs.reports.view');
