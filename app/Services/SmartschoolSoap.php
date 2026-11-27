@@ -214,6 +214,22 @@ class SmartschoolSoap
         );
     }
 
+    public function getSkoreRelations(): array
+    {
+        $raw=$this->client->getSkoreClassTeacherCourseRelation($this->accesscode);
+        if(!is_string($raw)||strlen($raw)>50000000||stripos($raw,'<!DOCTYPE')!==false||stripos($raw,'<!ENTITY')!==false) throw new \RuntimeException('Ongeldige Skore XML.');
+        $xml=@simplexml_load_string($raw,\SimpleXMLElement::class,LIBXML_NONET);
+        if($xml===false||$xml->getName()!=='skore') throw new \RuntimeException('Ongeldige Skore XML.');
+        $rows=[];
+        foreach($xml->courseTeacherClass as $node){
+            $students=[];
+            foreach($node->leerlingen->leerling??[] as $student) $students[]=(string)$student->gebruikersnaam;
+            $rows[]=['username'=>(string)$node->gebruikersnaam,'class'=>(string)$node->klasnaam,'course'=>(string)$node->vaknaam,'short'=>(string)$node->vaknaamkort,'students'=>$students];
+        }
+        if(!$rows) throw new \RuntimeException('Geen Skore lesrelaties ontvangen.');
+        return $rows;
+    }
+
     public function getClassTeachers(): array
     {
         return $this->decodeSmartschoolJson($this->client->getClassTeachers($this->accesscode,true));
