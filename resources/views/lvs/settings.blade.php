@@ -47,6 +47,9 @@ document.querySelectorAll('.lvs-staff-search').forEach(search => {
     @if($errors->any())
         <div class="library-errors" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
     @endif
+    @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+    <section class="library-form-card"><h2>Zichtbaarheid meldingen</h2><p>Stel per schoolrol en lesrelatie in welke meldingen zichtbaar zijn.</p><a class="library-button library-button-secondary" href="{{ route('lvs.visibility.index') }}">Zichtbaarheidsmatrix openen</a></section>
+    @endif
     @unless($ready)
         <section class="library-form-card">
             <h2>Opvolgregels nog niet geïnstalleerd</h2>
