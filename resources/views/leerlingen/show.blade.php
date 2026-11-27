@@ -13,9 +13,9 @@
 
 @section('content')
 <main class="screen lvs-screen">
-    <div class="lvs-page-heading student-photo-inline">
+    <div class="lvs-page-heading student-photo-inline lvs-dossier-heading">
         @include('partials.student-photo',['studentId'=>$leerling->id,'large'=>true])
-        <div>
+        <div class="lvs-dossier-heading-info">
             <p class="portal-eyebrow">LEERLINGVOLGSYSTEEM / LEERLING</p>
             <h1>{{ $leerling->voornaam }} {{ $leerling->achternaam }}</h1>
             <p>{{ $leerling->klas?->klasnaam ?? 'Geen klas' }} · {{ $leerling->geboortedatum ? $leerling->geboortedatum->age.' jaar' : 'Leeftijd onbekend' }}</p>
