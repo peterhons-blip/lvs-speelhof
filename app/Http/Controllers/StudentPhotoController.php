@@ -61,7 +61,7 @@ class StudentPhotoController extends Controller
 
     public function show(Request $request, LibraryAccess $access, int $student)
     {
-        abort_unless($access->staffId($request) && ($access->has($request,'beheer.students.manage') || $access->has($request,'lvs.view') || $access->has($request,'lvs.meldingen.create') || $access->has($request,'lvs.history.view')),403);
+        abort_unless($access->staffId($request) && ($access->has($request,'beheer.students.manage') || $access->has($request,'beheer.classes.manage') || $access->has($request,'lvs.view') || $access->has($request,'lvs.meldingen.create') || $access->has($request,'lvs.history.view')),403);
         $row=$this->student($student);
         abort_unless($row->active || $access->has($request,'beheer.students.manage') || ($access->has($request,'lvs.view') && $access->has($request,'lvs.history.view')),404);
         $key=$this->key($row);
