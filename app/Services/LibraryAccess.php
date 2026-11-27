@@ -55,11 +55,47 @@ class LibraryAccess
         return mb_strtolower(trim((string) data_get($request->session()->get('ss_user'), 'gebruikersnaam', '')));
     }
 
+    /**
+     * Cache only within a read request, separately for each authenticated identity.
+     * Preview swaps ss_user within the same request; never reuse the actor's rights.
+     * Mutating requests always use fresh authorization checks.
+     */
+    private function once(Request $request, string $key, \Closure $load): mixed
+    {
+        if (!$request->isMethodSafe()) return $load();
+        $identity = [
+            $this->username($request),
+            $request->session()->get('ss_user.principal_type'),
+            $request->session()->get('ss_user.id'),
+            $request->session()->get('ss_user.leerling_id'),
+        ];
+        $attribute = 'lvs.access.'.hash('sha256', serialize([$identity,$key]));
+        if (!$request->attributes->has($attribute)) {
+            $request->attributes->set($attribute,$load());
+        }
+        return $request->attributes->get($attribute);
+    }
+
+    private function tableExists(Request $request,string $table): bool
+    {
+        return $this->once($request,'table:'.$table,fn()=>Schema::hasTable($table));
+    }
+
     public function role(Request $request): ?string
+    {
+        return $this->once($request,'role',fn()=>$this->resolveRole($request));
+    }
+
+    public function staffId(Request $request): ?int
+    {
+        return $this->once($request,'staffId',fn()=>$this->resolveStaffId($request));
+    }
+
+    private function resolveRole(Request $request): ?string
     {
         if (in_array($request->session()->get('ss_user.principal_type'),['leerling','coaccount'],true)) return null;
         $username = $this->username($request);
-        if ($username === '' || ! Schema::hasTable('users') || ! Schema::hasTable('groups')) return null;
+        if ($username === '' || ! $this->tableExists($request,'users') || ! $this->tableExists($request,'groups')) return null;
 
         $groupName = DB::table('users')
             ->join('groups', 'groups.id', '=', 'users.groupId')
@@ -76,7 +112,7 @@ class LibraryAccess
         return null;
     }
 
-    public function staffId(Request $request): ?int
+    private function resolveStaffId(Request $request): ?int
     {
         if ($this->role($request)===null) return null;
         $ids=DB::table('users')->where('schoolid',1)->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->where(fn($q)=>$q->whereNull('smartschool_active')->orWhere('smartschool_active',1))->limit(2)->pluck('id');
@@ -91,6 +127,11 @@ class LibraryAccess
 
     public function has(Request $request, string $permission): bool
     {
+        return $this->once($request,'permission:'.$permission,fn()=>$this->resolvePermission($request,$permission));
+    }
+
+    private function resolvePermission(Request $request, string $permission): bool
+    {
         $principal=$request->session()->get('ss_user.principal_type');
         if ($principal==='leerling') {
             if (!array_key_exists($permission,config('portal_permissions.bibliotheek.permissions',[]))) return false;
@@ -101,9 +142,7 @@ class LibraryAccess
         $role = $this->role($request);
         if ($role === null) return false;
 
-        $known = collect(config('portal_permissions', []))
-            ->flatMap(fn ($module) => array_keys($module['permissions'] ?? []))
-            ->contains($permission);
+        $known = in_array($permission,$this->once($request,'knownPermissions',fn()=>collect(config('portal_permissions', []))->flatMap(fn($module)=>array_keys($module['permissions'] ?? []))->all()),true);
         if (! $known) return false;
 
         // ICT-coördinator behoudt altijd volledige beheertoegang.
@@ -115,14 +154,19 @@ class LibraryAccess
             return $this->has($request,'lvs.meldingen.create');
         }
         if (str_starts_with($permission,'leerling.') || str_starts_with($permission,'coaccount.')) return false;
-        if (Schema::hasTable('portal_user_permissions')) {
-            $id=DB::table('users')->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->value('id');
-            $override=DB::table('portal_user_permissions')->where('user_id',$id)->where('permission',$permission)->value('allowed');
+        if ($this->tableExists($request,'portal_user_permissions')) {
+            $id=$this->once($request,'overrideUserId',fn()=>DB::table('users')->where('smartschool_gebruikersnaam',$this->username($request))->where('allowed_login',1)->value('id'));
+            $override=$request->isMethodSafe()
+                ? $this->once($request,'overrides',fn()=>DB::table('portal_user_permissions')->where('user_id',$id)->get(['permission','allowed'])->groupBy('permission'))->get($permission)?->first()?->allowed
+                : DB::table('portal_user_permissions')->where('user_id',$id)->where('permission',$permission)->value('allowed');
             if ($override !== null) return (bool)$override;
         }
         // Alle overige rechten worden per schoolrol toegekend.
-        if (! Schema::hasTable('portal_role_permissions')) return false;
+        if (!$this->tableExists($request,'portal_role_permissions')) return false;
 
+        if ($request->isMethodSafe()) {
+            return $this->once($request,'rolePermissions:'.$role,fn()=>DB::table('portal_role_permissions')->where('role',$role)->pluck('permission'))->containsStrict($permission);
+        }
         return DB::table('portal_role_permissions')
             ->where('role', $role)->where('permission', $permission)->exists();
     }
