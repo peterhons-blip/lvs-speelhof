@@ -92,3 +92,7 @@ Gebruik stabiele ID's voor koppelingen, nooit alleen weergavenamen voor toegangs
 Bewaar schooljaarhistoriek; respecteer schoolgrenzen, rechten en vertrouwelijkheid.
 Bij onbetrouwbare synchronisatie bestaande koppelingen behouden en afwijkingen melden.
 Voer bij legacy-databank uitsluitend de benodigde migraties expliciet uit; geen migrate:fresh/reset/refresh.
+
+## LVS — laatste rechtenuitbreiding
+- [x] Instelbare zichtbaarheid per schoolrol en actuele titularis-/Skore-relatie; algemene leesrechten en vertrouwelijkheidsrecht blijven vereist.
+- [ ] Migratie 110000 uitvoeren en rechtenmatrix testen per rol, eigen/andere leerling, historische dossiers, vertrouwelijkheid, directe URLs, opvolging, dashboard en exports vóór productiegebruik.
