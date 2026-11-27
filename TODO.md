@@ -34,21 +34,25 @@ Een afgevinkt ontwikkelpunt betekent dat de code op main staat, niet noodzakelij
 - [x] Mijn klassen: titularisklassen bovenaan, eigen lesklassen met vakken, AJAX, foto's, zoeken, sessieherstel en dossier/nieuwe melding.
 - [x] Dashboard: leerlingen zoeken vanaf twee tekens, foto's en links zonder reload; zoeken en Mijn klassen bovenaan navigatie.
 
-### Nog uitwerken
+### Geparkeerde uitbreidingen klasbeheer
 - [ ] Personeelsgerichte beheerweergave (per leerkracht alle klassen, vakken en titularisklassen; zoeken en filteren).
 - [ ] Synchronisatiekwaliteit per klas bewaken: lege/onvolledige respons, sterke daling van relaties, individuele afwijkingen; bron en laatste succesvolle sync zichtbaar maken.
 - [ ] Schooljaarovergang en vervangingen testen; gecontroleerde handmatige uitzonderingen met einddatum en audit.
 - [ ] Automatische Smartschool-fotosync onderzoeken.
 - [ ] Skore-klasnaamfallback bij ontbrekende leerlinglijsten beoordelen; nooit onbevestigde lesrelaties gebruiken om dossierrechten toe te kennen.
 
-## P1 — LVS: volgende ontwikkelvolgorde
-### 1. Leerlingendossier
-- [ ] Tabbladen Algemeen, Meldingen, Opvolging, Gesprekken, Begeleiding, Sancties en Historiek.
-- [ ] Klastitularissen en relevante klasgegevens zichtbaar maken; snelacties volgens rechten.
+## LVS — ontwikkeling voorlopig afgerond na leerlingendossier
+### Leerlingendossier (laatste actieve uitbreiding)
+- [x] Functionele tabbladen Algemeen, Leerkrachten en vakken, Meldingen, Opvolging, Sanctievoorstellen en Administratie 18+, afhankelijk van bestaande rechten.
+- [x] Actuele titularissen en vakleerkrachten zichtbaar; snelactie nieuwe melding.
+- [ ] Dossier testen met actieve/inactieve leerlingen en verschillende rechten; vertrouwelijke meldingen controleren.
+
+### Parkeerplaats — geen actieve LVS-ontwikkeling zonder nieuwe prioritering
+- Gesprekken, begeleiding en afzonderlijke historiek pas bij concrete behoefte.
 - [ ] Opvolging vanuit Mijn klassen rechtstreeks openen zodra een geschikte leerlinggebonden route bestaat.
 - [ ] Later bibliotheek, ICT-materiaal en afwezigheden integreren indien bevoegd.
 
-### 2. Klasgebonden toegangsrechten (na validatie)
+### Klasgebonden toegangsrechten (geparkeerd; huidige rechten blijven gelden)
 - [ ] Vakleerkracht: enkel effectieve eigen lesleerlingen uit Skore.
 - [ ] Titularis: eigen volledige titularisklassen.
 - [ ] Leerlingbegeleiding: toegewezen leerlingen of expliciet recht op alle leerlingen.
@@ -58,7 +62,7 @@ Een afgevinkt ontwikkelpunt betekent dat de code op main staat, niet noodzakelij
 - [ ] Testmatrix voor rollen, individuele uitzonderingen, inactieve leerlingen, andere scholen, directe URL's en verlopen relaties.
 - [ ] Eerst proefmodus/controle, daarna pas strikte beperking activeren. Bestaande algemene LVS-rechten zijn nu nog ongewijzigd.
 
-### 3. Automatische opvolging en sancties
+### Automatische opvolging en sancties (geparkeerd)
 - [ ] Automatische melding naar de werkelijke klastitularis(sen) via de gevalideerde koppelingen, zonder dubbele berichten.
 - [ ] Opvolgingsregels uitbreiden: drempel, periode, graad, finaliteit, categorie/soort, verantwoordelijke en menselijke goedkeuring.
 - [ ] Meldingscategorieën, soorten en vrijgave-instellingen functioneel testen.
@@ -66,7 +70,7 @@ Een afgevinkt ontwikkelpunt betekent dat de code op main staat, niet noodzakelij
 - [ ] Sanctiebeheer en uitvoering opvolgen; geen automatische sancties zonder menselijke beoordeling.
 - [ ] Secretariaatsbezoeken 18+ en herinneringen testen.
 
-### 4. Begeleiding en klassenraad
+### Begeleiding en klassenraad (geparkeerd)
 - [ ] Gespreksregistratie, afspraken en beperkte zichtbaarheid.
 - [ ] Huiswerkklas en taalklas: aanwezigheid, reden, opdrachten en opvolging.
 - [ ] Klassenraaddashboard per klas, leerlingoverzicht, afdruk/export en commentaren.
