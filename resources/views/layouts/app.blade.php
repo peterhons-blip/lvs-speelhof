@@ -172,6 +172,9 @@ $isExternal = in_array(data_get($ss_user,'principal_type'),['leerling','coaccoun
                                 <a href="{{ route('beheer.dashboard') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.dashboard') ? 'is-active' : '' }}">Overzicht</a>
                                 @if(app(\App\Services\LibraryAccess::class)->role(request()) === 'ict_coordinator' && !session()->has('portal_preview'))
                                 <a href="{{ route('beheer.performance.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.performance.*') ? 'is-active' : '' }}">Systeemprestaties</a>
+                                @if(\Illuminate\Support\Facades\Route::has('beheer.backups.index'))
+                                <a href="{{ route('beheer.backups.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.backups.*') ? 'is-active' : '' }}">Back-ups</a>
+                                @endif
                                 @endif
                                 @if(app(\App\Services\LibraryAccess::class)->has(request(), 'beheer.scheduled_tasks.view'))
                                 <a href="{{ route('beheer.scheduled-tasks.index') }}" class="portal-nav-subitem {{ request()->routeIs('beheer.scheduled-tasks.*') ? 'is-active' : '' }}">Geplande taken</a>

@@ -41,6 +41,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $encrypted) -or (Get-Item -LiteralPath $encrypted).Length -lt 100) { throw 'Encryption failed.' }
     Remove-Item -LiteralPath $plain -Force
     $state.local = 'ok'
+    $state.file = [IO.Path]::GetFileName($encrypted)
     $state.bytes = (Get-Item -LiteralPath $encrypted).Length
     if ($BlobContainer) {
         $state.external = 'failed'
@@ -80,6 +81,19 @@ try {
             if (Test-Path -LiteralPath $plain) { Remove-Item -LiteralPath $plain -Force }
             $state.timestamp = [DateTimeOffset]::UtcNow.ToString('o')
             Write-Status
+            # Publish only non-sensitive metadata. Never grant the web process access to backups.
+            $historyPath = Join-Path $StatusDirectory ("backup-run-$stamp.json")
+            $historyTemp = Join-Path $StatusDirectory ("backup-run-$stamp.tmp")
+            try {
+                [IO.File]::WriteAllText($historyTemp,($state | ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+                [IO.File]::Move($historyTemp,$historyPath)
+            } finally {
+                if (Test-Path -LiteralPath $historyTemp) { Remove-Item -LiteralPath $historyTemp -Force }
+            }
+            Get-ChildItem -LiteralPath $StatusDirectory -File -Filter 'backup-run-*.json' |
+                Where-Object { $_.Name -match '^backup-run-\d{8}T\d{9}Z\.json$' -and $_.LastWriteTimeUtc -lt [DateTime]::UtcNow.AddDays(-31) } |
+                Remove-Item -Force
+
         } finally { $lock.Dispose() }
     }
 }

@@ -34,7 +34,28 @@ class WindowsOperationsStatus
     public function backup(): ?array
     {
         $data = $this->read('backup-status.json');
+        return $this->validateBackup($data);
+    }
+
+    private function validateBackup(?array $data): ?array
+    {
         if (!$data || !in_array($data['local'] ?? null,['ok','failed'],true) || !in_array($data['external'] ?? null,['ok','failed','not_configured'],true) || !is_numeric($data['bytes'] ?? null) || $data['bytes'] < 0) return null;
-        return array_intersect_key($data,array_flip(['age','local','external','bytes']));
+        if (!is_string($data['file'] ?? null) || !preg_match('/\Aspeelhof_lvs-\d{8}T\d{9}Z\.sql\.gpg\z/D',$data['file'])) unset($data['file']);
+        return array_intersect_key($data,array_flip(['timestamp','age','local','external','bytes','file']));
+    }
+    public function backupHistory(): array
+    {
+        $dir = config('lvs_performance.status_directory');
+        if (!is_string($dir) || $dir === '') return [];
+        $files = glob(rtrim($dir, '/\\').DIRECTORY_SEPARATOR.'backup-run-*.json') ?: [];
+        rsort($files,SORT_STRING);
+        $rows = [];
+        foreach (array_slice($files,0,800) as $path) {
+            $name = basename($path);
+            if (!preg_match('/\Abackup-run-\d{8}T\d{9}Z\.json\z/D',$name)) continue;
+            $row = $this->validateBackup($this->read($name));
+            if ($row) $rows[] = $row;
+        }
+        return $rows;
     }
 }

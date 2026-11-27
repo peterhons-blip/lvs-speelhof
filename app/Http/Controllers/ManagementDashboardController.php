@@ -32,6 +32,9 @@ class ManagementDashboardController extends Controller
 
         if ($access->role($request) === 'ict_coordinator' && !$request->session()->has('portal_preview')) {
             $sections[] = ['route'=>'beheer.performance.index','title'=>'Systeemprestaties','description'=>'Responstijden, SQL-belasting en databankindexen analyseren.','icon'=>'activity'];
+            if (\Illuminate\Support\Facades\Route::has('beheer.backups.index')) {
+                $sections[] = ['route'=>'beheer.backups.index','title'=>'Back-ups','description'=>'Lokale en externe databankback-ups, status en historiek.','icon'=>'shield-check'];
+            }
         }
 
         $stats = [];

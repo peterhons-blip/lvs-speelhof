@@ -157,6 +157,7 @@ Route::middleware([EnsureSmartschoolAuthenticated::class])->group(function () {
     });
     Route::get('/beheer', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('beheer.dashboard');
     Route::get('/beheer/systeemprestaties', [\App\Http\Controllers\SystemPerformanceController::class, 'index'])->name('beheer.performance.index');
+    Route::get('/beheer/back-ups', [\App\Http\Controllers\BackupDashboardController::class, 'index'])->name('beheer.backups.index');
 
     // Handmatige Smartschool-testzending, uitsluitend na ICT-login en expliciete submit.
     Route::get('/beheer/smartschool-test', [\App\Http\Controllers\SmartschoolTestMessageController::class, 'create'])
