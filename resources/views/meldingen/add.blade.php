@@ -113,9 +113,13 @@
                         <label class="lvs-incident-option"><input type="checkbox" id="visible_coaccount" name="visible_coaccount" value="1" @checked(old('visible_coaccount',1))><span><strong>Co-accounts</strong><small>Zichtbaar in het ouderportaal · standaard aan</small></span></label>
                     </div>
                     @if(app(\App\Services\LibraryAccess::class)->has(request(),'lvs.meldingen.confidential.create'))
-                    <label class="lvs-incident-option lvs-incident-confidential"><input type="checkbox" id="vertrouwelijk" name="vertrouwelijk" value="1" @checked(old('vertrouwelijk'))><span><strong>Vertrouwelijke melding</strong><small>Alleen voor medewerkers met het afzonderlijke vertrouwelijkheidsrecht. Niet zichtbaar voor leerling of co-accounts. Geen automatische Smartschool-opvolging.</small></span></label>
+                    <label class="lvs-incident-option lvs-incident-confidential"><input type="checkbox" id="vertrouwelijk" name="vertrouwelijk" value="1" @checked(old('vertrouwelijk'))><span><strong>Vertrouwelijke melding</strong><small>Alleen voor medewerkers met het afzonderlijke vertrouwelijkheidsrecht. Vrijgave voor leerling en co-accounts kan afzonderlijk worden ingesteld. Geen automatische Smartschool-opvolging.</small></span></label>
                     @endif
-                    <p class="lvs-field-help" id="incident-visibility-note" role="status">Vertrouwelijke meldingen worden nooit vrijgegeven.</p>
+                    <div id="confidential-release-confirm" @if(!old('vertrouwelijk') || (!old('visible_student') && !old('visible_coaccount')))hidden @endif>
+                        <label class="lvs-incident-option lvs-incident-confidential"><input type="checkbox" name="confirm_confidential_release" id="confirm_confidential_release" value="1" @checked(old('confirm_confidential_release'))><span><strong>Ik bevestig de vrijgave van deze vertrouwelijke melding</strong><small>De geselecteerde leerling en/of co-accounts kunnen de volledige omschrijving lezen.</small></span></label>
+                    </div>
+                    @error('confirm_confidential_release')<p class="lvs-form-alert" role="alert">{{ $message }}</p>@enderror
+                    <p class="lvs-field-help" id="incident-visibility-note" role="status">Vertrouwelijkheid bepaalt de inzage door medewerkers; de vrijgave bepaalt de inzage in het leerling- en ouderportaal.</p>
                 </fieldset>
                 <div class="lvs-incident-actions">
                     <a href="{{ route('meldingen.select-student') }}" class="lvs-link-button lvs-link-button-subtle">Annuleren</a>
@@ -170,5 +174,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/incident-form.js') }}?v=2" defer></script>
+<script src="{{ asset('js/incident-form.js') }}?v=3" defer></script>
 @endpush
