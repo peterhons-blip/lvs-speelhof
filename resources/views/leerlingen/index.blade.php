@@ -21,7 +21,10 @@
     </div>
 
     @if($canHistory)
-    <nav style="display:flex;gap:12px;margin-bottom:16px"><a class="lvs-link-button {{ !$historical?'lvs-link-button-primary':'' }}" href="{{ route('leerlingen.index') }}">Actieve leerlingen</a><a class="lvs-link-button {{ $historical?'lvs-link-button-primary':'' }}" href="{{ route('leerlingen.index',['historisch'=>1]) }}">Historische leerlingen</a></nav>
+    <nav class="lvs-student-tabs" aria-label="Leerlingstatus">
+        <a class="{{ !$historical ? 'is-selected' : '' }}" @if(!$historical) aria-current="page" @endif href="{{ route('leerlingen.index') }}">Actieve leerlingen</a>
+        <a class="{{ $historical ? 'is-selected' : '' }}" @if($historical) aria-current="page" @endif href="{{ route('leerlingen.index',['historisch'=>1]) }}">Historische leerlingen</a>
+    </nav>
     @endif
     <div class="lvs-overview-grid">
     <section class="card lvs-panel lvs-search-panel" aria-labelledby="lvs-search-title">
