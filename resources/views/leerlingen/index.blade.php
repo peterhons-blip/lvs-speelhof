@@ -58,6 +58,7 @@
                     <a href="{{ route('leerlingen.show', $l->id) }}" class="bday-today-row-link">
                         <div class="bday-today-row">
                             <div class="bday-today-name">
+                                @include('partials.student-photo',['studentId'=>$l->id])
                                 <strong>{{ $l->voornaam }} {{ $l->achternaam }}</strong>
                                 <span class="badge badge-klas">{{ optional($l->klas)->klasnaam ?? '—' }}</span>
                             </div>
@@ -82,7 +83,8 @@
 
 @push('scripts')
 <script>
+    window.LVS_PHOTO_BASE = @json(url("/leerlingfoto")."/");
     window.LVS_STUDENTS = @json($leerlingen);
 </script>
-<script src="{{ asset('js/lvs.js') }}?v=3" defer></script>
+<script src="{{ asset('js/lvs.js') }}?v=4" defer></script>
 @endpush
