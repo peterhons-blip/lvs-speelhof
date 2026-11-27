@@ -41,12 +41,14 @@ class ClassStaffController extends Controller
     public function preview(Request $request,LibraryAccess $access,ClassStaffLinks $links,ClassMentorSpreadsheet $sheet)
     {
         $this->authorizeManager($request,$access);
-        $request->validate(['kind'=>'required|in:teacher,mentor','file'=>'required_if:kind,mentor|nullable|file|max:5120']);
+        $request->validate(['kind'=>'required|in:teacher,mentor,mentor_smartschool','file'=>'required_if:kind,mentor|nullable|file|max:5120']);
         $kind=$request->input('kind');
         try {
             if($kind==='mentor'){
                 $file=$request->file('file');
                 $preview=$links->mentorPreview($sheet->read($file->getRealPath(),strtolower($file->getClientOriginalExtension())));
+            }elseif($kind==='mentor_smartschool'){
+                $preview=$links->smartschoolMentorPreview();
             }else{
                 $preview=$links->teacherPreview();
             }
