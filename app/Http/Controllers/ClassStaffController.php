@@ -23,7 +23,11 @@ class ClassStaffController extends Controller
         $year=ClassStaffLinks::year();
         $members=DB::table('class_staff_links as l')->join('users as u','u.id','=','l.user_id')
             ->where('l.school_id',1)->where('l.school_year',$year)->where('u.schoolid',1)
-            ->select('l.class_id','l.kind','u.smartschool_gebruikersnaam')->orderBy('u.smartschool_gebruikersnaam')->get()->groupBy('class_id');
+            ->select('l.class_id','l.kind','u.smartschool_gebruikersnaam','u.voornaam','u.name')->orderBy('u.name')->orderBy('u.voornaam')->get()
+            ->map(function($member){
+                $member->display_name=trim(trim((string)$member->voornaam).' '.trim((string)$member->name)) ?: $member->smartschool_gebruikersnaam;
+                return $member;
+            })->groupBy('class_id');
         $counts=DB::table('leerlingen')->where('schoolid',1)->where('active',1)->selectRaw('klasid,count(*) as total')->groupBy('klasid')->pluck('total','klasid');
         return view('beheer.classes.index',compact('classes','year','members','counts'));
     }
@@ -52,6 +56,13 @@ class ClassStaffController extends Controller
             report($e);
             return back()->withErrors(['preview'=>'Smartschool-preview mislukt. Er zijn geen wijzigingen uitgevoerd.']);
         }
+        $names=DB::table('users')->where('schoolid',1)->whereIn('id',array_unique(array_column($preview['rows'],'user_id')))->get(['id','voornaam','name'])->keyBy('id');
+        foreach($preview['rows'] as &$row){
+            $person=$names->get($row['user_id']);
+            $row['display_name']=$person ? (trim(trim((string)$person->voornaam).' '.trim((string)$person->name)) ?: $row['username']) : $row['username'];
+            $row['sort_name']=$person ? trim((string)$person->name).' '.trim((string)$person->voornaam) : $row['username'];
+        }
+        unset($row);
         $token=Str::random(48);
         Cache::put('class-staff-preview:'.$token,['actor'=>$access->staffId($request),'year'=>ClassStaffLinks::year(),'kind'=>$kind,'preview'=>$preview],now()->addMinutes(15));
         return view('beheer.classes.preview',compact('preview','token','kind'));
