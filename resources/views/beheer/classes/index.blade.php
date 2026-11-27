@@ -12,10 +12,37 @@
 <section class="library-form-card"><h2>Klassen</h2>
 @foreach($classes as $class)
 @php($items=$members->get($class->id,collect()))
-<details style="padding:12px 0;border-bottom:1px solid #d5e0e8"><summary style="cursor:pointer;font-weight:650">{{ $class->klasnaam }} · {{ $counts[$class->id]??0 }} leerlingen · {{ $items->where('kind','teacher')->count() }} leerkrachten · {{ $items->where('kind','mentor')->count() }} titularissen</summary>
+<details class="class-admin-details" data-roster-url="{{ route('beheer.classes.students',$class->id) }}"><summary style="cursor:pointer;font-weight:650">{{ $class->klasnaam }} · {{ $counts[$class->id]??0 }} leerlingen · {{ $items->where('kind','teacher')->count() }} leerkrachten · {{ $items->where('kind','mentor')->count() }} titularissen</summary>
 <p><strong>Klastitularissen:</strong> {{ $items->where('kind','mentor')->pluck('smartschool_gebruikersnaam')->implode(', ') ?: 'Niet gekoppeld' }}</p>
 <p><strong>Leerkrachten:</strong> {{ $items->where('kind','teacher')->pluck('smartschool_gebruikersnaam')->implode(', ') ?: 'Niet gekoppeld' }}</p>
+<h3>Leerlingen</h3>
+<div data-class-roster aria-live="polite">Open de klas om de leerlingen te laden.</div>
 </details>
 @endforeach
 </section></main>
 @endsection
+@push('scripts')
+<script>
+document.querySelectorAll('details[data-roster-url]').forEach(details => {
+    const target=details.querySelector('[data-class-roster]');
+    async function load(){
+        if(details.dataset.loaded || details.dataset.loading)return;
+        details.dataset.loading='1';
+        target.textContent='Leerlingen laden…';
+        try{
+            const response=await fetch(details.dataset.rosterUrl,{credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+            if(!response.ok||response.redirected)throw new Error('load');
+            target.innerHTML=await response.text();
+            details.dataset.loaded='1';
+        }catch(e){
+            target.textContent='Leerlingen konden niet worden geladen. ';
+            const retry=document.createElement('button');
+            retry.type='button'; retry.className='library-button library-button-secondary'; retry.textContent='Opnieuw proberen';
+            retry.addEventListener('click',load);target.append(retry);
+        }finally{delete details.dataset.loading;}
+    }
+    details.addEventListener('toggle',()=>{if(details.open)load();});
+    if(details.open)load();
+});
+</script>
+@endpush
