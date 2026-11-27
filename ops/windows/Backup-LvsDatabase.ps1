@@ -21,7 +21,7 @@ function Write-Status {
     $temp = Join-Path $StatusDirectory ('backup-'+[guid]::NewGuid().ToString('N')+'.tmp')
     [IO.File]::WriteAllText($temp,($state | ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
     try {
-        if (Test-Path -LiteralPath $target) { [IO.File]::Replace($temp,$target,$null) }
+        if (Test-Path -LiteralPath $target) { [IO.File]::Replace($temp,$target,[NullString]::Value) }
         else { [IO.File]::Move($temp,$target) }
     } finally { if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force } }
 }
