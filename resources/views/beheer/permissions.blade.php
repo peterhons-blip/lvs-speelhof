@@ -28,6 +28,9 @@
         <a class="library-button library-button-secondary" href="{{ route('beheer.permissions.individual') }}">Individuele rechten beheren</a>
     </section>
 
+    @if(app(\App\Services\LibraryAccess::class)->role(request())==='ict_coordinator')
+    <section class="library-form-card" style="margin-bottom:22px"><h2>LVS: zichtbaarheid per leerlingrelatie</h2><p>De algemene rechten hieronder bepalen welke functies toegankelijk zijn. De zichtbaarheidsmatrix bepaalt daarna welke meldingen iemand effectief mag zien.</p><a class="library-button library-button-secondary" href="{{ route('lvs.visibility.index') }}">Zichtbaarheidsmatrix</a></section>
+    @endif
     <div class="portal-roles-accordion" aria-label="Schoolrollen en toegangsrechten">
         <details class="portal-role-panel portal-role-panel-ict">
             <summary class="portal-role-summary">
